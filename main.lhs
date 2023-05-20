@@ -17,6 +17,10 @@
 %% for your publication.
 \documentclass[sigplan,screen,review,anonymous]{acmart}
 
+%%%% lhs2Tex (*.lhs) document
+\let\Bbbk\undefined
+%include polycode.fmt
+
 %%%% %% Rights management information.  This information is sent to you
 %%%% %% when you complete the rights form.  These commands have SAMPLE
 %%%% %% values in them; it is your responsibility as an author to replace
@@ -263,9 +267,12 @@ actor model.
 
 \subsubsection{Sending (throwing) messages}
 
-\begin{lstlisting}[language=Haskell]
-omg
-\end{lstlisting}
+Test hello
+
+\begin{code}
+main :: IO ()
+main = print "test"
+\end{code}
 
 \subsubsection{Receiving (catching) messages}
 

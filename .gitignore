@@ -15,5 +15,8 @@ comment.cut
 
 *.bbl
 *.blg
+*.ptb
 
 *.pdf
+
+main.tex
