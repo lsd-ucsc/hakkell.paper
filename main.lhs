@@ -20,6 +20,7 @@
 %%%% lhs2Tex (*.lhs) document
 \let\Bbbk\undefined
 %include polycode.fmt
+\long\def\ignore#1{}
 
 %%%% %% Rights management information.  This information is sent to you
 %%%% %% when you complete the rights form.  These commands have SAMPLE
@@ -45,31 +46,6 @@
 %% citations and references.
 %% Uncommenting the next command will enable that style.
 \citestyle{acmauthoryear}
-
-\usepackage{listings}
-% https://tex.stackexchange.com/questions/116595/highlighting-haskell-listings-in-large-tex-document
-\lstset{
-    frame=none,
-    xleftmargin=2pt,
-    stepnumber=1,
-    numbers=left,
-    numbersep=5pt,
-    numberstyle=\ttfamily\tiny\color[gray]{0.3},
-    belowcaptionskip=\bigskipamount,
-    captionpos=b,
-    escapeinside={*'}{'*},
-    language=haskell,
-    tabsize=2,
-    emphstyle={\bf},
-    commentstyle=\it,
-    stringstyle=\mdseries\rmfamily,
-    showspaces=false,
-    keywordstyle=\bfseries\rmfamily,
-    columns=flexible,
-    basicstyle=\small\sffamily,
-    showstringspaces=false,
-    morecomment=[l]\%,
-}
 
 %% end of the preamble, start of the body of the document source.
 \begin{document}
@@ -164,7 +140,7 @@
 
 \section{Introduction}
 
-TODO
+\plr{TODO}
 
 \section{Background}
 
@@ -184,7 +160,7 @@ cannot proceed such as \verb|(readFile "\0")|.
 one, or the RTS itself, to communicate conditions requiring the thread to
 terminate: thread cancellation, user interrupts, or memory limits.
 %
-We will focus on asynchronous exceptions.
+We focus on asynchronous exceptions.
 
 Asynchronous exceptions uniquely allow syntactically-distant parts of a program
 to interact.
@@ -194,50 +170,48 @@ to throw a \verb|ThreadKilled| exception to it.
 The standard library function \verb|killThread|
 is even implemented as \verb|(\x -> throwTo x ThreadKilled)|.\footnote{
     These identifiers are variously defined in \texttt{Control.Concurrent} and
-    \texttt{Control.Exception} in \texttt{base-4.18.0.0}.
+    \texttt{Control.Exception} in \texttt{base-4.15.1.0}.
 }
 %
 There is no permission or capability required to access this powerful feature.
 
 Asynchronous exceptions are peculiar because they aren't constrained to their
-stated purpose, \cite{marlow2001async} of ``signaling (or killing) one
-thread by another.''
+stated purpose of ``signaling (or killing) one
+thread by another'' \cite{marlow2001async}.
 %
 A thread may throw any exception to any thread for any reason.
 %
-Standard exceptions may be reused to extend greetings,
+Standard exceptions may be reused to extend greetings as in,
 \verb|(\x -> throwTo x $ AssertionFailed "hello")|.
 %
-User defined datatypes may be made into exceptions.
+User defined datatypes may even be thrown as asynchronous exceptions by
+declaring an instance of \verb|Exception| \cite{marlow2006extensible}.
 %
-It is only necessary to declare an instance of \verb|Exception| for a type
-\cite{marlow2006extensible}:
+Given the two lines of declarations below it is possible to greet in
+vernacular, \verb|(\x -> throwTo x Hi)|.
 %
-\begin{verbatim}
+\begin{spec}
 data Greet = Hi | Hello deriving Show
 instance Exception Greet
-\end{verbatim}
-%
-Having declared the instance it is permissible to greet in vernacular,
-\verb|(\x -> throwTo x Hi)|.
+\end{spec}
 
 Asynchronous exceptions may be caught by the receiving thread for
-either cleanup or recovery.
+either cleanup or surprisingly, recovery.
 %
-Recovery includes ``inform[ing] the program when memory is running out [so] it
-can take remedial action'' \cite{marlow2001async}.
+An example of recovery includes ``inform[ing] the program when memory is
+running out [so] it can take remedial action'' \cite{marlow2001async}.
 %
 The ability to recover from a termination signal seems innocuous, but combined
-with the rest, asynchronous exceptions allow a variety of ``spooky action at a
-distance'' which one might want to constrain in a functional programming
+with the rest, asynchronous exceptions facilitate ``spooky action at a
+distance'' in ways one might want to constrain in a functional programming
 language.
 
 \subsection{The actor model}
 
 The actor model is a computational paradigm characterized by message passing.
 %
-\cite{hewitt1973actors} says, ``an actor can be thought of as a kind of virtual
-processor that is never "busy" [in the sense that it cannot be sent a
+\citet{hewitt1973actors} says, ``an actor can be thought of as a kind of
+virtual processor that is never "busy" [in the sense that it cannot be sent a
 message].''
 %
 In modern terms, we might say an actor is a green-thread with some state and an
@@ -251,69 +225,301 @@ Having completed that, the actor waits to process the next message in its
 inbox.
 %
 We will approximate this model with Haskell's asynchronous exceptions as the
-primary metaphor to message passing.
+primary metaphor for message passing.
 
 
 
 
 \section{Implementation}
 
-We define that an actor is a Haskell thread running a library-provided
-\verb|mainloop| function which mediates message receipt and calls to a
-user-provided \verb|handler| function.
+We define that an actor is a Haskell thread.
+%
+Such a thread runs a library-provided main-loop function which mediates
+message receipt and calls to a user-defined handler function.
 %
 Here we describe the minimal abstractions around such threads which realize the
 actor model.
 
-\subsubsection{Sending (throwing) messages}
+From this point forward, all code listings are part of a literate Haskell
+file.\footnote{
+We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0| and the following imports:
 
-Test hello
+\begin{code}
+{-# LANGUAGE NamedFieldPuns #-}
+-- Section 3.1, 3.2
+import Control.Exception (Exception(..), throwTo, catch, mask_)
+import Control.Concurrent (ThreadId, myThreadId, threadDelay)
+-- Section 3.3
+import Control.Exception (TypeError(..), SomeException)
+\end{code}
+}
+%
+Our implementation requires a few definitions from Haskell's \verb|base|
+package,
+and we simplify our presentation with an extension to enable construction and
+pattern-matches using binders named the same as fields.
+
+%%%% \subsection{Simple implementation}
+%%%% \label{sec:simple-impl}
+%%%% 
+%%%% We first reveal a simplified actor framework to communicate the essential
+%%%% workings to the reader.
+%%%% %
+%%%% Section \plr{FIXME} defines more complex implementation we will use for
+%%%% case studies in Section \ref{sec:case-studies}.
+
+
+\subsection{Sending (throwing) messages}
+
+To send a message we will throw an exception to the recipient threads
+identifier.
+%
+So that the recipient may respond, we define a self-addressed envelope data
+type.
+%
+This envelope and the message content must both be instances of
+\verb|Exception| and \verb|Show|.
+%
+\begin{code}
+data Envelope a = Envelope { sender :: ThreadId, message :: a }
+    deriving Show
+
+instance Exception a => Exception (Envelope a)
+\end{code}
+%
+With the envelope defined, our send function reads the current thread
+identifier, constructs a self-addressed envelope, and throws it to the
+specified recipient.
+%
+\begin{code}
+sendStatic :: Exception a => ThreadId -> a -> IO ()
+sendStatic recipient message = do
+    sender <- myThreadId
+    throwTo recipient Envelope{sender, message}
+\end{code}
+%
+Our choice to wrap a user-defined message type in a known envelope type has the
+benefit of allowing the actor main-loop to distinguish between messages and
+exceptions, allowing the latter to terminate the thread as intended.
+
+
+\subsection{Receiving (catching) messages}
+
+An actor is a thread running a library-provided main-loop function.
+%
+To receive a message, the main-loop function will install an exception-handler
+that passes messages to a user-defined handler.
+%
+The user-defined handler function encodes actor intentions as a
+state-transition function that takes a self-addressed envelope as its first
+argument.
+%
+\begin{code}
+type Handler state a = Envelope a -> state -> IO state
+\end{code}
+
+The actor main-loop is defined in Figure \ref{fig:mainloop}:
+%
+\verb|mainloop| takes a \verb|Handler| and its initial state and does not
+return.
+%
+Then \verb|mainloop| masks asynchronous exceptions so they will only be raised
+at well-defined points and runs its loop under that mask.
+
+The main-loop has two pieces of state: handler state and an inbox of messages
+to be processed.
+%
+The main-loop body is divided roughly into three cases by an exception
+handler and a case-split on the inbox list.
+%
+(1) If the inbox is empty, the thread sleeps for 60 seconds and then recurses on
+the unchanged handler state and empty inbox.
+%
+(2) If the inbox has a message, process it with the handler and recurse
+on the updated handler state and remainder of the inbox.
+%
+(3) If during cases (1) or (2) an \verb|Envelope| exception is received,
+recurse on unchanged handler state and an inbox with the new envelope appended
+to the end.
+
+In the normal course of things, an actor will start with an empty inbox and go
+to sleep.
+%
+If a message is received during sleep, the actor will wake (because
+\verb|threadDelay| is defined to be \emph{interruptible}) and add the message
+to its inbox.
+%
+On the next loop iteration the actor will process that message using the
+handler and once again have an empty inbox.
+%
+Exceptions are masked outside of interruptible actions so that the bookkeeping
+of recursing with updated state through the loop is not disrupted.
+
+\begin{figure}
+\begin{code}
+mainloop :: Exception a => Handler s a -> s -> IO ()
+mainloop handler initialState = mask_ $ loop (initialState, [])
+  where
+    loop (state, inbox) =
+        catch
+            (case inbox of
+                [] -> threadDelay 60000000 >> return (state, inbox)
+                x:xs -> (,) <$> handler x state <*> return xs)
+            (\e@Envelope{} -> return (state, inbox ++ [e]))
+        >>= loop
+\end{code}
+\caption{Core of the actor framework.}
+\label{fig:mainloop}
+\end{figure}
+
+\paragraph{Unsafe profundity}
+
+Before moving forward, let us acknowledge that this approach is \emph{not
+safe}:
+%
+An exception may arrive while executing the handler.
+%
+Despite the exception mask which we have intentionally left in place, if the
+handler executes an interruptible action then it will be preempted.
+%
+In this case the handler's work will be unfinished.
+%
+Without removing the message currently being processed, the loop
+will continue on an inbox extended with the new message.
+%
+The next iteration will begin by processing the same message that the preempted
+iteration was, effecting a double-send.
+
+To avoid the possibility of a double-send, a careful implementor of a
+\verb|Handler| might follow the documented recommendations (use software
+transactional memory (STM), or avoid interruptible actions, or apply
+\verb|uninterruptibleMask|), but recall that message sending is implemented
+with \verb|throwTo| which is ``\emph{always} interruptible, even if does not
+actually block'' \cite{controlDotException}.
+%
+Here be dragons.
+
+We have in only a few lines of code discovered an actor
+framework in the GHC Haskell runtime that makes no explicit use of channels,
+references, or locks and imports just a few names from the default modules.
+%
+Despite minor brokenness, it is notable that this is possible.
+
+
+
+\subsection{Dynamic types}
+
+The actor main-loop in Figure \ref{fig:mainloop} constrains an actor thread to
+handle messages of only a single type.
+%
+An envelope containing the wrong message type will not be caught by the
+exception handler and will cause the receiving actor to crash.
+%
+In this section, we extend the framework to support actors that may receive
+messages of different types.
+%
+We hesitate to identify it as a dynamically-typed actor framework.
+
+Instead of sending an \verb|Envelope| of some application-specific message
+type, we convert messages to the ``any type'' in Haskell's the exception
+hierarchy, \verb|SomeException|.
+%
+All inflight messages will be of type \verb|Envelope SomeException|.
+
+\begin{code}
+sendDyn :: Exception a => ThreadId -> a -> IO ()
+sendDyn recipient = sendStatic recipient . toException
+\end{code}
+
+On the receiving side, messages must now be downcast to the \verb|Handler|
+message type.
+%
+This is an opportunity to handle messages of the wrong type specially.
+%
+We define a \verb|handlerDyn| function to convert any \verb|Handler| to one
+that can receive messages produced by \verb|sendDyn|.
+%
+If the message downcast fails, instead of the recipient crashing, it throws an
+exception (not a message) to the sender (but we do not include an informative
+type-error message here).\footnote{
+    The extensions \texttt{ScopedTypeVariables}, \texttt{TypeApplications}, and
+    the function \texttt{Data.Typeable.typeOf} can be used to construct a very
+    helpful type-error message for debugging actor programs.
+}
+%
+For brevity we show this change to the framework as a wrapper around a
+\verb|Handler|, \plr{but it is better made as a modification to the
+exception-handler in \verb|mainloop|}.
+
+%%%% \begin{code}
+%%%% receiveDyn :: Exception a => Handler s a -> s -> IO ()
+%%%% receiveDyn handlerStatic = mainloop handlerDyn
+%%%%   where
+%%%%     handlerDyn e@Envelope{sender, message} state =
+%%%%         case fromException message of
+%%%%             Just m -> handlerStatic e{message=m} state
+%%%%             Nothing
+%%%%                 -> throwTo sender (TypeError "...")
+%%%%                 >> return state
+%%%% \end{code}
+
+\begin{code}
+handlerDyn :: Exception a => Handler s a
+    -> Handler s SomeException
+handlerDyn handler e@Envelope{sender, message} state =
+    case fromException message of
+        Just m -> handler e{message=m} state
+        Nothing
+            -> throwTo sender (TypeError "...")
+            >> return state
+\end{code}
+
+A close reader will note that these changes haven't directly empowered actor
+handler-functions to deal with messages of different types.
+%
+In fact, actors that wish to receive messages of different types will do so by
+performing the downcast from \verb|SomeException| themselves.
+%
+The \verb|handlerDyn| function is most useful for actors that \emph{do not}
+receive messages of different types.
+%
+The next section will show examples of both.
+
+
+
+
+
+
+\section{Examples}
+\label{sec:case-studies}
+
+\subsection{Ring leader-election}
+
+\cite{lelann1977distributed} and \cite{chang1979decentralextrema}
+
+\subsubsection{Actor implementation}
+
+
 
 \begin{code}
 main :: IO ()
-main = print "test"
+main = print "hello"
 \end{code}
 
-\subsubsection{Receiving (catching) messages}
 
 
-%% \subsection{One message type}
-%% 
-%% In the interest of clarity, we first describe the system in terms of a single
-%% message type with \verb|handler| functions that do not maintain state.
-%% %
-%% Section \ref{sec:state} extends to a state-passing model and Section
-%% \ref{sec:dynamic} enables the use of dynamic types.
-%% 
-%% \subsubsection{Sending (throwing) messages}
-%% 
-%% \subsubsection{Receiving (catching) messages}
-%% 
-%% \subsubsection{Maintaining state}
-%% \label{sec:state}
-%% 
-%% 
-%% \subsection{Dynamic message types}
-%% \label{sec:dynamic}
-%% 
-%% To extend the sending and receiving messages to dynamic message types we
-%% observe that a 
-
-
-
-\section{Example}
 
 
 
 
 \section{Big Questions}
 
-TODO
+\plr{TODO}
 
 
 \section{Conclusion}
 
-TODO
+\plr{TODO}
 
 %% The acknowledgments section is defined using the "acks" environment
 %% (and NOT an unnumbered section). This ensures the proper
@@ -334,7 +540,7 @@ Ack the PLV people
 
 \section{Appendix}
 
-TODO
+\plr{TODO}
 
 \end{document}
 \endinput
