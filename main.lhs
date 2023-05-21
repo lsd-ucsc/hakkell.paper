@@ -17,6 +17,14 @@
 %% for your publication.
 \documentclass[sigplan,screen,review,anonymous]{acmart}
 
+\newcommand{\newcommenter}[3]{%
+  \newcommand{#1}[1]{%
+    \textcolor{#2}{\small\textsf{[{#3}: {##1}]}}%
+  }%
+}
+
+\newcommenter{\plr}{magenta}{PLR}
+
 %%%% lhs2Tex (*.lhs) document
 \let\Bbbk\undefined
 %include polycode.fmt
@@ -493,12 +501,17 @@ The next section will show examples of both.
 \section{Examples}
 \label{sec:case-studies}
 
+\subsection{Dining philosophers}
+
 \subsection{Ring leader-election}
 
 \cite{lelann1977distributed} and \cite{chang1979decentralextrema}
 
 \subsubsection{Actor implementation}
 
+\subsubsection{Ring setup}
+
+\subsubsection{Extension by dynamic types}
 
 
 \begin{code}
