@@ -426,14 +426,31 @@ Here be dragons.
 
 Which requirements to be a COPL does this system display?
 %
-RTS threads behave as independent process, and although not strongly
+RTS threads behave as independent processes, and although not strongly
 isolated and able to share state, they have a unique hidden \verb|ThreadId|.
 
-The implementation as shown encourages communication via reliable synchronous
-message passing with FIFO order.
+The implementation as shown encourages communication via \emph{reliable
+synchronous message passing with FIFO order}.
 %
-By wrapping calls to \verb|sendStatic| with \verb|forkIO|, it becomes reliable
-\emph{asynchronous} message passing \emph{possibly without} FIFO order.
+We call it synchronous because ``\verb|throwTo| does not return until the
+exception is received by the target thread''
+\cite{controlDotException}.\footnote{
+	``Synchronous for me, but not for thee'' might be the most correct
+	characterization. Senders may experience GHC's asynchronous exceptions as
+	synchronous, but recipients will always perceive them as asynchronous.
+}
+%
+This means that a sender may block if the recipient never reaches an
+interruptible point (e.g. its handler function enters an infinite loop in pure
+computation).
+%
+Assuming handler functions terminate, instead the framework will tend to
+exhibit the behavior of \emph{reliable asynchronous message passing with FIFO
+order} and occasional double-sends.
+%
+By wrapping calls to \verb|sendStatic| with \verb|forkIO|, we can obtain
+\emph{reliable asynchronous message passing without FIFO order} even in the
+presence of non-terminating handler functions.
 %
 FIFO can be recovered by message sequence numbers or (albeit, jumping the
 shark) use of an outbox-thread per actor.
