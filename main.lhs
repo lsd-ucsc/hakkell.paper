@@ -235,6 +235,28 @@ inbox.
 We will approximate this model with Haskell's asynchronous exceptions as the
 primary metaphor for message passing.
 
+\citet{armstrong2003} provides additional definition for actors in their list of characteristics of a concurrency oriented programming language (COPL).
+%
+Every COPL
+(1) has processes,
+(2) which are strongly isolated,
+(3) with a unique hidden identifier,
+(4) without shared state,
+(5) that communicate via unreliable message passing,
+and
+(6) can detect when another process halts.
+%
+Additionally
+(5a) message passing is asynchronous so that no stuck recipient may cause a sender to become stuck,
+(5b) receiving a response is the only way to know that a prior message was delivered,
+and
+(5c) messages between two processes obey FIFO ordering.
+%
+While an actor system within an instance of the RTS cannot satisfy all of these
+requirements (e.g. termination of the main thread is not strongly isolated from
+the child threads), we will show that ours satisfies many requirements of being COPL with relatively little effort.
+
+
 
 
 
@@ -242,7 +264,7 @@ primary metaphor for message passing.
 
 We define that an actor is a Haskell thread.
 %
-Such a thread runs a library-provided main-loop function which mediates
+An actor thread runs a library-provided main-loop function which mediates
 message receipt and calls to a user-defined handler function.
 %
 Here we describe the minimal abstractions around such threads which realize the
@@ -279,7 +301,7 @@ pattern-matches using binders named the same as fields.
 
 \subsection{Sending (throwing) messages}
 
-To send a message we will throw an exception to the recipient threads
+To send a message we will throw an exception to the recipient thread's
 identifier.
 %
 So that the recipient may respond, we define a self-addressed envelope data
@@ -305,49 +327,43 @@ sendStatic recipient message = do
     sender <- myThreadId
     throwTo recipient Envelope{sender, message}
 \end{code}
-%
-Our choice to wrap a user-defined message type in a known envelope type has the
-benefit of allowing the actor main-loop to distinguish between messages and
-exceptions, allowing the latter to terminate the thread as intended.
 
 
 \subsection{Receiving (catching) messages}
 
-An actor is a thread running a library-provided main-loop function.
+Every actor thread runs a library-provided main-loop function to manage message
+receipt and processing.
 %
-To receive a message, the main-loop function will install an exception-handler
-that passes messages to a user-defined handler.
+The main-loop installs an exception handler to accumulate messages in an inbox
+and calls a user-defined handler on each.
 %
-The user-defined handler function encodes actor intentions as a
-state-transition function that takes a self-addressed envelope as its first
-argument.
+The user-defined handler encodes actor intentions (or behavior) as a
+state-transition that takes a self-addressed envelope as its first argument.
 %
 \begin{code}
-type Handler state a = Envelope a -> state -> IO state
+type Handler st msg = Envelope msg -> st -> IO st
 \end{code}
 
-The actor main-loop is defined in Figure \ref{fig:mainloop}:
-%
-\verb|mainloop| takes a \verb|Handler| and its initial state and does not
-return.
+Figure \ref{fig:mainloop} defines \verb|mainloop| which takes a \verb|Handler|
+and its initial state and does not return.
 %
 Then \verb|mainloop| masks asynchronous exceptions so they will only be raised
 at well-defined points and runs its loop under that mask.
 
-The main-loop has two pieces of state: handler state and an inbox of messages
-to be processed.
+The loop has two pieces of state: that of \verb|Handler| and an inbox of
+messages to be processed.
 %
-The main-loop body is divided roughly into three cases by an exception
+The loop body is divided roughly into three cases by an exception
 handler and a case-split on the inbox list.
 %
-(1) If the inbox is empty, the thread sleeps for 60 seconds and then recurses on
-the unchanged handler state and empty inbox.
+(1) If the inbox is empty, sleep for 60 seconds and then recurse on the
+unchanged  and empty inbox.
 %
-(2) If the inbox has a message, process it with the handler and recurse
-on the updated handler state and remainder of the inbox.
+(2) If the inbox has a message, call the handler and recurse on the
+updated handler-state and remainder of the inbox.
 %
 (3) If during cases (1) or (2) an \verb|Envelope| exception is received,
-recurse on unchanged handler state and an inbox with the new envelope appended
+recurse on unchanged handler-state and an inbox with the new envelope appended
 to the end.
 
 In the normal course of things, an actor will start with an empty inbox and go
@@ -357,8 +373,8 @@ If a message is received during sleep, the actor will wake (because
 \verb|threadDelay| is defined to be \emph{interruptible}) and add the message
 to its inbox.
 %
-On the next loop iteration the actor will process that message using the
-handler and once again have an empty inbox.
+On the next loop iteration the actor will process that message and once again
+have an empty inbox.
 %
 Exceptions are masked outside of interruptible actions so that the bookkeeping
 of recursing with updated state through the loop is not disrupted.
@@ -380,10 +396,9 @@ mainloop handler initialState = mask_ $ loop (initialState, [])
 \label{fig:mainloop}
 \end{figure}
 
-\paragraph{Unsafe profundity}
+\paragraph{Unsafety}
 
-Before moving forward, let us acknowledge that this approach is \emph{not
-safe}:
+Before moving forward, let us acknowledge that this is \emph{not safe}.
 %
 An exception may arrive while executing the handler.
 %
@@ -407,11 +422,45 @@ actually block'' \cite{controlDotException}.
 %
 Here be dragons.
 
-We have in only a few lines of code discovered an actor
-framework in the GHC Haskell runtime that makes no explicit use of channels,
-references, or locks and imports just a few names from the default modules.
+\paragraph{Aspects of a COPL}
+
+Which requirements to be a COPL does this system display?
 %
-Despite minor brokenness, it is notable that this is possible.
+RTS threads behave as independent process, and although not strongly
+isolated and able to share state, they have a unique hidden \verb|ThreadId|.
+
+The implementation as shown encourages communication via reliable synchronous
+message passing with FIFO order.
+%
+By wrapping calls to \verb|sendStatic| with \verb|forkIO|, it becomes reliable
+\emph{asynchronous} message passing \emph{possibly without} FIFO order.
+%
+FIFO can be recovered by message sequence numbers or (albeit, jumping the
+shark) use of an outbox-thread per actor.
+%
+With use of \verb|forkFinally| an actor can reliably inform others of its
+termination.\footnote{
+	\verb|forkIO| and \verb|forkFinally| are defined in
+	\texttt{Control.Concurrent} in \texttt{base-4.15.1.0}.
+}
+
+\plr{Digresses slightly from COPL, but still relevant to armstrong.}
+Our choice to wrap a user-defined message type in a known envelope type has the
+benefit of allowing the actor main-loop to distinguish between messages and
+exceptions, allowing the latter to terminate the thread as intended.
+%
+At the same time this choice runs afoul of the \emph{name distribution problem}
+\cite{armstrong2003} by indiscriminately informing all recipients of the sender
+process identifier.
+
+\paragraph{Perspective}
+We have in only a few lines of code discovered an actor framework within the
+RTS which makes no explicit use of channels, references, or locks and imports
+just a few names from the default modules.
+%
+The likelihood of double sends might temper enthusiasm for this discovery, but
+despite minor brokenness it is notable that this is possible.
+
 
 
 
@@ -442,22 +491,25 @@ sendDyn recipient = sendStatic recipient . toException
 On the receiving side, messages must now be downcast to the \verb|Handler|
 message type.
 %
-This is an opportunity to handle messages of the wrong type specially.
+This is an opportunity to treat messages of the wrong type specially.
 %
 We define a \verb|handlerDyn| function to convert any \verb|Handler| to one
 that can receive messages produced by \verb|sendDyn|.
 %
 If the message downcast fails, instead of the recipient crashing, it throws an
-exception (not a message) to the sender (but we do not include an informative
-type-error message here).\footnote{
+exception (not a message) to the sender.\footnote{
     The extensions \texttt{ScopedTypeVariables}, \texttt{TypeApplications}, and
     the function \texttt{Data.Typeable.typeOf} can be used to construct a very
     helpful type-error message for debugging actor programs.
 }
-%
-For brevity we show this change to the framework as a wrapper around a
-\verb|Handler|, \plr{but it is better made as a modification to the
-exception-handler in \verb|mainloop|}.
+%%%% %
+%%%% We feel that sending a message which the recipient cannot handle is a bug in
+%%%% the sender not the recipient and this changes aligns behavior to align with
+%%%% that expectation.
+%%%% %
+%%%% For brevity we show this change to the framework as a wrapper around a
+%%%% \verb|Handler|, \plr{but it is better made as a modification to the
+%%%% exception-handler in \verb|mainloop|}.
 
 %%%% \begin{code}
 %%%% receiveDyn :: Exception a => Handler s a -> s -> IO ()
@@ -502,6 +554,8 @@ The next section will show examples of both.
 \label{sec:case-studies}
 
 \subsection{Dining philosophers}
+
+\subsection{Santa Clause Problem}
 
 \subsection{Ring leader-election}
 
