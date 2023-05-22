@@ -448,15 +448,16 @@ Assuming handler functions terminate, instead the framework will tend to
 exhibit the behavior of \emph{reliable asynchronous message passing with FIFO
 order} and occasional double-sends.
 %
-By wrapping calls to \verb|sendStatic| with \verb|forkIO|, we can obtain
-\emph{reliable asynchronous message passing without FIFO order} even in the
-presence of non-terminating handler functions.
+By wrapping calls to \verb|sendStatic| with \verb|forkIO|
+\cite{marlow2001async}, we obtain \emph{reliable asynchronous message passing
+without FIFO order} even in the presence of non-terminating handler functions.
+\plr{Read \cite{marlow2001async} closely to decide whether we have FIFO.}
 %
 FIFO can be recovered by message sequence numbers or (albeit, jumping the
 shark) use of an outbox-thread per actor.
 %
-With use of \verb|forkFinally| an actor can reliably inform others of its
-termination.\footnote{
+An actor can reliably inform others of its termination with use of
+\verb|forkFinally|.\footnote{
 	\verb|forkIO| and \verb|forkFinally| are defined in
 	\texttt{Control.Concurrent} in \texttt{base-4.15.1.0}.
 }
