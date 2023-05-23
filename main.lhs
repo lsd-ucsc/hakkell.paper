@@ -670,6 +670,7 @@ the greater of itself and the received nominee to its successor in the ring.
 %
 Unless the nominee is itself, in which case it wins and the algorithm stops.
 %
+\begin{samepage}
 \begin{code}
 node state@Member{next}
   Envelope{message=Nominate{nominee}} = do
@@ -680,6 +681,7 @@ node state@Member{next}
         |  otherwise       -> send next (Nominate self)
     return state
 \end{code}
+\end{samepage}
 
 \subsubsection{Initialization}
 
@@ -719,11 +721,6 @@ main1 = do
         mainloop (handlerDyn node) Uninitialized
 \end{code}
 %
-
-
-\subsubsection{Actor implementation}
-
-\subsubsection{Ring setup}
 
 \subsubsection{Extension by dynamic types}
 
