@@ -273,21 +273,28 @@ actor model.
 From this point forward, all code listings are part of a literate Haskell
 file.\footnote{
 We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0| and the following imports:
-
+%
 \begin{code}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 -- Section 3.1, 3.2
 import Control.Exception (Exception(..), throwTo, catch, mask_)
 import Control.Concurrent (ThreadId, myThreadId, threadDelay)
 -- Section 3.3
 import Control.Exception (TypeError(..), SomeException)
+-- Section 4.2
+import Control.Concurrent (forkIO)
+import System.Random (RandomGen, randomR, getStdRandom)
 \end{code}
 }
 %
 Our implementation requires a few definitions from Haskell's \verb|base|
-package,
-and we simplify our presentation with an extension to enable construction and
-pattern-matches using binders named the same as fields.
+package.
+%
+We simplify our presentation with an extension to enable construction and
+pattern-matches using binders named the same as fields,
+and
+an extension allowing two records to share the same field name.
 
 %%%% \subsection{Simple implementation}
 %%%% \label{sec:simple-impl}
@@ -338,10 +345,10 @@ The main-loop installs an exception handler to accumulate messages in an inbox
 and calls a user-defined handler on each.
 %
 The user-defined handler encodes actor intentions (or behavior) as a
-state-transition that takes a self-addressed envelope as its first argument.
+state-transition that takes a self-addressed envelope as its second argument.
 %
 \begin{code}
-type Handler st msg = Envelope msg -> st -> IO st
+type Handler st msg = st -> Envelope msg -> IO st
 \end{code}
 
 Figure \ref{fig:mainloop} defines \verb|mainloop| which takes a \verb|Handler|
@@ -388,7 +395,7 @@ mainloop handler initialState = mask_ $ loop (initialState, [])
         catch
             (case inbox of
                 [] -> threadDelay 60000000 >> return (state, inbox)
-                x:xs -> (,) <$> handler x state <*> return xs)
+                x:xs -> (,) <$> handler state x <*> return xs)
             (\e@Envelope{} -> return (state, inbox ++ [e]))
         >>= loop
 \end{code}
@@ -502,8 +509,8 @@ hierarchy, \verb|SomeException|.
 All inflight messages will be of type \verb|Envelope SomeException|.
 
 \begin{code}
-sendDyn :: Exception a => ThreadId -> a -> IO ()
-sendDyn recipient = sendStatic recipient . toException
+send :: Exception a => ThreadId -> a -> IO ()
+send recipient = sendStatic recipient . toException
 \end{code}
 
 On the receiving side, messages must now be downcast to the \verb|Handler|
@@ -512,7 +519,7 @@ message type.
 This is an opportunity to treat messages of the wrong type specially.
 %
 We define a \verb|handlerDyn| function to convert any \verb|Handler| to one
-that can receive messages produced by \verb|sendDyn|.
+that can receive messages produced by this send.
 %
 If the message downcast fails, instead of the recipient crashing, it throws an
 exception (not a message) to the sender.\footnote{
@@ -542,11 +549,11 @@ exception (not a message) to the sender.\footnote{
 %%%% \end{code}
 
 \begin{code}
-handlerDyn :: Exception a => Handler s a
-    -> Handler s SomeException
-handlerDyn handler e@Envelope{sender, message} state =
+handlerDyn :: Exception a =>
+    Handler s a -> Handler s SomeException
+handlerDyn handler state e@Envelope{sender, message} =
     case fromException message of
-        Just m -> handler e{message=m} state
+        Just m -> handler state e{message=m}
         Nothing
             -> throwTo sender (TypeError "...")
             >> return state
@@ -573,11 +580,122 @@ The next section will show examples of both.
 
 \subsection{Dining philosophers}
 
-\subsection{Santa Clause Problem}
+TODO if space and need
 
 \subsection{Ring leader-election}
+\label{sec:ring-impl}
 
-\cite{lelann1977distributed} and \cite{chang1979decentralextrema}
+The problem of \emph{ring leader-election} is to designate one node among a
+network of nodes that communicate with a ring topology
+\cite{lelann1977distributed}.
+%
+The nodes do not know the number or identities of the other nodes except for
+their immediate successor ``next'' node.
+%
+A satisfying solution will result in one node being designated the winner.
+%
+Though this problem is a classic in distributed systems literature, it might
+not make sense to apply to threads in a process.
+%
+It is nonetheless interesting and we use it for demonstration.
+
+\citet{chang1979decentralextrema} describe a solution where each node nominates
+itself to its successor. Upon receiving a nomination, a node forwards it if the
+nominee is greater than itself and ignores it otherwise.
+%
+Here we show a simpler solution in which only one randomly chosen node
+nominates itself.
+%
+Upon receiving a nomination, a node forwards it or nominates itself.
+
+\subsubsection{State and message}
+
+Each node begins uninitialized, and is later made a member of the ring
+when it learns the identity of the next node in the ring.
+%
+Therefore our node state type will have two constructors.
+\begin{code}
+type Id = ThreadId
+data Node = Uninitialized | Member {next::Id}
+\end{code}
+%
+The main thread will create each node actor and then initialize the ring by
+informing the actors of their ``next'' nodes.
+%
+Then the main thread will instruct one node actor to start the algorithm.
+%
+Finally, the nodes will complete the algorithm by sending nominations.
+%
+Therefore our message type has three constructors.
+\begin{code}
+data Msg = Init{next::Id} | Start | Nominate{nominee::Id}
+    deriving Show
+instance Exception Msg
+\end{code}
+
+\subsubsection{Handler}
+
+Our node actor \textit{Handler} will have state \textit{Node} and pass
+\textit{Msg} messages.
+%
+\begin{code}
+node :: Handler Node Msg
+\end{code}
+%
+When an uninitialized node receives an \textit{Init} message, it becomes a
+member of the ring and remembers its next member.
+%
+\begin{code}
+node Uninitialized
+  Envelope{message=Init{next}} = do
+    return Member{next}
+\end{code}
+%
+When a member of the ring receives a \textit{Start} message, it nominates
+itself to the next member of the ring.
+%
+\begin{code}
+node state@Member{next}
+  Envelope{message=Start} = do
+    self <- myThreadId
+    send next $ Nominate self
+    return state
+\end{code}
+%
+When a member of the ring receives a \textit{Nominate} message, it nominates
+the greater of itself and the received nominee to the next member of the ring.
+%
+Unless the nominee is itself, in which case it wins and the algorithm stops.
+%
+\begin{code}
+node state@Member{next}
+  Envelope{message=Nominate{nominee}} = do
+    self <- myThreadId
+    case () of
+     _  |  self == nominee -> putStrLn (show self ++ ": I win")
+        |  self <  nominee -> send next (Nominate nominee)
+        |  otherwise       -> send next (Nominate self)
+    return state
+\end{code}
+%
+To initialize the algorithm the main thread must perform several steps:
+(1) Create some given number of actor threads.
+(2) Randomize the order of the \textit{ThreadId}s.
+(3) Inform each thread of the \textit{ThreadId} that follows it in the random
+order.
+(4) Tell one thread to start the algorithm.
+%
+These tasks are implemented it \textit{ringElection}.
+%
+\begin{code}
+ringElection :: Int -> IO () -> IO ()
+ringElection n actor = do
+    nodes <- sequence . replicate n $ forkIO actor
+    ring <- getStdRandom $ permute nodes
+    mapM_ (\(self, next) -> send self Init{next})
+        $ zip ring (tail ring ++ [head ring])
+    send (head ring) Start
+\end{code}
 
 \subsubsection{Actor implementation}
 
@@ -585,10 +703,13 @@ The next section will show examples of both.
 
 \subsubsection{Extension by dynamic types}
 
+Todo
+
 
 \begin{code}
 main :: IO ()
-main = print "hello"
+main = ringElection 5 $
+    mainloop (handlerDyn node) Uninitialized
 \end{code}
 
 
@@ -625,7 +746,31 @@ Ack the PLV people
 
 \section{Appendix}
 
-\plr{TODO}
+In Section \ref{sec:ring-impl} we provided the implementation of a ring
+leader-election in our actor framework.
+%
+The implementation used \textit{permute} to randomize the list of
+\textit{ThreadId}.
+%
+Its implementation is as follows:
+%
+Repeatedly pop a random element from the input and add it to the output.
+%
+\begin{code}
+permute :: RandomGen g => [a] -> g -> ([a], g)
+permute pool0 gen0
+    = snd
+    . foldr pick (pool0, ([], gen0))
+    $ replicate (length pool0) ()
+  where
+    pick () (pool, (output, g)) =
+        let (index, g') = randomR (0, length pool - 1) g
+            (x, pool') = pop pool index
+        in (pool', (x:output, g'))
+    pop (x:xs) 0 = (x, xs)
+    pop (x:xs) n = (x:) <$> pop xs (n - 1)
+    pop [] _ = error "pop empty list"
+\end{code}
 
 \end{document}
 \endinput
