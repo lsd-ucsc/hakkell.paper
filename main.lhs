@@ -283,7 +283,7 @@ import Control.Concurrent (ThreadId, myThreadId, threadDelay)
 -- Section 3.3
 import Control.Exception (TypeError(..), SomeException)
 -- Section 4.2
-import Control.Concurrent (forkIO)
+import Control.Concurrent (forkIO, killThread)
 import System.Random (RandomGen, randomR, getStdRandom)
 \end{code}
 }
@@ -334,6 +334,7 @@ sendStatic recipient message = do
     sender <- myThreadId
     throwTo recipient Envelope{sender, message}
 \end{code}
+%%  putStrLn (show sender ++ " send " ++ show message ++ " to " ++ show recipient)
 
 
 \subsection{Receiving (catching) messages}
@@ -519,7 +520,7 @@ message type.
 This is an opportunity to treat messages of the wrong type specially.
 %
 We define a \verb|handlerDyn| function to convert any \verb|Handler| to one
-that can receive messages produced by this send.
+that can receive messages produced by this send function.
 %
 If the message downcast fails, instead of the recipient crashing, it throws an
 exception (not a message) to the sender.\footnote{
@@ -595,23 +596,25 @@ their immediate successor ``next'' node.
 A satisfying solution will result in one node being designated the winner.
 %
 Though this problem is a classic in distributed systems literature, it might
-not make sense to apply to threads in a process.
+not be practical to apply to threads in a process.
 %
 It is nonetheless interesting and we use it for demonstration.
 
-\citet{chang1979decentralextrema} describe a solution where each node nominates
-itself to its successor. Upon receiving a nomination, a node forwards it if the
-nominee is greater than itself and ignores it otherwise.
+\citet{chang1979decentralextrema} describe a solution in which every node
+simultaneously nominates itself to its successor.
+%
+Upon receiving a nomination, a node forwards it if the nominee is greater than
+itself and ignores it otherwise.
 %
 Here we show a simpler solution in which only one randomly chosen node
 nominates itself.
 %
 Upon receiving a nomination, a node forwards it or nominates itself.
 
-\subsubsection{State and message}
+\subsubsection{State and messages}
 
 Each node begins uninitialized, and is later made a member of the ring
-when it learns the identity of the next node in the ring.
+when it learns the identity of its successor in the ring.
 %
 Therefore our node state type will have two constructors.
 \begin{code}
@@ -620,30 +623,30 @@ data Node = Uninitialized | Member {next::Id}
 \end{code}
 %
 The main thread will create each node actor and then initialize the ring by
-informing the actors of their ``next'' nodes.
+informing each node of its successor.
 %
 Then the main thread will instruct one node actor to start the algorithm.
 %
 Finally, the nodes will complete the algorithm by sending nominations.
 %
-Therefore our message type has three constructors.
+Accordingly our message type has three constructors.
 \begin{code}
 data Msg = Init{next::Id} | Start | Nominate{nominee::Id}
     deriving Show
 instance Exception Msg
 \end{code}
 
-\subsubsection{Handler}
+\subsubsection{Actor behavior}
 
-Our node actor \textit{Handler} will have state \textit{Node} and pass
-\textit{Msg} messages.
+The \verb|Handler| for a node actor will have state of type \verb|Node| and
+pass messages of type \verb|Msg|. We describe each case separately.
 %
 \begin{code}
 node :: Handler Node Msg
 \end{code}
 %
-When an uninitialized node receives an \textit{Init} message, it becomes a
-member of the ring and remembers its next member.
+When an uninitialized node receives an \verb|Init| message, it becomes a member
+of the ring and remembers its successor.
 %
 \begin{code}
 node Uninitialized
@@ -651,8 +654,8 @@ node Uninitialized
     return Member{next}
 \end{code}
 %
-When a member of the ring receives a \textit{Start} message, it nominates
-itself to the next member of the ring.
+When a member of the ring receives a \verb|Start| message, it nominates itself
+to its successor in the ring.
 %
 \begin{code}
 node state@Member{next}
@@ -662,8 +665,8 @@ node state@Member{next}
     return state
 \end{code}
 %
-When a member of the ring receives a \textit{Nominate} message, it nominates
-the greater of itself and the received nominee to the next member of the ring.
+When a member of the ring receives a \verb|Nominate| message, it nominates
+the greater of itself and the received nominee to its successor in the ring.
 %
 Unless the nominee is itself, in which case it wins and the algorithm stops.
 %
@@ -677,25 +680,46 @@ node state@Member{next}
         |  otherwise       -> send next (Nominate self)
     return state
 \end{code}
-%
-To initialize the algorithm the main thread must perform several steps:
-(1) Create some given number of actor threads.
-(2) Randomize the order of the \textit{ThreadId}s.
-(3) Inform each thread of the \textit{ThreadId} that follows it in the random
+
+\subsubsection{Initialization}
+
+The main thread performs several steps to initialize the algorithm:
+(1) Create some number of actor threads.
+(2) Randomize order of their \verb|ThreadId|s in a list.
+(3) Inform each thread of the \verb|ThreadId| that follows it in the random
 order.
 (4) Tell one thread to start the algorithm.
 %
-These tasks are implemented it \textit{ringElection}.
+These tasks are implemented it \verb|ringElection|.
+%
+Note that any practical use of threads should be careful not to leak them.
 %
 \begin{code}
 ringElection :: Int -> IO () -> IO ()
 ringElection n actor = do
-    nodes <- sequence . replicate n $ forkIO actor
-    ring <- getStdRandom $ permute nodes
-    mapM_ (\(self, next) -> send self Init{next})
-        $ zip ring (tail ring ++ [head ring])
-    send (head ring) Start
+    nodes <- sequence . replicate n $ forkIO actor {-"\quad\quad\hfill (1)"-}
+    ring <- getStdRandom $ permute nodes {-"\hfill (2)"-}
+    mapM_
+        (\(self, next) -> send self Init{next}) {-"\hfill (3)"-}
+        (zip ring $ tail ring ++ [head ring])
+    send (head ring) Start {-"\hfill (4)"-}
 \end{code}
+\ignore{
+\begin{code}
+    threadDelay 1000000
+    mapM_ killThread nodes
+\end{code}
+}
+
+\begin{code}
+main1 :: IO ()
+main1 = do
+    count <- fmap read getLine
+    ringElection count $
+        mainloop (handlerDyn node) Uninitialized
+\end{code}
+%
+
 
 \subsubsection{Actor implementation}
 
@@ -706,10 +730,10 @@ ringElection n actor = do
 Todo
 
 
+
 \begin{code}
 main :: IO ()
-main = ringElection 5 $
-    mainloop (handlerDyn node) Uninitialized
+main = main1
 \end{code}
 
 
@@ -749,8 +773,8 @@ Ack the PLV people
 In Section \ref{sec:ring-impl} we provided the implementation of a ring
 leader-election in our actor framework.
 %
-The implementation used \textit{permute} to randomize the list of
-\textit{ThreadId}.
+The implementation used \verb|permute| to randomize the list of
+\verb|ThreadId|.
 %
 Its implementation is as follows:
 %
