@@ -276,7 +276,8 @@ We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0| and the following imports:
 %
 \begin{code}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DuplicateRecordFields #-} -- Section 4.2
+{-# LANGUAGE ViewPatterns #-} -- Section 4.3
 -- Section 3.1, 3.2
 import Control.Exception (Exception(..), throwTo, catch, mask_)
 import Control.Concurrent (ThreadId, myThreadId, threadDelay)
@@ -285,6 +286,8 @@ import Control.Exception (TypeError(..))
 -- Section 4.2
 import Control.Concurrent (forkIO)
 import System.Random (RandomGen, randomR, getStdRandom)
+-- Section 4.3
+import Control.Exception (SomeException)
 \end{code}
 \ignore{
 \begin{code}
@@ -300,6 +303,7 @@ We simplify our presentation with an extension to enable construction and
 pattern-matches using binders named the same as fields,
 and
 an extension allowing two records to share the same field name.
+\plr{Mention viewpatterns}
 
 
 \subsection{Sending (throwing) messages}
@@ -355,16 +359,16 @@ state-transition that takes a self-addressed envelope as its second argument.
 type Handler st msg = st -> Envelope msg -> IO st
 \end{code}
 
-Figure \ref{fig:recvStatic} defines \verb|recvStatic| which takes a \verb|Handler|
+Figure \ref{fig:runStatic} defines \verb|runStatic| which takes a \verb|Handler|
 and its initial state and does not return.
 %
-Then \verb|recvStatic| masks asynchronous exceptions so they will only be raised
+Then \verb|runStatic| masks asynchronous exceptions so they will only be raised
 at well-defined points and runs its loop under that mask.
 
 \begin{figure}[h]
 \begin{code}
-recvStatic :: Exception a => Handler s a -> s -> IO ()
-recvStatic handler initialState = mask_ $ loop (initialState, [])
+runStatic :: Exception a => Handler s a -> s -> IO ()
+runStatic handler initialState = mask_ $ loop (initialState, [])
   where
     loop (state, inbox) =
         catch
@@ -375,7 +379,7 @@ recvStatic handler initialState = mask_ $ loop (initialState, [])
         >>= loop
 \end{code}
 \caption{Actor-thread message-receipt main-loop.}
-\label{fig:recvStatic}
+\label{fig:runStatic}
 \end{figure}
 
 The loop has two pieces of state: that of \verb|Handler| and an inbox of
@@ -496,7 +500,7 @@ despite minor brokenness it is notable that this is possible.
 \subsection{Dynamic types}
 \label{sec:dynamic-types}
 
-The actor main-loop in Figure \ref{fig:recvStatic} constrains an actor thread
+The actor main-loop in Figure \ref{fig:runStatic} constrains an actor thread
 to handle messages of a single type.
 %
 An envelope containing the wrong message type will not be caught by the
@@ -525,7 +529,7 @@ message type.
 %
 This is an opportunity to treat messages of the wrong type specially.
 %
-We define a \verb|recv| function which lifts any \verb|Handler| to one that can
+We define a \verb|run| function which lifts any \verb|Handler| to one that can
 receive envelopes containing \verb|SomeException|.
 %
 If the message downcast fails, instead of the recipient crashing, it performs a
@@ -539,8 +543,8 @@ error.\footnote{
 }
 %
 \begin{code}
-recv :: Exception a => Handler s a -> s -> IO ()
-recv handlerStatic = recvStatic handler
+run :: Exception a => Handler s a -> s -> IO ()
+run handlerStatic = runStatic handler
   where
     handler state e@Envelope{sender, message} =
         case fromException message of
@@ -605,6 +609,7 @@ Each node begins uninitialized, and is later made a member of the ring
 when it learns the identity of its successor.
 %
 Therefore our node state type will have two constructors.
+%
 \begin{code}
 type Id = ThreadId
 data Node = Uninitialized | Member {next::Id}
@@ -706,7 +711,7 @@ ringElection n actor = do
 \end{samepage}
 %
 Finally, the election algorithm is initiated in \verb|main1| by passing the
-node handler and the uninitialized state to \verb|recv|.
+node handler and the uninitialized state to \verb|run|.
 %
 This results in an \verb|IO ()| value representing the behavior of a node
 actor, which we pass to \verb|ringElection| to be run on several threads.
@@ -717,7 +722,7 @@ We include a trace of \verb|main1| in Appendix \ref{sec:main1-trace}.
 \begin{code}
 main1 :: Int -> IO ()
 main1 count = do
-    ring <- ringElection count (recv node Uninitialized)
+    ring <- ringElection count $ run node Uninitialized
     return ()
 \end{code}
 \ignore{
@@ -749,8 +754,8 @@ The additional behavior is:
 declaring themselves winner.
 %
 (3) Every node will compare their last seen nominee with the winner
-declaration; if they are the same then that node will forward the declaration,
-otherwise ignoring it.
+declaration; if the same then they forward the declaration,
+otherwise they ignore it.
 %
 When a node receives a declaration of the winner that they agree with, they
 have ``learned'' that node is indeed the winner.
@@ -760,14 +765,134 @@ the winner.
 
 \subsubsection{State and messages}
 
+Each node now has a \verb|Node| paired with a \verb|Maybe ThreadId| that
+represents the last-seen nominee.
+%
+\begin{code}
+type Node' = (Node, Maybe ThreadId)
+\end{code}
+%
+The new message type has only one constructor to indicate the winner.
+%
+\begin{code}
+data Winner = Winner ThreadId
+    deriving Show
+instance Exception Winner
+\end{code}
 
+\subsubsection{Actor behavior}
+
+The handler function for the new actor will use \verb|Node'| as described, but we
+declare its message type to be \verb|SomeException|.
+%
+Recall the implementation of \verb|run| from Section \ref{sec:dynamic-types}:
+%
+The handler wrapper will downcast from
+\verb|SomeException| by calling
+\verb|fromException|.
+%
+Since the result is inferred to be \verb|Maybe SomeException|,
+the built-in instance wraps the input with \verb|Just|.
+%
+This allows the handler function to downcast manually, for which we
+enable \verb|ViewPatterns|.
+%
+\begin{code}
+node' :: Handler Node' SomeException
+\end{code}
+%
+The first case applies when a node downcasts the envelope contents to
+\verb|Msg|.
+%
+It tracks the last-seen nominee and triggers the winner round.
+%
+There are several steps:
+%
+(1) We put the downcast message back into the envelope and pass it through the
+\verb|node| handler function from Section \ref{sec:ring-impl}.
+%
+The resulting state is returned in any case.
+%
+(2) If the message is a nomination of the current node, the election is
+over and we start the winner round.
+%
+(3,4) Otherwise, the election is ongoing and so we scrutinize the nominee,
+saving the greater between the current node and the received nominee as the
+``last-seen'' nominee.
+%
+(5) For any other \verb|Msg| constructors, we only return the updated state.
+%
+\begin{samepage}
+\begin{code}
+node' (n, nominated)
+  e@Envelope{message=fromException -> Just m} = do
+    self <- myThreadId
+    n'@Member{next} <- node n e{message=m} {-"\quad\quad\hfill (1)"-}
+    case m of
+        Nominate{nominee}
+            | self == nominee
+                -> send next (Winner self) {-"\quad\quad\hfill (2)"-}
+                >> return (n', nominated)
+            | self <  nominee -> return (n', Just nominee) {-"\quad\quad\hfill (3)"-}
+            | otherwise       -> return (n', Just self) {-"\quad\quad\hfill (4)"-}
+        _ -> return (n', nominated) {-"\quad\quad\hfill (5)"-}
+\end{code}
+\end{samepage}
+%
+The second case applies when a node downcasts the envelope contents to a winner
+declaration.
+%
+State is unchanged in all three cases:
+%
+The current node is declared winner, so the algorithm stops.
+%
+Our last-seen nominee is declared winner, so we forward the declaration.
+%
+Some unknown node is declared winner, so we complain and ignore the message.
+%
+\begin{code}
+node' state@(Member{next}, nominated)
+  Envelope{message=fromException -> Just m} = do
+    self <- myThreadId
+    case m of
+        Winner w
+            | self == w -> putStrLn (show self ++ ": Confirmed")
+            | nominated == Just w -> send next (Winner w)
+            | otherwise -> putStrLn "Unexpected nominee"
+    return state
+\end{code}
+
+\subsubsection{Initialization}
+\label{sec:ring2-init}
+
+The extended ring leader-election can reuse the same scaffolding as before.
+We only define a \verb|main2| function.
+%
+We include a trace of \verb|main2| in Appendix \ref{sec:main2-trace}.
+%
+\begin{samepage}
+\begin{code}
+main2 :: Int -> IO ()
+main2 count = do
+    ring <- ringElection count $ run node' (Uninitialized, Nothing)
+    return ()
+\end{code}
+\ignore{
+\begin{code}
+    threadDelay 1000000
+    mapM_ killThread ring
+\end{code}
+}
+\end{samepage}
 
 \ignore{
 \begin{code}
 main :: IO ()
 main = do
+    beginVerb
     main1 5
-    -- main2 5
+    main2 5
+    endVerb
 \end{code}
 }
 
@@ -861,6 +986,31 @@ Here's an example trace.
 \footnotesize
 \perform{beginVerb >> putStrLn "> main1 8" >> main1 8 >> endVerb }
 \normalsize
+
+\subsection{Dynamic types trace}
+\label{sec:main2-trace}
+
+In Section \ref{sec:ring2-init} we defined \verb|main2| to run a ring
+leader-election with a winner declaration round.
+%
+Here's an example trace.
+
+\footnotesize
+\perform{beginVerb >> putStrLn "> main2 8" >> main2 8 >> endVerb }
+\normalsize
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \end{document}
 \endinput
