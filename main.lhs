@@ -691,8 +691,8 @@ node state@Member{next}
 Figure \ref{fig:ring-nominate} shows the case which characterizes
 this algorithm.
 %
-When a member of the ring receives a \verb|Nominate| message, it nominates
-the greater of itself and the received nominee to its successor in the ring.
+When a member of the ring receives a \verb|Nominate| message it forwards that
+nomination to the member's successor in the ring if the nominee is greater.
 %
 If the nominee is the current node, it wins and the algorithm stops.
 %
