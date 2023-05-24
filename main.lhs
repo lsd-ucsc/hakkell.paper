@@ -624,12 +624,15 @@ It is nonetheless interesting and we use it for demonstration.
 \lk{I think we're being a little too apologetic here --- it's OK to have illustrative examples that are not practical}
 
 \citet{chang1979decentralextrema} describe a solution in which every node
-simultaneously nominates itself to its successor.
+simultaneously sends a message to its successor, nominating itself as the leader.
+\lk{is ``simultaneously'' really the right word, or would ``concurrently'' or ``in arbitrary order'' do?  We don't really mean they have to do it at exactly the same time in lockstep, right?}
 %
 Upon receiving a nomination, a node forwards it if the nominee is greater than
 itself and ignores it otherwise. \lk{Maybe we need to add something to the problem spec above that says that every node is assumed to have a unique ID and that these IDs have a total order.}
 %
 We implement and extend that solution below.
+
+\lk{To help visualize the algorithm, I think it would be helpful to have a figure with an illustration of the ring, some sent messages, and the algorithm in progress, kind of like in the ``message chains'' paper}
 
 \subsection{Implementing elections}
 
@@ -648,11 +651,12 @@ data Node = Uninitialized | Member {next::Id}
 The main thread will create multiple node actors and then initialize the ring by
 informing each node of its successor.
 %
-Next the main thread will instruct one node actor to start the algorithm.
+Next, the main thread will instruct one node actor to start running the leader election algorithm.
 %
-Finally, the nodes will complete the algorithm by sending nominations.
+Finally, the nodes will carry out the algorithm by sending nominations.
+\lk{let's add a sentence or two here about what the termination condition is, which is that a node receives a nomination for itself, and why this means that that node must be the winner}
 %
-Accordingly our message type has three constructors.
+Accordingly, our message type has three constructors.
 \begin{code}
 data Msg = Init{next::Id} | Start | Nominate{nominee::Id}
     deriving Show
@@ -677,8 +681,8 @@ node Uninitialized
     return Member{next}
 \end{code}
 %
-When a member of the ring receives a \verb|Start| message, it nominates itself
-to its successor in the ring.
+When a member of the ring receives a \verb|Start| message, it sends a message
+to its successor in the ring, nominating itself.
 %
 \begin{code}
 node state@Member{next}
@@ -688,11 +692,10 @@ node state@Member{next}
     return state
 \end{code}
 %
-Figure \ref{fig:ring-nominate} shows the case which characterizes
+Figure \ref{fig:ring-nominate} shows the case that characterizes
 this algorithm.
 %
-When a member of the ring receives a \verb|Nominate| message, it nominates
-the greater of itself and the received nominee to its successor in the ring.
+When a member of the ring receives a \verb|Nominate| message, it sends a message nominating the greater of itself and the received nominee to its successor in the ring.
 %
 If the nominee is the current node, it wins and the algorithm stops.
 %
@@ -715,6 +718,7 @@ node state@Member{next}
 \label{sec:ring-init}
 
 The main thread performs several steps to initialize the algorithm:
+\lk{style thing: whenever you have a list like this (a few places), you can use a list environment.  We have space, and it might make things more readable.}
 (1) Create some number of actor threads.
 (2) Randomize the order of the \verb|ThreadId|s in a list.
 (3) Inform each thread of the \verb|ThreadId| that follows it in the random
@@ -725,6 +729,7 @@ These tasks are implemented in \verb|ringElection|.\footnote{
     The implementation shown doesn't handle degenerate rings of size 0 or 1,
     but we consider that out of scope of the demonstration.
 }
+\lk{How are you deciding whether to make code a figure or not?  You could do it based on how long the code is, but this one is actually longer than \Cref{fig:ring-nominate}. Whatever we do, let's pick a consistent approach}
 %
 \begin{samepage}
 \begin{code}
@@ -772,9 +777,9 @@ insofar as a single node concludes that it has won.
 However, it is also desirable for the other nodes to learn the outcome of the
 election.
 %
-To that end we will extend the existing solution using the dynamic types
-support from Section \ref{sec:dynamic-types} to add an additional message type
-and behaviors.
+To that end, we will extend the existing solution using the dynamic types
+support from \Cref{sec:dynamic-types} to add an additional message type
+and behaviors. \lk{Explain why we need dynamic types to do this.}
 
 The additions are:
 %
@@ -874,10 +879,10 @@ State is unchanged in all three cases:
 %
 If the current node is declared winner, the algorithm stops.
 %
-If the greatest nominee the current node has seen is declared winner, forward
+If the greatest nominee the current node has seen is declared winner, the node forwards
 the declaration.
 %
-If some unknown node is declared winner, complain and ignore the message.
+If some unknown node is declared winner, the node complains and ignores the message.
 %
 \begin{code}
 node' state@(Member{next}, great)
@@ -932,13 +937,17 @@ main2 count = do
 
 \section{Feature subsumption}
 
-Can you implement an actor framework with Haskell's threads and asynchronous
+\lk{Let's figure out what the point is that we want to make here.}
+
+Can we implement an actor framework with Haskell's threads and asynchronous
 exceptions?
 %
-This is the question that lead us to writing this paper.
+This is the question that led us to writing this paper.
 %
-Figure \ref{fig:runStatic} shows that you very nearly can, and this fact hints
+\Cref{fig:runStatic} shows that we very nearly can, and this fact hints
 that perhaps asynchronous exceptions are more general than actors.
+\lk{It's not just \Cref{fig:runStatic} in isolation.  How about ``Our implementation suggests that we very nearly can.''}
+\lk{But, why ``very nearly can'' and not just ``can''?  We should explicit about what's missing if something is missing, instead of using weasel words}
 
 When we discussed this research at an informal gathering, a participant asked
 whether algebraic effects could be used to implement asynchronous exceptions.
@@ -951,6 +960,8 @@ What does this mean for the design of exception systems?
 %
 What is the relationship to coroutines?
 %
+\lk{I think the above stuff about the ``gathering'' and the ``lively discussion'' is too colloquial.  We could say something like ``Several questions come to mind:'' and then discuss the questions.  We should be sure to put the PLV group in the acks if this paper gets accepted.}
+
 \plr{
 Are Haskell's asynchronous exceptions truly asynchronous, given that a sender
 could block?
