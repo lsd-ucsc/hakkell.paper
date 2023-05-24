@@ -1,0 +1,8 @@
+name: hakkell-paper
+ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+dependencies:
+    - base
+    - random
+    - lhs2tex
+executable:
+    main: main.lhs

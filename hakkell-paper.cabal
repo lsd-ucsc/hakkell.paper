@@ -1,0 +1,21 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 69c03f06511fa3e2a6a77001bafb612d42b60470a7acf4c9e7905025b6d483d3
+
+name:           hakkell-paper
+version:        0.0.0
+build-type:     Simple
+
+executable hakkell-paper
+  main-is: main.lhs
+  other-modules:
+      Paths_hakkell_paper
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base
+    , random
+  default-language: Haskell2010
