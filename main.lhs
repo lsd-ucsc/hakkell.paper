@@ -596,10 +596,12 @@ simultaneously nominates itself to its successor.
 Upon receiving a nomination, a node forwards it if the nominee is greater than
 itself and ignores it otherwise.
 %
+\plr{
 Here we show a solution with simpler traces in which only one randomly chosen
 node nominates itself.
 %
 Upon receiving a nomination, a node forwards it or nominates itself.
+}
 
 \subsection{Solution implementation}
 
@@ -674,7 +676,7 @@ node state@Member{next}
     case () of
      _  |  self == nominee -> putStrLn (show self ++ ": I win")
         |  self <  nominee -> send next (Nominate nominee)
-        |  otherwise       -> send next (Nominate self)
+        |  otherwise       -> return ()
     return state
 \end{code}
 \caption{Node behavior upon receiving a nomination.}
@@ -705,7 +707,7 @@ ringElection n actor = do
     mapM_
         (\(self, next) -> send self Init{next}) {-"\hfill (3)"-}
         (zip ring $ tail ring ++ [head ring])
-    send (head ring) Start {-"\hfill (4)"-}
+    mapM_ (\n -> send n Start) ring {-"\hfill (4)"-}
     return ring
 \end{code}
 \end{samepage}
