@@ -465,8 +465,13 @@ order} and occasional double-sends.
 %
 By wrapping calls to \verb|sendStatic| with \verb|forkIO|
 \cite{marlow2001async}, we obtain \emph{reliable asynchronous message passing
-without FIFO order} even in the presence of non-terminating handler functions.
-\plr{Read \cite{marlow2001async} closely to decide whether we have FIFO.}
+without FIFO order} even in the presence of non-terminating handler
+functions.\footnote{
+    If thread $T_1$ forks thread $T_2$ to send message $M_2$, and then $T_1$
+    forks thread $T_3$ to send message $M_3$, the RTS scheduler may first run
+    $T_3$ resulting in $M_3$ reaching the recipient before $M_2$, violating
+    FIFO.
+}
 %
 FIFO can be recovered by message sequence numbers or (albeit, jumping the
 shark) use of an outbox-thread per actor.
