@@ -20,7 +20,7 @@ clean: $(TEXSRC)
 
 clean-all: $(TEXSRC)
 	latexmk -C
-	rm -fv main.{bbl,ptb,tex}
+	rm -fv main.{bbl,ptb,tex,hi,o}
 
 preview: $(TEXSRC)
 	latexmk -pvc
