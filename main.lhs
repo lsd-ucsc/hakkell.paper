@@ -146,11 +146,10 @@
 \maketitle
 
 
-\section{Introduction}
+
+\section{TODO: Introduction}
 
 \plr{TODO}
-
-\section{Background}
 
 \subsection{Exceptions in GHC}
 
@@ -276,22 +275,23 @@ We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0| and the following imports:
 %
 \begin{code}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE DuplicateRecordFields #-} -- Section 4.2
-{-# LANGUAGE ViewPatterns #-} -- Section 4.3
--- Section 3.1, 3.2
+{-# LANGUAGE DuplicateRecordFields #-} -- Section 3.2
+{-# LANGUAGE ViewPatterns #-} -- Section 3.3
+-- Section 2.1, 2.2
 import Control.Exception (Exception(..), throwTo, catch, mask_)
 import Control.Concurrent (ThreadId, myThreadId, threadDelay)
--- Section 3.3
+-- Section 2.3
 import Control.Exception (TypeError(..))
--- Section 4.2
+-- Section 3.2
 import Control.Concurrent (forkIO)
 import System.Random (RandomGen, randomR, getStdRandom)
--- Section 4.3
+-- Section 3.3
 import Control.Exception (SomeException)
 \end{code}
 \ignore{
 \begin{code}
 import Control.Concurrent (killThread)
+import System.IO (hSetBuffering, stdout, BufferMode(..))
 \end{code}
 }
 }
@@ -865,10 +865,10 @@ node' state@(Member{next}, nominated)
 \subsubsection{Initialization}
 \label{sec:ring2-init}
 
-The extended ring leader-election can reuse the same scaffolding as before.
-We only define a \verb|main2| function.
+The extended ring leader-election can reuse the same scaffolding as before; we
+only define a \verb|main2| function.
 %
-We include a trace of \verb|main2| in Appendix \ref{sec:main2-trace}.
+A trace of \verb|main2| is in Appendix \ref{sec:main2-trace}.
 %
 \begin{samepage}
 \begin{code}
@@ -889,16 +889,28 @@ main2 count = do
 
 
 
+\subsection{TODO: Performance evaluation}
 
+\plr{TODO}
 
-\section{Big Questions}
+\section{TODO: Big Questions}
 
 \plr{TODO}
 
 
-\section{Conclusion}
+\section{TODO: Conclusion}
 
 \plr{TODO}
+
+
+
+
+
+
+
+
+
+
 
 %% The acknowledgments section is defined using the "acks" environment
 %% (and NOT an unnumbered section). This ensures the proper
@@ -978,7 +990,9 @@ permute pool0 gen0
 \ignore{
 \begin{code}
 beginVerb :: IO ()
-beginVerb = putStrLn "\\begin{verbatim}"
+beginVerb = do
+    hSetBuffering stdout LineBuffering
+    putStrLn "\\begin{verbatim}"
 
 endVerb :: IO ()
 endVerb = putStrLn "\\end{verbatim}"
