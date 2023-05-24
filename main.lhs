@@ -789,7 +789,7 @@ node' :: Handler Node' SomeException
 Recall the implementation of \verb|run| from Section \ref{sec:dynamic-types}.
 %
 That function calls \verb|fromException| which here is inferred to return
-\verb|Maybe SomeException|, succeeding unconditionally.
+\verb|Maybe SomeException| and succeeds unconditionally.
 %
 The actor handler function must now deal with this, and so we enable
 \verb|ViewPatterns| to perform downcasts in pattern matches.
