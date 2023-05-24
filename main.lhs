@@ -677,6 +677,7 @@ node state@Member{next}
 \end{figure}
 
 \subsubsection{Initialization}
+\label{sec:ring-init}
 
 The main thread performs several steps to initialize the algorithm:
 (1) Create some number of actor threads.
@@ -710,14 +711,14 @@ node handler and the uninitialized state to \verb|recv|.
 This results in an \verb|IO ()| value representing the behavior of a node
 actor, which we pass to \verb|ringElection| to be run on several threads.
 %
+We include a trace of \verb|main1| in Appendix \ref{sec:main1-trace}.
+%
 \begin{samepage}
 \begin{code}
-main1 :: IO ()
-main1 = do
-    putStrLn "count: "
-    count <- fmap read getLine
+main1 :: Int -> IO ()
+main1 count = do
     ring <- ringElection count (recv node Uninitialized)
-    print ring
+    return ()
 \end{code}
 \ignore{
 \begin{code}
@@ -740,7 +741,7 @@ Here we demonstrate the use of the dynamic types support from
 
 \begin{code}
 main :: IO ()
-main = main1
+main = main1 5
 \end{code}
 
 
@@ -777,6 +778,8 @@ Ack the PLV people
 
 \section{Appendix}
 
+\subsection{Permute}
+
 In Section \ref{sec:ring-impl} we provided the implementation of a ring
 leader-election in our actor framework.
 %
@@ -802,6 +805,35 @@ permute pool0 gen0
     pop (x:xs) n = (x:) <$> pop xs (n - 1)
     pop [] _ = error "pop empty list"
 \end{code}
+
+
+
+
+
+
+\ignore{
+\begin{code}
+beginVerb :: IO ()
+beginVerb = putStrLn "\\begin{verbatim}"
+
+endVerb :: IO ()
+endVerb = putStrLn "\\end{verbatim}"
+\end{code}
+}
+
+%options ghci -threaded -rtsopts -with-rtsopts=-N
+
+\subsection{Election trace}
+\label{sec:main1-trace}
+
+In Section \ref{sec:ring-init} we defined \verb|main1| to run a ring
+leader-election.
+%
+Here's an example trace.
+
+\footnotesize
+\perform{beginVerb >> putStrLn "> main1 8" >> main1 8 >> endVerb }
+\normalsize
 
 \end{document}
 \endinput
