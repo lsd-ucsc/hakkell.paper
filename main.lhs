@@ -281,11 +281,16 @@ We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0| and the following imports:
 import Control.Exception (Exception(..), throwTo, catch, mask_)
 import Control.Concurrent (ThreadId, myThreadId, threadDelay)
 -- Section 3.3
-import Control.Exception (TypeError(..), SomeException)
+import Control.Exception (TypeError(..))
 -- Section 4.2
-import Control.Concurrent (forkIO, killThread)
+import Control.Concurrent (forkIO)
 import System.Random (RandomGen, randomR, getStdRandom)
 \end{code}
+\ignore{
+\begin{code}
+import Control.Concurrent (killThread)
+\end{code}
+}
 }
 %
 Our implementation requires a few definitions from Haskell's \verb|base|
@@ -295,15 +300,6 @@ We simplify our presentation with an extension to enable construction and
 pattern-matches using binders named the same as fields,
 and
 an extension allowing two records to share the same field name.
-
-%%%% \subsection{Simple implementation}
-%%%% \label{sec:simple-impl}
-%%%% 
-%%%% We first reveal a simplified actor framework to communicate the essential
-%%%% workings to the reader.
-%%%% %
-%%%% Section \plr{FIXME} defines more complex implementation we will use for
-%%%% case studies in Section \ref{sec:case-studies}.
 
 
 \subsection{Sending (throwing) messages}
@@ -326,15 +322,22 @@ instance Exception a => Exception (Envelope a)
 %
 With the envelope defined, our send function reads the current thread
 identifier, constructs a self-addressed envelope, and throws it to the
-specified recipient.
+specified recipient, in Figure \ref{fig:send-static}.
 %
+For the purpose of explication in this paper, it also prints a trace.
+%
+\begin{figure}[h]
 \begin{code}
 sendStatic :: Exception a => ThreadId -> a -> IO ()
 sendStatic recipient message = do
     sender <- myThreadId
+    putStrLn (show sender ++ " send " ++ show message
+                          ++ " to " ++ show recipient)
     throwTo recipient Envelope{sender, message}
 \end{code}
-%%  putStrLn (show sender ++ " send " ++ show message ++ " to " ++ show recipient)
+\caption{Send a message in a self-addressed envelope.}
+\label{fig:send-static}
+\end{figure}
 
 
 \subsection{Receiving (catching) messages}
@@ -352,11 +355,28 @@ state-transition that takes a self-addressed envelope as its second argument.
 type Handler st msg = st -> Envelope msg -> IO st
 \end{code}
 
-Figure \ref{fig:mainloop} defines \verb|mainloop| which takes a \verb|Handler|
+Figure \ref{fig:recvStatic} defines \verb|recvStatic| which takes a \verb|Handler|
 and its initial state and does not return.
 %
-Then \verb|mainloop| masks asynchronous exceptions so they will only be raised
+Then \verb|recvStatic| masks asynchronous exceptions so they will only be raised
 at well-defined points and runs its loop under that mask.
+
+\begin{figure}[h]
+\begin{code}
+recvStatic :: Exception a => Handler s a -> s -> IO ()
+recvStatic handler initialState = mask_ $ loop (initialState, [])
+  where
+    loop (state, inbox) =
+        catch
+            (case inbox of
+                [] -> threadDelay 60000000 >> return (state, inbox)
+                x:xs -> (,) <$> handler state x <*> return xs)
+            (\e@Envelope{} -> return (state, inbox ++ [e]))
+        >>= loop
+\end{code}
+\caption{Actor-thread message-receipt main-loop.}
+\label{fig:recvStatic}
+\end{figure}
 
 The loop has two pieces of state: that of \verb|Handler| and an inbox of
 messages to be processed.
@@ -386,23 +406,6 @@ have an empty inbox.
 %
 Exceptions are masked outside of interruptible actions so that the bookkeeping
 of recursing with updated state through the loop is not disrupted.
-
-\begin{figure}
-\begin{code}
-mainloop :: Exception a => Handler s a -> s -> IO ()
-mainloop handler initialState = mask_ $ loop (initialState, [])
-  where
-    loop (state, inbox) =
-        catch
-            (case inbox of
-                [] -> threadDelay 60000000 >> return (state, inbox)
-                x:xs -> (,) <$> handler state x <*> return xs)
-            (\e@Envelope{} -> return (state, inbox ++ [e]))
-        >>= loop
-\end{code}
-\caption{Core of the actor framework.}
-\label{fig:mainloop}
-\end{figure}
 
 \paragraph{Unsafety}
 
@@ -491,15 +494,16 @@ despite minor brokenness it is notable that this is possible.
 
 
 \subsection{Dynamic types}
+\label{sec:dynamic-types}
 
-The actor main-loop in Figure \ref{fig:mainloop} constrains an actor thread to
-handle messages of only a single type.
+The actor main-loop in Figure \ref{fig:recvStatic} constrains an actor thread
+to handle messages of a single type.
 %
 An envelope containing the wrong message type will not be caught by the
-exception handler and will cause the receiving actor to crash.
+exception handler, causing the receiving actor to crash.
 %
-In this section, we extend the framework to support actors that may receive
-messages of different types.
+In this section we correct this issue by extending the framework to support
+actors that may receive messages of different types.
 %
 We hesitate to identify it as a dynamically-typed actor framework.
 
@@ -507,83 +511,65 @@ Instead of sending an \verb|Envelope| of some application-specific message
 type, we convert messages to the ``any type'' in Haskell's the exception
 hierarchy, \verb|SomeException|.
 %
-All inflight messages will be of type \verb|Envelope SomeException|.
-
+Therefore all inflight messages will be \verb|Envelope| of
+\verb|SomeException|.
+%
 \begin{code}
 send :: Exception a => ThreadId -> a -> IO ()
 send recipient = sendStatic recipient . toException
 \end{code}
+\plr{Is the eta-reduction in this definition confusing?}
 
 On the receiving side, messages must now be downcast to the \verb|Handler|
 message type.
 %
 This is an opportunity to treat messages of the wrong type specially.
 %
-We define a \verb|handlerDyn| function to convert any \verb|Handler| to one
-that can receive messages produced by this send function.
+We define a \verb|recv| function which lifts any \verb|Handler| to one that can
+receive envelopes containing \verb|SomeException|.
 %
-If the message downcast fails, instead of the recipient crashing, it throws an
-exception (not a message) to the sender.\footnote{
+If the message downcast fails, instead of the recipient crashing, it performs a
+``return to sender.''
+%
+Specifically, it throws an exception (not an envelope) with a run-time type
+error.\footnote{
     The extensions \texttt{ScopedTypeVariables}, \texttt{TypeApplications}, and
     the function \texttt{Data.Typeable.typeOf} can be used to construct a very
     helpful type-error message for debugging actor programs.
 }
-%%%% %
-%%%% We feel that sending a message which the recipient cannot handle is a bug in
-%%%% the sender not the recipient and this changes aligns behavior to align with
-%%%% that expectation.
-%%%% %
-%%%% For brevity we show this change to the framework as a wrapper around a
-%%%% \verb|Handler|, \plr{but it is better made as a modification to the
-%%%% exception-handler in \verb|mainloop|}.
-
-%%%% \begin{code}
-%%%% receiveDyn :: Exception a => Handler s a -> s -> IO ()
-%%%% receiveDyn handlerStatic = mainloop handlerDyn
-%%%%   where
-%%%%     handlerDyn e@Envelope{sender, message} state =
-%%%%         case fromException message of
-%%%%             Just m -> handlerStatic e{message=m} state
-%%%%             Nothing
-%%%%                 -> throwTo sender (TypeError "...")
-%%%%                 >> return state
-%%%% \end{code}
-
+%
 \begin{code}
-handlerDyn :: Exception a =>
-    Handler s a -> Handler s SomeException
-handlerDyn handler state e@Envelope{sender, message} =
-    case fromException message of
-        Just m -> handler state e{message=m}
-        Nothing
-            -> throwTo sender (TypeError "...")
-            >> return state
+recv :: Exception a => Handler s a -> s -> IO ()
+recv handlerStatic = recvStatic handler
+  where
+    handler state e@Envelope{sender, message} =
+        case fromException message of
+            Just m -> handlerStatic state e{message=m}
+            Nothing
+                -> throwTo sender (TypeError "...")
+                >> return state
 \end{code}
+\plr{Is the eta-reduction in this definition confusing?}
 
 A close reader will note that these changes haven't directly empowered actor
-handler-functions to deal with messages of different types.
+handler-functions to deal with messages of different types, only lifted our
+infrastructure to remove the type parameter from envelopes.
 %
 In fact, actors that wish to receive messages of different types will do so by
 performing the downcast from \verb|SomeException| themselves.
 %
-The \verb|handlerDyn| function is most useful for actors that \emph{do not}
-receive messages of different types.
-%
-The next section will show examples of both.
+Section \ref{sec:dyn-ring} will show an example of an actor which receives
+messages of different types, by extending an actor that doesn't.
 
 
 
 
 
 
-\section{Examples}
-\label{sec:case-studies}
+\section{Case study: Ring leader-election}
+\label{sec:case-study}
 
-\subsection{Dining philosophers}
-
-TODO if space and need
-
-\subsection{Ring leader-election}
+\subsection{Problem and solution sketch}
 \label{sec:ring-impl}
 
 The problem of \emph{ring leader-election} is to designate one node among a
@@ -595,7 +581,7 @@ their immediate successor ``next'' node.
 %
 A satisfying solution will result in one node being designated the winner.
 %
-Though this problem is a classic in distributed systems literature, it might
+Though this is a classic problem in distributed systems literature, it might
 not be practical to apply to threads in a process.
 %
 It is nonetheless interesting and we use it for demonstration.
@@ -606,15 +592,17 @@ simultaneously nominates itself to its successor.
 Upon receiving a nomination, a node forwards it if the nominee is greater than
 itself and ignores it otherwise.
 %
-Here we show a simpler solution in which only one randomly chosen node
-nominates itself.
+Here we show a solution with simpler traces in which only one randomly chosen
+node nominates itself.
 %
 Upon receiving a nomination, a node forwards it or nominates itself.
+
+\subsection{Solution implementation}
 
 \subsubsection{State and messages}
 
 Each node begins uninitialized, and is later made a member of the ring
-when it learns the identity of its successor in the ring.
+when it learns the identity of its successor.
 %
 Therefore our node state type will have two constructors.
 \begin{code}
@@ -622,10 +610,10 @@ type Id = ThreadId
 data Node = Uninitialized | Member {next::Id}
 \end{code}
 %
-The main thread will create each node actor and then initialize the ring by
+The main thread will create multiple node actors and then initialize the ring by
 informing each node of its successor.
 %
-Then the main thread will instruct one node actor to start the algorithm.
+Next the main thread will instruct one node actor to start the algorithm.
 %
 Finally, the nodes will complete the algorithm by sending nominations.
 %
@@ -665,12 +653,15 @@ node state@Member{next}
     return state
 \end{code}
 %
+Figure \ref{fig:ring-nominate} shows the case which characterizes
+this algorithm.
+%
 When a member of the ring receives a \verb|Nominate| message, it nominates
 the greater of itself and the received nominee to its successor in the ring.
 %
-Unless the nominee is itself, in which case it wins and the algorithm stops.
+If the nominee is the current node, it wins and the algorithm stops.
 %
-\begin{samepage}
+\begin{figure}[h]
 \begin{code}
 node state@Member{next}
   Envelope{message=Nominate{nominee}} = do
@@ -681,23 +672,27 @@ node state@Member{next}
         |  otherwise       -> send next (Nominate self)
     return state
 \end{code}
-\end{samepage}
+\caption{Node behavior upon receiving a nomination.}
+\label{fig:ring-nominate}
+\end{figure}
 
 \subsubsection{Initialization}
 
 The main thread performs several steps to initialize the algorithm:
 (1) Create some number of actor threads.
-(2) Randomize order of their \verb|ThreadId|s in a list.
+(2) Randomize the order of the \verb|ThreadId|s in a list.
 (3) Inform each thread of the \verb|ThreadId| that follows it in the random
-order.
+order (its successor).
 (4) Tell one thread to start the algorithm.
 %
-These tasks are implemented it \verb|ringElection|.
+These tasks are implemented in \verb|ringElection|.\footnote{
+    The implementation shown doesn't handle degenerate rings of size 0 or 1,
+    but we consider that out of scope of the demonstration.
+}
 %
-Note that any practical use of threads should be careful not to leak them.
-%
+\begin{samepage}
 \begin{code}
-ringElection :: Int -> IO () -> IO ()
+ringElection :: Int -> IO () -> IO [ThreadId]
 ringElection n actor = do
     nodes <- sequence . replicate n $ forkIO actor {-"\quad\quad\hfill (1)"-}
     ring <- getStdRandom $ permute nodes {-"\hfill (2)"-}
@@ -705,27 +700,42 @@ ringElection n actor = do
         (\(self, next) -> send self Init{next}) {-"\hfill (3)"-}
         (zip ring $ tail ring ++ [head ring])
     send (head ring) Start {-"\hfill (4)"-}
+    return ring
+\end{code}
+\end{samepage}
+%
+Finally, the election algorithm is initiated in \verb|main1| by passing the
+node handler and the uninitialized state to \verb|recv|.
+%
+This results in an \verb|IO ()| value representing the behavior of a node
+actor, which we pass to \verb|ringElection| to be run on several threads.
+%
+\begin{samepage}
+\begin{code}
+main1 :: IO ()
+main1 = do
+    putStrLn "count: "
+    count <- fmap read getLine
+    ring <- ringElection count (recv node Uninitialized)
+    print ring
 \end{code}
 \ignore{
 \begin{code}
     threadDelay 1000000
-    mapM_ killThread nodes
+    mapM_ killThread ring
 \end{code}
 }
+\end{samepage}
 
-\begin{code}
-main1 :: IO ()
-main1 = do
-    count <- fmap read getLine
-    ringElection count $
-        mainloop (handlerDyn node) Uninitialized
-\end{code}
+\subsection{Extending with dynamic types}
+\label{sec:dyn-ring}
+
+The solution we have shown solves the ring leader-election problem insofar as a
+single node concludes that it has won, however, it is also desirable for the
+other nodes to learn the outcome of the election.
 %
-
-\subsubsection{Extension by dynamic types}
-
-Todo
-
+Here we demonstrate the use of the dynamic types support from 
+\ref{sec:dynamic-types}
 
 
 \begin{code}
