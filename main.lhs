@@ -17,6 +17,8 @@
 %% for your publication.
 \documentclass[sigplan,screen,review,anonymous]{acmart}
 
+\usepackage{cleveref}
+
 \newcommand{\newcommenter}[3]{%
   \newcommand{#1}[1]{%
     \textcolor{#2}{\small\textsf{[{#3}: {##1}]}}%
@@ -24,6 +26,7 @@
 }
 
 \newcommenter{\plr}{magenta}{PLR}
+\newcommenter{\lk}{blue}{LK}
 
 %%%% lhs2Tex (*.lhs) document
 \let\Bbbk\undefined
@@ -88,19 +91,20 @@
 \begin{abstract}
     The Glasgow Haskell Compiler is well known for its fully featured runtime
     system (RTS) which includes green threads, asynchronous exceptions, and
-    recently delimited continuations.
+    --- recently --- delimited continuations.
     %
     The interactions between these features and the forthcoming effect
     handling system may be nontrivial.
+    \lk{this last sentence feels a little bit like a non sequitur --- what does it have to do with actors?}
 
-    We present a user accessible actor framework hidden in plain sight within
-    the RTS and demonstrate it on a classic example.
+    We present a user-accessible actor framework hidden in plain sight within
+    GHC's RTS and demonstrate it on a classic example.
     %
     We then extend both the framework and example to the realm of dynamic
     types.
     %
-    Finally we raise questions about the expressiveness and subsumption of
-    programming language features.
+    Finally, we raise questions about the expressiveness and subsumption of
+    programming language features. \lk{let's make this last sentence more specific}
 \end{abstract}
 
 %%%% %%
@@ -171,6 +175,7 @@ terminate.
 %
 \emph{Synchronous exceptions} are thrown when side effects in the IO monad
 cannot proceed such as \verb|(readFile "\0")|.
+\lk{do we even need to bring up imprecise and synchronous exceptions?  does it help us accomplish our goal?}
 %
 \emph{Asynchronous exceptions} are thrown by threads distinct from the current
 one, or the RTS itself, to communicate conditions requiring the thread to
@@ -200,10 +205,10 @@ A thread may throw any exception to any thread for any reason.
 Standard exceptions may be reused to extend greetings as in,
 \verb|(\x -> throwTo x $ AssertionFailed "hello")|.
 %
-User defined datatypes may even be thrown as asynchronous exceptions by
+User-defined datatypes may even be thrown as asynchronous exceptions by
 declaring an instance of \verb|Exception| \cite{marlow2006extensible}.
 %
-Given the two lines of declarations below it is possible to greet in
+Given the two lines of declarations below, it is possible to greet in
 vernacular, \verb|(\x -> throwTo x Hi)|.
 %
 \begin{spec}
@@ -227,10 +232,10 @@ language.
 The actor model is a computational paradigm characterized by message passing.
 %
 \citet{hewitt1973actors} says, ``an actor can be thought of as a kind of
-virtual processor that is never "busy" [in the sense that it cannot be sent a
+virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
-In modern terms, we might say an actor is a green-thread with some state and an
+In modern terms, we might say an actor is a green thread \lk{let's add a one-sentence definition of ``green thread'' here -- I had to look this up} with some state and an
 inbox.
 %
 Upon receipt of a message to its inbox, an actor may perform some actions: send
@@ -243,7 +248,7 @@ inbox.
 We will approximate this model with Haskell's asynchronous exceptions as the
 primary metaphor for message passing.
 
-\citet{armstrong2003} provides additional definition for actors in their list of characteristics of a concurrency oriented programming language (COPL).
+\citet{armstrong2003} provides additional definition for actors in their list of characteristics of a concurrency-oriented programming language (COPL). \lk{This sentence kind of makes it sound like Armstrong explicitly discusses/defines ``actors'', but he doesn't, as far as I can tell.  Should we generalize the subsection heading to encompass this COPL stuff, or make a new subsection?  What is the goal of talking about COPLs?  Should we defer this all to a discussion section later, or to the ``Aspects of a COPL'' part of the implementation section?}
 %
 Every COPL
 (1) has processes,
@@ -259,9 +264,10 @@ Additionally
 (5b) receiving a response is the only way to know that a prior message was delivered,
 and
 (5c) messages between two processes obey FIFO ordering.
+\lk{what is the goal of recapping all this stuff from Armstrong's diss?  how does it help us tell our story?}
 %
 While an actor system within an instance of the RTS cannot satisfy all of these
-requirements (e.g. termination of the main thread is not strongly isolated from
+requirements (e.g., termination of the main thread is not strongly isolated from
 the child threads), we will show that ours satisfies many requirements of being COPL with relatively little effort.
 
 
@@ -271,6 +277,7 @@ the child threads), we will show that ours satisfies many requirements of being 
 \section{Implementation}
 
 We define that an actor is a Haskell thread.
+\lk{I'd say ``In our actor implementation, an actor is a Haskell thread.''}
 %
 An actor thread runs a library-provided main-loop function which mediates
 message receipt and calls to a user-defined handler function.
@@ -278,6 +285,7 @@ message receipt and calls to a user-defined handler function.
 Here we describe the minimal abstractions around such threads which realize the
 actor model.
 
+\lk{I would phrase this next sentence as: ``The rest of this paper is written as a literate Haskell program.''}
 From this point forward, all code listings are part of a literate Haskell
 file.\footnote{
 We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0| and the following imports:
@@ -354,24 +362,25 @@ sendStatic recipient message = do
 
 
 \subsection{Receiving (catching) messages}
+\label{subsec:receiving-catching}
 
 Every actor thread runs a library-provided main-loop function to manage message
 receipt and processing.
 %
-The main-loop installs an exception handler to accumulate messages in an inbox
+The main-loop function installs an exception handler to accumulate messages in an inbox
 and calls a user-defined handler on each.
 %
 The user-defined handler encodes actor intentions (or behavior) as a
-state-transition that takes a self-addressed envelope as its second argument.
+state transition that takes a self-addressed envelope as its second argument.
 %
 \begin{code}
 type Handler st msg = st -> Envelope msg -> IO st
 \end{code}
 
-Figure \ref{fig:runStatic} defines \verb|runStatic| which takes a \verb|Handler|
+Figure \ref{fig:runStatic} defines \verb|runStatic|, which takes a \verb|Handler|
 and its initial state and does not return.
 %
-Then \verb|runStatic| masks asynchronous exceptions so they will only be raised
+The \verb|runStatic| function masks asynchronous exceptions so they will only be raised
 at well-defined points and runs its loop under that mask.
 
 \begin{figure}[h]
@@ -387,24 +396,24 @@ runStatic handler initialState = mask_ $ loop (initialState, [])
             (\e@Envelope{} -> return (state, inbox ++ [e]))
         >>= loop
 \end{code}
-\caption{Actor-thread message-receipt main-loop.}
+\caption{Actor-thread message-receipt main loop.}
 \label{fig:runStatic}
 \end{figure}
 
-The loop has two pieces of state: that of \verb|Handler| and an inbox of
+The loop has two pieces of state: that of \verb|Handler|, and an inbox of
 messages to be processed.
 %
 The loop body is divided roughly into three cases by an exception
 handler and a case-split on the inbox list.
 %
 (1) If the inbox is empty, sleep for 60 seconds and then recurse on the
-unchanged  and empty inbox.
+unchanged  and empty inbox.  \lk{Should we explain here that this length of time is arbitrary and unimportant, because it can be interrupted anyway, as we'll see shortly?}
 %
 (2) If the inbox has a message, call the handler and recurse on the
-updated handler-state and remainder of the inbox.
+updated handler state and remainder of the inbox.
 %
 (3) If during cases (1) or (2) an \verb|Envelope| exception is received,
-recurse on unchanged handler-state and an inbox with the new envelope appended
+recurse on unchanged handler state and an inbox with the new envelope appended
 to the end.
 
 In the normal course of things, an actor will start with an empty inbox and go
@@ -414,11 +423,13 @@ If a message is received during sleep, the actor will wake (because
 \verb|threadDelay| is defined to be \emph{interruptible}) and add the message
 to its inbox.
 %
-On the next loop iteration the actor will process that message and once again
+On the next loop iteration, the actor will process that message and once again
 have an empty inbox.
 %
 Exceptions are masked outside of interruptible actions so that the bookkeeping
 of recursing with updated state through the loop is not disrupted.
+
+\lk{The following three paragraph headings are all still under the ``Receiving (catching) messages'' subsection.  I think these discussion-y parts belong their own subsection, maybe called ``Discussion'', or maybe something like ``What hath we wrought?'' would be a cute title.}
 
 \paragraph{Unsafety}
 
@@ -427,7 +438,7 @@ Before moving forward, let us acknowledge that this is \emph{not safe}.
 An exception may arrive while executing the handler.
 %
 Despite the exception mask which we have intentionally left in place, if the
-handler executes an interruptible action then it will be preempted.
+handler executes an interruptible action, then it will be preempted.
 %
 In this case the handler's work will be unfinished.
 %
@@ -514,7 +525,9 @@ despite minor brokenness it is notable that this is possible.
 \subsection{Dynamic types}
 \label{sec:dynamic-types}
 
-The actor main-loop in Figure \ref{fig:runStatic} constrains an actor thread
+\lk{After the discussion-y stuff just above, this section returns to implementation details.  It might flow better if you swap the order to put this right after the \Cref{subsec:receiving-catching} section, then move discussion-y stuff to after that.}
+
+The actor main loop in Figure \ref{fig:runStatic} constrains an actor thread
 to handle messages of a single type.
 %
 An envelope containing the wrong message type will not be caught by the
@@ -524,9 +537,10 @@ In this section we correct this issue by extending the framework to support
 actors that may receive messages of different types.
 %
 We hesitate to identify it as a dynamically-typed actor framework.
+\lk{why hesitation?}
 
 Instead of sending an \verb|Envelope| of some application-specific message
-type, we convert messages to the ``any type'' in Haskell's the exception
+type, we convert messages to the ``any type'' in Haskell's exception
 hierarchy, \verb|SomeException|.
 %
 Therefore all inflight messages will be \verb|Envelope| of
@@ -537,6 +551,7 @@ send :: Exception a => ThreadId -> a -> IO ()
 send recipient = sendStatic recipient . toException
 \end{code}
 \plr{Is the eta-reduction in this definition confusing?}
+\lk{for this and the others, I think Haskell Symposium reviewers will be fine, but we can see what they say}
 
 On the receiving side, messages must now be downcast to the \verb|Handler|
 message type.
@@ -569,6 +584,7 @@ run handlerStatic = runStatic handler
 \end{code}
 \plr{Is the eta-reduction in this definition confusing?}
 
+\lk{style nitpick: I think you can leave out things like ``A close reader will note that''}
 A close reader will note that these changes haven't directly empowered actor
 handler-functions to deal with messages of different types, only lifted our
 infrastructure to remove the type parameter from envelopes.
@@ -576,7 +592,7 @@ infrastructure to remove the type parameter from envelopes.
 In fact, actors that wish to receive messages of different types will do so by
 performing the downcast from \verb|SomeException| themselves.
 %
-Section \ref{sec:dyn-ring} will show an example of an actor which receives
+Section \ref{sec:dyn-ring} will show an example of an actor that receives
 messages of different types, by extending an actor that doesn't.
 
 
@@ -587,28 +603,31 @@ messages of different types, by extending an actor that doesn't.
 \section{Case study: Ring leader-election}
 \label{sec:case-study}
 
+\lk{Maybe just call it ``Example'' rather than ``Case study'' -- to me, ``case study'' suggests some amount of practical applicability that we're not going for here}
+
 \subsection{Problem and solution sketch}
 \label{sec:ring-impl}
 
-The problem of \emph{ring leader-election} is to designate one node among a
-network of nodes that communicate with a ring topology
+The classic problem of \emph{ring leader-election} is to designate one ``leader'' node among a
+network of communicating nodes organized in a ring topology
 \cite{lelann1977distributed}.
 %
-The nodes do not know the number or identities of the other nodes except for
+The nodes do not know the number or identities of the other nodes, except for
 their immediate successor ``next'' node.
 %
-A satisfying solution will result in one node being designated the winner.
+A correct solution will result in exactly one node being designated the leader.
 %
 Though this is a classic problem in distributed systems literature, it might
 not be practical to apply to threads in a process.
 %
 It is nonetheless interesting and we use it for demonstration.
+\lk{I think we're being a little too apologetic here --- it's OK to have illustrative examples that are not practical}
 
 \citet{chang1979decentralextrema} describe a solution in which every node
 simultaneously nominates itself to its successor.
 %
 Upon receiving a nomination, a node forwards it if the nominee is greater than
-itself and ignores it otherwise.
+itself and ignores it otherwise. \lk{Maybe we need to add something to the problem spec above that says that every node is assumed to have a unique ID and that these IDs have a total order.}
 %
 We implement and extend that solution below.
 
