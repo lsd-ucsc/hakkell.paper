@@ -731,18 +731,45 @@ main1 count = do
 \subsection{Extending with dynamic types}
 \label{sec:dyn-ring}
 
-The solution we have shown solves the ring leader-election problem insofar as a
-single node concludes that it has won, however, it is also desirable for the
-other nodes to learn the outcome of the election.
+The solution we have shown solves the ring leader-election problem
+insofar as a single node concludes that it has won.
 %
-Here we demonstrate the use of the dynamic types support from 
-\ref{sec:dynamic-types}
+However, it is also desirable for the other nodes to learn the outcome of the
+election.
+%
+To that end we will extend the existing solution using the dynamic types
+support from Section \ref{sec:dynamic-types} to add an additional message type
+and behaviors.
+
+The additional behavior is:
+%
+(1) Each node will keep track of its last-seen nominee.
+%
+(2) When the winner self-identifies, they will start an extra round
+declaring themselves winner.
+%
+(3) Every node will compare their last seen nominee with the winner
+declaration; if they are the same then that node will forward the declaration,
+otherwise ignoring it.
+%
+When a node receives a declaration of the winner that they agree with, they
+have ``learned'' that node is indeed the winner.
+%
+When the winner receives their own declaration, everyone has learned they are
+the winner.
+
+\subsubsection{State and messages}
 
 
+
+\ignore{
 \begin{code}
 main :: IO ()
-main = main1 5
+main = do
+    main1 5
+    -- main2 5
 \end{code}
+}
 
 
 
