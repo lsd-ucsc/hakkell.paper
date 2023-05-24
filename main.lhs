@@ -885,17 +885,6 @@ main2 count = do
 }
 \end{samepage}
 
-\ignore{
-\begin{code}
-main :: IO ()
-main = do
-    beginVerb
-    main1 5
-    main2 5
-    endVerb
-\end{code}
-}
-
 
 
 
@@ -925,10 +914,33 @@ Ack the PLV people
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{main.bib}
 
+
+
+
+
+
+
+
+
+
+
 %% If your work has an appendix, this is the place to put it.
 \appendix
 
 \section{Appendix}
+
+% It's necessary to have a main function, but I'm excluding it from appearing
+% in the document.
+\ignore{
+\begin{code}
+main :: IO ()
+main = do
+    beginVerb
+    main1 5
+    main2 5
+    endVerb
+\end{code}
+}
 
 \subsection{Permute}
 
