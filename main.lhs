@@ -90,16 +90,16 @@
     system (RTS) which includes green threads, asynchronous exceptions, and
     recently delimited continuations.
     %
-    The interactions between these features, and the forthcoming effect
-    handling system, may be nontrivial.
-    %
+    The interactions between these features and the forthcoming effect
+    handling system may be nontrivial.
+
     We present a user accessible actor framework hidden in plain sight within
-    the RTS.
+    the RTS and demonstrate it on a classic example.
     %
-    We demonstrate the actor framework on a classic examples, and detail how to
-    extend both to the realm of dynamic types.
+    We then extend both the framework and example to the realm of dynamic
+    types.
     %
-    Finally, we raise questions about the expressiveness and subsumption of
+    Finally we raise questions about the expressiveness and subsumption of
     programming language features.
 \end{abstract}
 
@@ -908,9 +908,41 @@ main2 count = do
 
 \plr{TODO}
 
-\section{TODO: Big Questions}
 
-\plr{TODO}
+
+
+\section{Feature subsumption}
+
+Can you implement an actor framework with Haskell's threads and asynchronous
+exceptions?
+%
+This is the question that lead us to writing this paper.
+%
+Figure \ref{fig:runStatic} shows that you very nearly can, and this fact hints
+that perhaps asynchronous exceptions are more general than actors.
+
+When we discussed this research at an informal gathering, a participant asked
+whether algebraic effects could be used to implement asynchronous exceptions.
+%
+This lead us to a lively discussion:
+%
+Can you implement them in terms of delimited continuations?
+%
+What does this mean for the design of exception systems? 
+%
+What is the relationship to coroutines?
+%
+\plr{
+Are Haskell's asynchronous exceptions truly asynchronous, given that a sender
+could block?
+}
+
+\citet[p.~40]{sussman1975interpreter} say, ``we discovered that the "actors"
+and the lambda expressions were identical in implementation.
+
+
+
+
 
 
 \section{TODO: Conclusion}
