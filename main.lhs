@@ -596,14 +596,9 @@ simultaneously nominates itself to its successor.
 Upon receiving a nomination, a node forwards it if the nominee is greater than
 itself and ignores it otherwise.
 %
-\plr{
-Here we show a solution with simpler traces in which only one randomly chosen
-node nominates itself.
-%
-Upon receiving a nomination, a node forwards it or nominates itself.
-}
+We implement and extend that solution below.
 
-\subsection{Solution implementation}
+\subsection{Implementing elections}
 
 \subsubsection{State and messages}
 
@@ -676,7 +671,7 @@ node state@Member{next}
     case () of
      _  |  self == nominee -> putStrLn (show self ++ ": I win")
         |  self <  nominee -> send next (Nominate nominee)
-        |  otherwise       -> return ()
+        |  otherwise       -> putStrLn "Ignored nominee"
     return state
 \end{code}
 \caption{Node behavior upon receiving a nomination.}
@@ -735,7 +730,7 @@ main1 count = do
 }
 \end{samepage}
 
-\subsection{Extending with dynamic types}
+\subsection{Adding a victory round}
 \label{sec:dyn-ring}
 
 The solution we have shown solves the ring leader-election problem
@@ -748,17 +743,17 @@ To that end we will extend the existing solution using the dynamic types
 support from Section \ref{sec:dynamic-types} to add an additional message type
 and behaviors.
 
-The additional behavior is:
+The additions are:
 %
-(1) Each node will keep track of its last-seen nominee.
+(1) Each node will keep track of the greatest nominee it has seen.
 %
 (2) When the winner self-identifies, they will start an extra round
 declaring themselves winner.
 %
-(3) Every node will compare their last seen nominee with the winner
-declaration; if the same then they forward the declaration,
-otherwise they ignore it.
-%
+(3) Upon receiving a winner declaration, nodes will compare their greatest
+nominee seen with the winner declaration; if agreeable, then they forward the
+declaration, otherwise they ignore it.
+
 When a node receives a declaration of the winner that they agree with, they
 have ``learned'' that node is indeed the winner.
 %
@@ -767,14 +762,14 @@ the winner.
 
 \subsubsection{State and messages}
 
-Each node now has a \verb|Node| paired with a \verb|Maybe ThreadId| that
-represents the last-seen nominee.
+Each node now has a \verb|Node| paired with a \verb|ThreadId| that
+represents the greatest nominee it has seen.
 %
 \begin{code}
-type Node' = (Node, Maybe ThreadId)
+type Node' = (Node, ThreadId)
 \end{code}
 %
-The new message type has only one constructor to indicate the winner.
+The new message type has only one constructor to declare the winner.
 %
 \begin{code}
 data Winner = Winner ThreadId
@@ -787,21 +782,20 @@ instance Exception Winner
 The handler function for the new actor will use \verb|Node'| as described, but we
 declare its message type to be \verb|SomeException|.
 %
-Recall the implementation of \verb|run| from Section \ref{sec:dynamic-types}:
-%
-The handler wrapper will downcast from
-\verb|SomeException| by calling
-\verb|fromException|.
-%
-Since the result is inferred to be \verb|Maybe SomeException|,
-the built-in instance wraps the input with \verb|Just|.
-%
-This allows the handler function to downcast manually, for which we
-enable \verb|ViewPatterns|.
-%
 \begin{code}
 node' :: Handler Node' SomeException
 \end{code}
+%
+Recall the implementation of \verb|run| from Section \ref{sec:dynamic-types}.
+%
+That function calls \verb|fromException| which here is inferred to return
+\verb|Maybe SomeException|, succeeding unconditionally.
+%
+The actor handler function must now deal with this, and so we enable
+\verb|ViewPatterns| to perform downcasts in pattern matches.
+
+There are two main cases, corresponding to the two message types the actor will
+handle.
 %
 The first case applies when a node downcasts the envelope contents to
 \verb|Msg|.
@@ -810,34 +804,33 @@ It tracks the last-seen nominee and triggers the winner round.
 %
 There are several steps:
 %
-(1) We put the downcast message back into the envelope and pass it through the
-\verb|node| handler function from Section \ref{sec:ring-impl}.
+(1) Delegate to the held node by putting the revealed \verb|Msg| back into the
+envelope and passing it through the \verb|node| handler function from Section
+\ref{sec:ring-impl}.
 %
-The resulting state is returned in any case.
+Return that resulting node state in all of the cases below.
 %
-(2) If the message is a nomination of the current node, the election is
-over and we start the winner round.
+(2) If the message is a nomination of the current node, start the winner round
+because the election is over.
 %
-(3,4) Otherwise, the election is ongoing and so we scrutinize the nominee,
-saving the greater between the current node and the received nominee as the
-``last-seen'' nominee.
+(3) Otherwise the election is ongoing so keep track of the greatest nominee
+seen.
 %
-(5) For any other \verb|Msg| constructors, we only return the updated state.
+(4) For any other \verb|Msg| constructors, only return the updated state.
 %
 \begin{samepage}
 \begin{code}
-node' (n, nominated)
+node' (n, great)
   e@Envelope{message=fromException -> Just m} = do
     self <- myThreadId
     n'@Member{next} <- node n e{message=m} {-"\quad\quad\hfill (1)"-}
     case m of
-        Nominate{nominee}
-            | self == nominee
-                -> send next (Winner self) {-"\quad\quad\hfill (2)"-}
-                >> return (n', nominated)
-            | self <  nominee -> return (n', Just nominee) {-"\quad\quad\hfill (3)"-}
-            | otherwise       -> return (n', Just self) {-"\quad\quad\hfill (4)"-}
-        _ -> return (n', nominated) {-"\quad\quad\hfill (5)"-}
+        Nominate{nominee} ->
+            if self == nominee
+            then send next (Winner self) {-"\quad\quad\hfill (2)"-}
+                >> return (n', great)
+            else return (n', max nominee great) {-"\quad\quad\hfill (3)"-}
+        _ -> return (n', great) {-"\quad\quad\hfill (4)"-}
 \end{code}
 \end{samepage}
 %
@@ -846,21 +839,22 @@ declaration.
 %
 State is unchanged in all three cases:
 %
-The current node is declared winner, so the algorithm stops.
+If the current node is declared winner, the algorithm stops.
 %
-Our last-seen nominee is declared winner, so we forward the declaration.
+If the greatest nominee the current node has seen is declared winner, forward
+the declaration.
 %
-Some unknown node is declared winner, so we complain and ignore the message.
+If some unknown node is declared winner, complain and ignore the message.
 %
 \begin{code}
-node' state@(Member{next}, nominated)
+node' state@(Member{next}, great)
   Envelope{message=fromException -> Just m} = do
     self <- myThreadId
     case m of
         Winner w
-            | self == w -> putStrLn (show self ++ ": Confirmed")
-            | nominated == Just w -> send next (Winner w)
-            | otherwise -> putStrLn "Unexpected nominee"
+            | w == self -> putStrLn (show self ++ ": Confirmed")
+            | w == great -> send next (Winner w)
+            | otherwise -> putStrLn "Unexpected winner"
     return state
 \end{code}
 
@@ -870,13 +864,18 @@ node' state@(Member{next}, nominated)
 The extended ring leader-election can reuse the same scaffolding as before; we
 only define a \verb|main2| function.
 %
+As part of the \verb|IO ()| action passed to \verb|ringElection|, each thread
+initializes its greatest nominee seen to itself.
+%
 A trace of \verb|main2| is in Appendix \ref{sec:main2-trace}.
 %
 \begin{samepage}
 \begin{code}
 main2 :: Int -> IO ()
 main2 count = do
-    ring <- ringElection count $ run node' (Uninitialized, Nothing)
+    ring <- ringElection count $ do
+        great <- myThreadId
+        run node' (Uninitialized, great)
     return ()
 \end{code}
 \ignore{
@@ -949,9 +948,12 @@ Ack the PLV people
 \begin{code}
 main :: IO ()
 main = do
+    putStrLn "Enter count:"
+    count <- fmap read getLine
     beginVerb
-    main1 5
-    main2 5
+    main1 count
+    putStrLn ""
+    main2 count
     endVerb
 \end{code}
 }
@@ -968,6 +970,7 @@ Its implementation is as follows:
 %
 Repeatedly pop a random element from the input and add it to the output.
 %
+\begin{samepage}
 \begin{code}
 permute :: RandomGen g => [a] -> g -> ([a], g)
 permute pool0 gen0
@@ -983,6 +986,7 @@ permute pool0 gen0
     pop (x:xs) n = (x:) <$> pop xs (n - 1)
     pop [] _ = error "pop empty list"
 \end{code}
+\end{samepage}
 
 
 
