@@ -89,9 +89,18 @@
     The Glasgow Haskell Compiler is well known for its fully featured runtime
     system (RTS) which includes green threads, asynchronous exceptions, and
     recently delimited continuations.
+    %
+    The interactions between these features, and the forthcoming effect
+    handling system, may be nontrivial.
+    %
     We present a user accessible actor framework hidden in plain sight within
-    the RTS, demonstrate its use on classic examples, and raise questions about
-    the expressiveness and subsumption of programming language features.
+    the RTS.
+    %
+    We demonstrate the actor framework on a classic examples, and detail how to
+    extend both to the realm of dynamic types.
+    %
+    Finally, we raise questions about the expressiveness and subsumption of
+    programming language features.
 \end{abstract}
 
 %%%% %%
@@ -707,7 +716,7 @@ ringElection n actor = do
     mapM_
         (\(self, next) -> send self Init{next}) {-"\hfill (3)"-}
         (zip ring $ tail ring ++ [head ring])
-    mapM_ (\n -> send n Start) ring {-"\hfill (4)"-}
+    mapM_ (\tid -> send tid Start) ring {-"\hfill (4)"-}
     return ring
 \end{code}
 \end{samepage}
