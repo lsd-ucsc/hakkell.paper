@@ -608,31 +608,40 @@ messages of different types, by extending an actor that doesn't.
 \subsection{Problem and solution sketch}
 \label{sec:ring-impl}
 
-The classic problem of \emph{ring leader-election} is to designate one ``leader'' node among a
-network of communicating nodes organized in a ring topology
+The problem of \emph{ring leader-election} is to designate one ``leader'' node
+among a network of communicating nodes organized in a ring topology
 \cite{lelann1977distributed}.
 %
-The nodes do not know the number or identities of the other nodes, except for
-their immediate successor ``next'' node.
+Each node has an identity, and identities are totally ordered.
+%
+Nodes do not know number or identities of the other nodes, except for their
+immediate successor ``next'' node.
 %
 A correct solution will result in exactly one node being designated the leader.
 %
-Though this is a classic problem in distributed systems literature, it might
-not be practical to apply to threads in a process.
-%
-It is nonetheless interesting and we use it for demonstration.
-\lk{I think we're being a little too apologetic here --- it's OK to have illustrative examples that are not practical}
+We choose to demonstrate a solution to this classic problem in distributed
+systems literature because it nicely illustrates concurrent programming,
+despite being unnecessary in the context threads in a process.
 
-\citet{chang1979decentralextrema} describe a solution in which every node
-simultaneously sends a message to its successor, nominating itself as the leader.
-\lk{is ``simultaneously'' really the right word, or would ``concurrently'' or ``in arbitrary order'' do?  We don't really mean they have to do it at exactly the same time in lockstep, right?}
+\citet{chang1979decentralextrema} describe a solution that begins with every
+node sending a message to its successor to nominate itself as the leader.
 %
-Upon receiving a nomination, a node forwards it if the nominee is greater than
-itself and ignores it otherwise. \lk{Maybe we need to add something to the problem spec above that says that every node is assumed to have a unique ID and that these IDs have a total order.}
+Upon receiving a nomination,
+a node forwards the nomination
+to its successor
+if if the identity of the nominee is
+greater than the identity of the current node.
+%
+Otherwise the nomination is ignored.
 %
 We implement and extend that solution below.
 
-\lk{To help visualize the algorithm, I think it would be helpful to have a figure with an illustration of the ring, some sent messages, and the algorithm in progress, kind of like in the ``message chains'' paper}
+\lk{To help visualize the algorithm, I think it would be helpful to have a
+figure with an illustration of the ring, some sent messages, and the algorithm
+in progress, kind of like in the ``message chains'' paper}
+\plr{ring with seven nodes; two have message arrows bouncing around the outside
+of the ring; one message arrow terminates in an X at a greater node, the other
+message arrow originates at the greatest node and shows no sign of stopping}
 
 \subsection{Implementing elections}
 
