@@ -102,11 +102,17 @@
 \begin{abstract}
     The Glasgow Haskell Compiler is well known for its fully featured runtime
     system (RTS) which includes green threads, asynchronous exceptions, and
-    --- recently --- delimited continuations.
+    recently, delimited continuations.
+    \plr{Leaving "green threads" in because it's part of being a fully-featured
+    runtime. A language with a less fully-featured runtime uses OS threads.}
     %
-    The interactions between these features and the forthcoming effect
-    handling system may be nontrivial.
-    \lk{this last sentence feels a little bit like a non sequitur --- what does it have to do with actors?}
+    The combination of these features, and forthcoming support for algebraic
+    effects, is powerful.
+    %
+    A programmer may complete the same task in many different ways, some more
+    advisable than others.
+    \plr{I've tweaked the last sentence to hopefully not seem like a
+    non-sequitur and better lead into the following paragraph.}
 
     We present a user-accessible actor framework hidden in plain sight within
     GHC's RTS and demonstrate it on a classic example.
@@ -114,8 +120,10 @@
     We then extend both the framework and example to the realm of dynamic
     types.
     %
-    Finally, we raise questions about the expressiveness and subsumption of
-    programming language features. \lk{let's make this last sentence more specific}
+    Finally, we raise questions about the ability to express one language
+    feature in terms of another, and make recommendations about how GHC can
+    guide best practice by constraining the use of some features.
+    \plr{Tried making this last more specific.}
 \end{abstract}
 
 %%%% %%
@@ -181,18 +189,19 @@ The Glasgow Haskell Compiler (GHC) supports three varieties of exceptions, all
 of which may be caught in the IO monad and otherwise cause the program to
 terminate.
 %
+\plr{I introduce all three kinds of exceptions to draw the contrast that
+asynchronous exceptions are \emph{weird}.}
 \emph{Imprecise exceptions} arise in pure code from expressions such as
 \verb|(div 1 0)| which cannot be reduced further.
 %
 \emph{Synchronous exceptions} are thrown when side effects in the IO monad
-cannot proceed such as \verb|(readFile "\0")|.
-\lk{do we even need to bring up imprecise and synchronous exceptions?  does it help us accomplish our goal?}
+cannot proceed, such as \verb|(readFile "\0")|.
 %
-\emph{Asynchronous exceptions} are thrown by threads distinct from the current
-one, or the RTS itself, to communicate conditions requiring the thread to
-terminate: thread cancellation, user interrupts, or memory limits.
+\emph{Asynchronous exceptions} are thrown by threads \emph{distinct from the
+current one}, or by the RTS itself, to communicate conditions requiring the
+thread to terminate: thread cancellation, user interrupts, or memory limits.
 %
-We focus on asynchronous exceptions.
+We focus exclusively on asynchronous exceptions for the rest of the paper.
 
 Asynchronous exceptions uniquely allow syntactically-distant parts of a program
 to interact.
@@ -246,12 +255,18 @@ The actor model is a computational paradigm characterized by message passing.
 virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
-In modern terms, we might say an actor is a green thread \lk{let's add a one-sentence definition of ``green thread'' here -- I had to look this up} with some state and an
-inbox.
+We flesh out this definition by saying, an actor is a green thread\footnote{
+    A \emph{green thread} is a lightweight thread of control implemented in a
+    programming language runtime and dynamically mapped to a CPU by a scheduler
+    in the runtime.
+    %
+    A language using OS threads would likely be too heavyweight to support
+    actor programming, due to the large numbers of actors used.
+} with some state and an inbox.
 %
-Upon receipt of a message to its inbox, an actor may perform some actions: send
-a message, update state, create a new actor, destroy an actor, or terminate
-itself.
+Upon receipt of a message to its inbox, the actor may perform some actions:
+send a message, update state, create a new actor, destroy an actor, or
+terminate itself.
 %
 Having completed that, the actor waits to process the next message in its
 inbox.
@@ -259,9 +274,14 @@ inbox.
 We will approximate this model with Haskell's asynchronous exceptions as the
 primary metaphor for message passing.
 
-\citet{armstrong2003} provides additional definition for actors in their list of characteristics of a concurrency-oriented programming language (COPL). \lk{This sentence kind of makes it sound like Armstrong explicitly discusses/defines ``actors'', but he doesn't, as far as I can tell.  Should we generalize the subsection heading to encompass this COPL stuff, or make a new subsection?  What is the goal of talking about COPLs?  Should we defer this all to a discussion section later, or to the ``Aspects of a COPL'' part of the implementation section?}
+More specifically, we think of an actor framework as having the characteristics
+that \citet{armstrong2003} lists for a \emph{concurrency-oriented programming
+language} (COPL).
 %
-Every COPL
+\plr{After describing our framework, we will make the case that it has many of
+the characteristics of a COPL.}
+%
+Summarized, a COPL
 (1) has processes,
 (2) which are strongly isolated,
 (3) with a unique hidden identifier,
@@ -275,11 +295,11 @@ Additionally
 (5b) receiving a response is the only way to know that a prior message was delivered,
 and
 (5c) messages between two processes obey FIFO ordering.
-\lk{what is the goal of recapping all this stuff from Armstrong's diss?  how does it help us tell our story?}
 %
 While an actor system within an instance of the RTS cannot satisfy all of these
-requirements (e.g., termination of the main thread is not strongly isolated from
-the child threads), we will show that ours satisfies many requirements of being COPL with relatively little effort.
+requirements (e.g., termination of the main thread is not strongly isolated
+from the child threads), we will show that ours satisfies many requirements of
+being COPL with relatively little effort.
 
 
 
