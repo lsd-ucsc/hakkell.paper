@@ -184,13 +184,17 @@
 \plr{TODO}
 
 \subsection{Exceptions in GHC}
+\plr{Should I re-title this to indicate that the point is that asynchronous
+exceptions are weird?}
 
 The Glasgow Haskell Compiler (GHC) supports three varieties of exceptions, all
 of which may be caught in the IO monad and otherwise cause the program to
 terminate.
 %
 \plr{I introduce all three kinds of exceptions to draw the contrast that
-asynchronous exceptions are \emph{weird}.}
+asynchronous exceptions are weird. The topic sentences of the next three
+paragraphs indicate this with words "uniquely", "peculiar", and
+"surprisingly".}
 \emph{Imprecise exceptions} arise in pure code from expressions such as
 \verb|(div 1 0)| which cannot be reduced further.
 %
