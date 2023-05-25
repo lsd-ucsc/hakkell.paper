@@ -407,7 +407,7 @@ runStatic handler initialState = mask_ $ loop (initialState, [])
             (\e@Envelope{} -> return (state, inbox ++ [e]))
         >>= loop
 \end{code}
-\caption{Actor-thread message-receipt main loop.}
+\caption{Actor-thread message-receipt main-loop.}
 \label{fig:runStatic}
 \end{figure}
 
@@ -538,7 +538,7 @@ despite minor brokenness it is notable that this is possible.
 
 \lk{After the discussion-y stuff just above, this section returns to implementation details.  It might flow better if you swap the order to put this right after the \Cref{subsec:receiving-catching} section, then move discussion-y stuff to after that.}
 
-The actor main loop in Figure \ref{fig:runStatic} constrains an actor thread
+The actor main-loop in Figure \ref{fig:runStatic} constrains an actor thread
 to handle messages of a single type.
 %
 An envelope containing the wrong message type will not be caught by the
@@ -764,7 +764,7 @@ ringElection n actor = do
     mapM_
         (\(self, next) -> send self Init{next}) {-"\hfill (3)"-}
         (zip ring $ tail ring ++ [head ring])
-    mapM_ (\tid -> send tid Start) ring {-"\hfill (4)"-}
+    mapM_ (\t -> send t Start) ring {-"\hfill (4)"-}
     return ring
 \end{code}
 \end{samepage}
