@@ -33,6 +33,17 @@
 %include polycode.fmt
 \long\def\ignore#1{}
 
+%format <$> = "\mathbin{\langle\$\rangle}"
+%format <*> = "\mathbin{\langle*\rangle}"
+%format ++  = "\mathbin{+\hspace{-0.2em}+}"
+%format >>= = "\mathbin{>\hspace{-0.4em}>\hspace{-0.3em}=}"
+%format >>  = "\mathbin{>\hspace{-0.4em}>}"
+%format [   = "["
+%format {   = "\!\{"
+%%%%format ]   = "]"
+%%%%format }   = "\}"
+%%%%format (,)  = "(,\!)"
+
 %%%% %% Rights management information.  This information is sent to you
 %%%% %% when you complete the rights form.  These commands have SAMPLE
 %%%% %% values in them; it is your responsibility as an author to replace
@@ -392,7 +403,7 @@ runStatic handler initialState = mask_ $ loop (initialState, [])
         catch
             (case inbox of
                 [] -> threadDelay 60000000 >> return (state, inbox)
-                x:xs -> (,) <$> handler state x <*> return xs)
+                x:xs -> (,{-"\!"-}) <$> handler state x <*> return xs)
             (\e@Envelope{} -> return (state, inbox ++ [e]))
         >>= loop
 \end{code}
