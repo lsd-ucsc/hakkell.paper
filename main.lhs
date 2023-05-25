@@ -181,7 +181,42 @@
 
 \section{TODO: Introduction}
 
-\plr{TODO}
+using the tools throwTo and catch
+
+This paper is written as a literate Haskell program.\footnote{
+    We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
+    %
+    The actor framework imports the modules \verb|Control.Exception| and
+    \verb|Control.Concurrent|.
+    %
+    We enable the extensions \verb|NamedFieldPuns| and
+    \verb|DuplicateRecordFields| for the convenience of presenting the
+    framework.
+    %
+    The example demonstrating use of the framework imports the module
+    \verb|System.Random| and enables the extension \verb|ViewPatterns|.
+}
+
+\ignore{
+\begin{code}
+{-# LANGUAGE NamedFieldPuns #-}        -- Section 2
+{-# LANGUAGE DuplicateRecordFields #-} -- Section 3.2
+{-# LANGUAGE ViewPatterns #-}          -- Section 3.3
+
+-- Section 2.1, 2.2
+import Control.Exception (Exception(..), throwTo, catch, mask_)
+import Control.Concurrent (ThreadId, myThreadId, threadDelay)
+
+-- Section 2.3
+import Control.Exception (TypeError(..))
+
+-- Section 3.2
+import Control.Exception (SomeException)
+import Control.Concurrent (forkIO, killThread)
+import System.Random (RandomGen, randomR, getStdRandom)
+import System.IO (hSetBuffering, stdout, BufferMode(..))
+\end{code}
+} % end ignore
 
 \subsection{Exceptions in GHC}
 \plr{Should I re-title this to indicate that the point is that asynchronous
@@ -278,12 +313,12 @@ inbox.
 We will approximate this model with Haskell's asynchronous exceptions as the
 primary metaphor for message passing.
 
-More specifically, we think of an actor framework as having the characteristics
-that \citet{armstrong2003} lists for a \emph{concurrency-oriented programming
-language} (COPL).
+More specifically, \plr{More concretely,} we think of an actor framework as
+having the characteristics that \citet{armstrong2003} lists for a
+\emph{concurrency-oriented programming language} (COPL).
 %
-\plr{After describing our framework, we will make the case that it has many of
-the characteristics of a COPL.}
+After describing our framework, we will make the case that it has many of the
+characteristics of a COPL.
 %
 Summarized, a COPL
 (1) has processes,
@@ -309,58 +344,25 @@ being COPL with relatively little effort.
 
 
 
-\section{Implementation}
+\section{Actor framework implementation}
 
-We define that an actor is a Haskell thread.
-\lk{I'd say ``In our actor implementation, an actor is a Haskell thread.''}
+In our actor framework implementation, an actor is a Haskell thread running a
+provided main-loop function.
 %
-An actor thread runs a library-provided main-loop function which mediates
-message receipt and calls to a user-defined handler function.
+The main-loop function mediates message receipt and makes calls to a
+user-defined handler function.
 %
 Here we describe the minimal abstractions around such threads which realize the
 actor model.
-
-\lk{I would phrase this next sentence as: ``The rest of this paper is written as a literate Haskell program.''}
-From this point forward, all code listings are part of a literate Haskell
-file.\footnote{
-We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0| and the following imports:
 %
-\begin{code}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE DuplicateRecordFields #-} -- Section 3.2
-{-# LANGUAGE ViewPatterns #-} -- Section 3.3
--- Section 2.1, 2.2
-import Control.Exception (Exception(..), throwTo, catch, mask_)
-import Control.Concurrent (ThreadId, myThreadId, threadDelay)
--- Section 2.3
-import Control.Exception (TypeError(..))
--- Section 3.2
-import Control.Concurrent (forkIO)
-import System.Random (RandomGen, randomR, getStdRandom)
--- Section 3.3
-import Control.Exception (SomeException)
-\end{code}
-\ignore{
-\begin{code}
-import Control.Concurrent (killThread)
-import System.IO (hSetBuffering, stdout, BufferMode(..))
-\end{code}
-}
-}
-%
-Our implementation requires a few definitions from Haskell's \verb|base|
-package.
-%
-We simplify our presentation with an extension to enable construction and
-pattern-matches using binders named the same as fields,
-and
-an extension allowing two records to share the same field name.
-\plr{Mention viewpatterns}
-
+\plr{Would it add to the paper to name the framework "Hakkell"? Or would it
+just be distracting. I was thinking maybe the title of this section could be
+"Hakkell framework implementation" or maybe there could be a footnote
+somewhere.}
 
 \subsection{Sending (throwing) messages}
 
-To send a message we will throw an exception to the recipient thread's
+To send a message we will throw an exception to the recipient's thread
 identifier.
 %
 So that the recipient may respond, we define a self-addressed envelope data
@@ -376,9 +378,9 @@ data Envelope a = Envelope { sender :: ThreadId, message :: a }
 instance Exception a => Exception (Envelope a)
 \end{code}
 %
-With the envelope defined, our send function reads the current thread
-identifier, constructs a self-addressed envelope, and throws it to the
-specified recipient, in Figure \ref{fig:send-static}.
+With the envelope defined, in Figure \ref{fig:sendStatic} our send function:
+reads the current thread identifier, constructs a self-addressed envelope, and
+throws it to the specified recipient.
 %
 For the purpose of explication in this paper, it also prints a trace.
 %
@@ -392,15 +394,15 @@ sendStatic recipient message = do
     throwTo recipient Envelope{sender, message}
 \end{code}
 \caption{Send a message in a self-addressed envelope.}
-\label{fig:send-static}
+\label{fig:sendStatic}
 \end{figure}
 
 
 \subsection{Receiving (catching) messages}
 \label{subsec:receiving-catching}
 
-Every actor thread runs a library-provided main-loop function to manage message
-receipt and processing.
+Every actor thread runs a provided main-loop function to manage message receipt
+and processing.
 %
 The main-loop function installs an exception handler to accumulate messages in an inbox
 and calls a user-defined handler on each.
