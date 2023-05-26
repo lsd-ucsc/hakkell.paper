@@ -28,6 +28,8 @@
 \newcommenter{\plr}{magenta}{PLR}
 \newcommenter{\lk}{blue}{LK}
 
+\renewcommand{\labelenumi}{(\arabic{enumi})}
+
 %%%% lhs2Tex (*.lhs) document
 \let\Bbbk\undefined
 %include polycode.fmt
@@ -181,9 +183,9 @@
 
 \section{TODO: Introduction}
 
-using the tools throwTo and catch
+\noindent using the tools throwTo and catch
 
-This paper is written as a literate Haskell program.\footnote{
+\noindent This paper is written as a literate Haskell program.\footnote{
     We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
     %
     The actor framework imports the modules \verb|Control.Exception| and
@@ -193,8 +195,8 @@ This paper is written as a literate Haskell program.\footnote{
     \verb|DuplicateRecordFields| for the convenience of presenting the
     framework.
     %
-    The example demonstrating use of the framework imports the module
-    \verb|System.Random| and enables the extension \verb|ViewPatterns|.
+    The example additionally imports the module \verb|System.Random| and
+    enables the extension \verb|ViewPatterns|.
 }
 
 \ignore{
@@ -350,7 +352,7 @@ In our actor framework implementation, an actor is a Haskell thread running a
 provided main-loop function.
 %
 The main-loop function mediates message receipt and makes calls to a
-user-defined handler function.
+user-defined intent function.
 %
 Here we describe the minimal abstractions around such threads which realize the
 actor model.
@@ -361,7 +363,10 @@ just be distracting. I was thinking maybe the title of this section could be
 somewhere.}
 
 \subsection{Sending (throwing) messages}
+\label{sec:sending-throwing}
 
+\begin{samepage}
+\noindent
 To send a message we will throw an exception to the recipient's thread
 identifier.
 %
@@ -377,10 +382,14 @@ data Envelope a = Envelope { sender :: ThreadId, message :: a }
 
 instance Exception a => Exception (Envelope a)
 \end{code}
-%
-With the envelope defined, in Figure \ref{fig:sendStatic} our send function:
-reads the current thread identifier, constructs a self-addressed envelope, and
-throws it to the specified recipient.
+\end{samepage}
+
+
+\begin{samepage}
+\noindent
+\Cref{fig:sendStatic} defines a send function which reads the current thread
+identifier, constructs a self-addressed envelope, and throws it to the
+specified recipient.
 %
 For the purpose of explication in this paper, it also prints a trace.
 %
@@ -396,88 +405,106 @@ sendStatic recipient message = do
 \caption{Send a message in a self-addressed envelope.}
 \label{fig:sendStatic}
 \end{figure}
+\end{samepage}
+
+
 
 
 \subsection{Receiving (catching) messages}
 \label{subsec:receiving-catching}
 
+
+\begin{samepage}
+\noindent
 Every actor thread runs a provided main-loop function to manage message receipt
 and processing.
 %
 The main-loop function installs an exception handler to accumulate messages in an inbox
-and calls a user-defined handler on each.
+and calls a user-defined intent function on each.
 %
-The user-defined handler encodes actor intentions (or behavior) as a
-state transition that takes a self-addressed envelope as its second argument.
+The user-defined intent function encodes actor behavior as a state transition
+that takes a self-addressed envelope as its second argument.
 %
 \begin{code}
-type Handler st msg = st -> Envelope msg -> IO st
+type Intent st msg = st -> Envelope msg -> IO st
 \end{code}
+\end{samepage}
 
-Figure \ref{fig:runStatic} defines \verb|runStatic|, which takes a \verb|Handler|
-and its initial state and does not return.
+
+\begin{samepage}
+\noindent
+The main-loop, takes an \verb|Intent| function and its initial actor state and
+does not return.
 %
-The \verb|runStatic| function masks asynchronous exceptions so they will only be raised
-at well-defined points and runs its loop under that mask.
-
+It masks asynchronous exceptions so they will only be raised at well-defined
+points and runs its loop under that mask.
+%
 \begin{figure}[h]
 \begin{code}
-runStatic :: Exception a => Handler s a -> s -> IO ()
-runStatic handler initialState = mask_ $ loop (initialState, [])
+runStatic :: Exception a => Intent s a -> s -> IO ()
+runStatic intent initialState = mask_ $ loop (initialState, [])
   where
     loop (state, inbox) =
         catch
             (case inbox of
                 [] -> threadDelay 60000000 >> return (state, inbox)
-                x:xs -> (,{-"\!"-}) <$> handler state x <*> return xs)
+                x:xs -> (,{-"\!"-}) <$> intent state x <*> return xs)
             (\e@Envelope{} -> return (state, inbox ++ [e]))
         >>= loop
 \end{code}
 \caption{Actor-thread message-receipt main-loop.}
 \label{fig:runStatic}
 \end{figure}
+\end{samepage}
 
-The loop has two pieces of state: that of \verb|Handler|, and an inbox of
+
+\noindent
+The loop has two pieces of state: that of the intent function, and an inbox of
 messages to be processed.
 %
 The loop body is divided roughly into three cases by an exception
 handler and a case-split on the inbox list.
 %
-(1) If the inbox is empty, sleep for 60 seconds and then recurse on the
-unchanged  and empty inbox.  \lk{Should we explain here that this length of time is arbitrary and unimportant, because it can be interrupted anyway, as we'll see shortly?}
-%
-(2) If the inbox has a message, call the handler and recurse on the
-updated handler state and remainder of the inbox.
-%
-(3) If during cases (1) or (2) an \verb|Envelope| exception is received,
-recurse on unchanged handler state and an inbox with the new envelope appended
-to the end.
+\begin{enumerate}
+    \item If the inbox is empty, sleep for 60 seconds and then recurse on the
+    unchanged actor state and the empty inbox.
+    %
+    We will see length of the sleep is arbitrary.
+    
+    \item If the inbox has a message, call the intent function and recurse on
+    the updated actor state and remainder of the inbox.
 
+    \item If during cases (1) or (2) an \verb|Envelope| exception is received,
+    recurse on the unchanged actor state and an inbox with the new envelope
+    appended to the end.
+\end{enumerate}
+
+
+\noindent
 In the normal course of things, an actor will start with an empty inbox and go
 to sleep.
 %
 If a message is received during sleep, the actor will wake (because
-\verb|threadDelay| is defined to be \emph{interruptible}) and add the message
-to its inbox.
+\verb|threadDelay| is defined to be \emph{interruptible}), add the message to
+its inbox, and recurse.
 %
 On the next loop iteration, the actor will process that message and once again
-have an empty inbox.
+recurse on an empty inbox.
 %
 Exceptions are masked outside of interruptible actions so that the bookkeeping
 of recursing with updated state through the loop is not disrupted.
 
-\lk{The following three paragraph headings are all still under the ``Receiving (catching) messages'' subsection.  I think these discussion-y parts belong their own subsection, maybe called ``Discussion'', or maybe something like ``What hath we wrought?'' would be a cute title.}
 
 \paragraph{Unsafety}
 
 Before moving forward, let us acknowledge that this is \emph{not safe}.
 %
-An exception may arrive while executing the handler.
+An exception may arrive while executing the intent function.
 %
 Despite the exception mask which we have intentionally left in place, if the
-handler executes an interruptible action, then it will be preempted.
+intent function executes an interruptible action, then it will be preempted.
 %
-In this case the handler's work will be unfinished.
+In this case the intent function's work will be unfinished.
 %
 Without removing the message currently being processed, the loop
 will continue on an inbox extended with the new message.
@@ -485,76 +512,19 @@ will continue on an inbox extended with the new message.
 The next iteration will begin by processing the same message that the preempted
 iteration was, effecting a double-send.
 
-To avoid the possibility of a double-send, a careful implementor of a
-\verb|Handler| might follow the documented recommendations (use software
-transactional memory (STM), or avoid interruptible actions, or apply
-\verb|uninterruptibleMask|), but recall that message sending is implemented
-with \verb|throwTo| which is ``\emph{always} interruptible, even if does not
-actually block'' \cite{controlDotException}.
+To avoid the possibility of a double-send, a careful implementor of an actor
+program might follow the documented recommendations for code in the presence of
+asynchronous exceptions:
+use software transactional memory (STM),
+avoid interruptible actions,
+or apply \verb|uninterruptibleMask|.
+However recall that message sending is implemented with \verb|throwTo| which is
+``\emph{always} interruptible, even if does not actually block''
+\cite{controlDotException}.
 %
 Here be dragons.
-
-\paragraph{Aspects of a COPL}
-
-Which requirements to be a COPL does this system display?
 %
-RTS threads behave as independent processes, and although not strongly
-isolated and able to share state, they have a unique hidden \verb|ThreadId|.
-
-The implementation as shown encourages communication via \emph{reliable
-synchronous message passing with FIFO order}.
-%
-We call it synchronous because ``\verb|throwTo| does not return until the
-exception is received by the target thread''
-\cite{controlDotException}.\footnote{
-	``Synchronous for me, but not for thee'' might be the most correct
-	characterization. Senders may experience GHC's asynchronous exceptions as
-	synchronous, but recipients will always perceive them as asynchronous.
-}
-%
-This means that a sender may block if the recipient never reaches an
-interruptible point (e.g. its handler function enters an infinite loop in pure
-computation).
-%
-Assuming handler functions terminate, instead the framework will tend to
-exhibit the behavior of \emph{reliable asynchronous message passing with FIFO
-order} and occasional double-sends.
-%
-By wrapping calls to \verb|sendStatic| with \verb|forkIO|
-\cite{marlow2001async}, we obtain \emph{reliable asynchronous message passing
-without FIFO order} even in the presence of non-terminating handler
-functions.\footnote{
-    If thread $T_1$ forks thread $T_2$ to send message $M_2$, and then $T_1$
-    forks thread $T_3$ to send message $M_3$, the RTS scheduler may first run
-    $T_3$ resulting in $M_3$ reaching the recipient before $M_2$, violating
-    FIFO.
-}
-%
-FIFO can be recovered by message sequence numbers or (albeit, jumping the
-shark) use of an outbox-thread per actor.
-%
-An actor can reliably inform others of its termination with use of
-\verb|forkFinally|.\footnote{
-	\verb|forkIO| and \verb|forkFinally| are defined in
-	\texttt{Control.Concurrent} in \texttt{base-4.15.1.0}.
-}
-
-\plr{Digresses slightly from COPL, but still relevant to armstrong.}
-Our choice to wrap a user-defined message type in a known envelope type has the
-benefit of allowing the actor main-loop to distinguish between messages and
-exceptions, allowing the latter to terminate the thread as intended.
-%
-At the same time this choice runs afoul of the \emph{name distribution problem}
-\cite{armstrong2003} by indiscriminately informing all recipients of the sender
-process identifier.
-
-\paragraph{Perspective}
-We have in only a few lines of code discovered an actor framework within the
-RTS which makes no explicit use of channels, references, or locks and imports
-just a few names from the default modules.
-%
-The likelihood of double sends might temper enthusiasm for this discovery, but
-despite minor brokenness it is notable that this is possible.
+The best recommendation we can make is for the idempotence of intent functions.
 
 
 
@@ -562,94 +532,140 @@ despite minor brokenness it is notable that this is possible.
 \subsection{Dynamic types}
 \label{sec:dynamic-types}
 
-\lk{After the discussion-y stuff just above, this section returns to implementation details.  It might flow better if you swap the order to put this right after the \Cref{subsec:receiving-catching} section, then move discussion-y stuff to after that.}
-
-The actor main-loop in Figure \ref{fig:runStatic} constrains an actor thread
+The actor main-loop in \Cref{fig:runStatic} constrains an actor thread
 to handle messages of a single type.
 %
 An envelope containing the wrong message type will not be caught by the
 exception handler, causing the receiving actor to crash.
 %
+We think the recipient should not crash when another actor sends an incorrect
+message.
+
+
 In this section we correct this issue by extending the framework to support
 actors that may receive messages of different types.
 %
-We hesitate to identify it as a dynamically-typed actor framework.
-\lk{why hesitation?}
+With this extension our framework could be thought of as dynamically typed in
+the sense that a single actor can process multiple message types.
+%
+This is very similar to the dynamic types support in Haskell's
+\verb|Data.Dynamic| module.
 
+
+Furthermore, any actor may be extended by wrapping it (has-a style) with an
+actor that uses a distinct message type and branches on the type of a received
+message, delegating to the wrapped actor where desired.\footnote{
+    It is not sufficient to wrap a message type in a sum-type and write an
+    actor that takes the sum-type as its message.
+    %
+    Such a wrapper will fail to receive messages sent as the un-wrapped type.
+    %
+    To correct for this one would need to modify other actors to wrap their
+    outgoing messages in the sum-type.
+    %
+    The dynamic types pattern described in \Cref{sec:dynamic-types}
+    generalizes this for all types.
+}
+%
+It is desirable to encapsulate such actor-wrapping in combinators that
+generalize the patterns by which an actor is given additional behavior.
+%
+Our purpose here, though, is not to lean into the utility of a dynamically
+typed actor framework, but to point out how little scaffolding is required to
+obtain one from the RTS.
+
+
+\subsubsection{Sending dynamic messages}
+
+
+\begin{samepage}
+\noindent
 Instead of sending an \verb|Envelope| of some application-specific message
 type, we convert messages to the ``any type'' in Haskell's exception
 hierarchy, \verb|SomeException|.
 %
-Therefore all inflight messages will be \verb|Envelope| of
-\verb|SomeException|.
+All inflight messages will have the type \verb|Envelope SomeException|.
 %
+We define a new send function which converts messages before sending.
+%
+\begin{figure}[h]
 \begin{code}
 send :: Exception a => ThreadId -> a -> IO ()
 send recipient = sendStatic recipient . toException
 \end{code}
-\plr{Is the eta-reduction in this definition confusing?}
-\lk{for this and the others, I think Haskell Symposium reviewers will be fine, but we can see what they say}
+\caption{Upcast before sending.}
+\label{fig:send}
+\end{figure}
+\end{samepage}
 
-On the receiving side, messages must now be downcast to the \verb|Handler|
-message type.
+
+\subsubsection{Receiving dynamic messages}
+\label{sec:dynamic-recv-loop}
+
+
+\begin{samepage}
+\noindent
+On the receiving side, messages must now be downcast to the \verb|Intent|
+function's message type.
 %
 This is an opportunity to treat messages of the wrong type specially.
 %
-We define a \verb|run| function which lifts any \verb|Handler| to one that can
+We define a new main-loop which lifts any \verb|Intent| function to one that can
 receive envelopes containing \verb|SomeException|.
 %
 If the message downcast fails, instead of the recipient crashing, it performs a
 ``return to sender.''
 %
-Specifically, it throws an exception (not an envelope) with a run-time type
-error.\footnote{
+Specifically, it throws an exception (not an envelope) with a run time
+type-error.\footnote{
     The extensions \texttt{ScopedTypeVariables}, \texttt{TypeApplications}, and
     the function \texttt{Data.Typeable.typeOf} can be used to construct a very
     helpful type-error message for debugging actor programs.
 }
 %
+\begin{figure}[h]
 \begin{code}
-run :: Exception a => Handler s a -> s -> IO ()
-run handlerStatic = runStatic handler
+run :: Exception a => Intent s a -> s -> IO ()
+run intentStatic = runStatic intent
   where
-    handler state e@Envelope{sender, message} =
+    intent state e@Envelope{sender, message} =
         case fromException message of
-            Just m -> handlerStatic state e{message=m}
+            Just m -> intentStatic state e{message=m}
             Nothing
                 -> throwTo sender (TypeError "...")
                 >> return state
 \end{code}
-\plr{Is the eta-reduction in this definition confusing?}
+\caption{Downcast before processing.}
+\label{fig:run}
+\end{figure}
+\end{samepage}
 
-\lk{style nitpick: I think you can leave out things like ``A close reader will note that''}
-A close reader will note that these changes haven't directly empowered actor
-handler-functions to deal with messages of different types, only lifted our
-infrastructure to remove the type parameter from envelopes.
+
+The changes shown so far haven't directly empowered actor intent functions to
+deal with messages of different types, only lifted our infrastructure to remove
+application-specific type parameters from envelopes.
 %
-In fact, actors that wish to receive messages of different types will do so by
+Actors intending to receive messages of different types will do so by
 performing the downcast from \verb|SomeException| themselves.
 %
-Section \ref{sec:dyn-ring} will show an example of an actor that receives
+Such actors will use an intent function handling messages of type
+\verb|SomeException|.
+%, and will work equally well with \verb|runStatic| or \verb|run|.
+%
+\Cref{sec:dyn-ring} shows an example of an actor that receives
 messages of different types, by extending an actor that doesn't.
 
 
 
 
-
-
-\section{Case study: Ring leader-election}
-\label{sec:case-study}
-
-\lk{Maybe just call it ``Example'' rather than ``Case study'' -- to me, ``case study'' suggests some amount of practical applicability that we're not going for here}
-
-\subsection{Problem and solution sketch}
+\section{Example: Ring leader-election}
 \label{sec:ring-impl}
 
 The problem of \emph{ring leader-election} is to designate one ``leader'' node
 among a network of communicating nodes organized in a ring topology
 \cite{lelann1977distributed}.
 %
-Each node has an identity, and identities are totally ordered.
+Each node has a unique identity, and identities are totally ordered.
 %
 Nodes do not know number or identities of the other nodes, except for their
 immediate successor ``next'' node.
@@ -664,60 +680,97 @@ despite being unnecessary in the context threads in a process.
 node sending a message to its successor to nominate itself as the leader.
 %
 Upon receiving a nomination,
-a node forwards the nomination
-to its successor
-if if the identity of the nominee is
+a node forwards the nomination to its successor
+if the identity of the nominee is
 greater than the identity of the current node.
 %
 Otherwise the nomination is ignored.
 %
 We implement and extend that solution below.
 
+\begin{figure}[h]
 \lk{To help visualize the algorithm, I think it would be helpful to have a
 figure with an illustration of the ring, some sent messages, and the algorithm
 in progress, kind of like in the ``message chains'' paper}
 \plr{ring with seven nodes; two have message arrows bouncing around the outside
 of the ring; one message arrow terminates in an X at a greater node, the other
 message arrow originates at the greatest node and shows no sign of stopping}
+\caption{Ring election visual TODO}
+\label{fig:ring-election-visual}
+\end{figure}
 
-\subsection{Implementing elections}
+\subsection{Implementing a leader-election}
 
 \subsubsection{State and messages}
 
+
+\begin{samepage}
+\noindent
 Each node begins uninitialized, and is later made a member of the ring
 when it learns the identity of its successor.
 %
 Therefore our node state type will have two constructors.
 %
 \begin{code}
-type Id = ThreadId
-data Node = Uninitialized | Member {next::Id}
+data Node = Uninitialized | Member {next::ThreadId}
 \end{code}
-%
+\end{samepage}
+
+
+\begin{samepage}
+\noindent
 The main thread will create multiple node actors and then initialize the ring by
 informing each node of its successor.
 %
-Next, the main thread will instruct one node actor to start running the leader election algorithm.
+Next, the main thread will rapidly instruct every node actor to start running
+the leader election algorithm.
 %
-Finally, the nodes will carry out the algorithm by sending nominations.
-\lk{let's add a sentence or two here about what the termination condition is, which is that a node receives a nomination for itself, and why this means that that node must be the winner}
+Finally, the nodes will carry out the algorithm by forwarding or ignoring
+nominations.
 %
 Accordingly, our message type has three constructors.
+%
 \begin{code}
-data Msg = Init{next::Id} | Start | Nominate{nominee::Id}
+data Msg
+    = Init{next::ThreadId}
+    | Start
+    | Nominate{nominee::ThreadId}
     deriving Show
 instance Exception Msg
 \end{code}
+\end{samepage}
+
+
+\noindent
+The node with the greatest identity that nominates itself will eventually
+receive its own nomination after it has circulated the entire ring.
+%
+That same node will ignore every other nomination.
+%
+Therefore the algorithm will terminate because node identities being unique
+means that only one nomination will circumnavigate the ring.
+%
+If no nomination makes it all the way around the ring, then the algorithm
+terminates without a winner.
+
 
 \subsubsection{Actor behavior}
+\label{sec:ring-intent-fun}
 
-The \verb|Handler| for a node actor will have state of type \verb|Node| and
-pass messages of type \verb|Msg|. We describe each case separately.
+
+\begin{samepage}
+\noindent
+The intent function for a node actor will have state of type \verb|Node|
+and pass messages of type \verb|Msg|. We describe each case separately.
 %
 \begin{code}
-node :: Handler Node Msg
+node :: Intent Node Msg
 \end{code}
-%
+\end{samepage}
+
+
+\begin{samepage}
+\noindent
 When an uninitialized node receives an \verb|Init| message, it becomes a member
 of the ring and remembers its successor.
 %
@@ -726,9 +779,13 @@ node Uninitialized
   Envelope{message=Init{next}} = do
     return Member{next}
 \end{code}
-%
+\end{samepage}
+
+
+\begin{samepage}
+\noindent
 When a member of the ring receives a \verb|Start| message, it sends a message
-to its successor in the ring, nominating itself.
+to its successor in the ring to nominate itself.
 %
 \begin{code}
 node state@Member{next}
@@ -737,10 +794,14 @@ node state@Member{next}
     send next $ Nominate self
     return state
 \end{code}
-%
-Figure \ref{fig:ring-nominate} shows the case that characterizes this
-algorithm.
-%
+\end{samepage}
+
+
+\begin{samepage}
+\noindent
+%% Figure \ref{fig:nodeNominate} shows the case that characterizes this
+%% algorithm.
+%% %
 When a member of the ring receives a \verb|Nominate| message, it compares the
 nominee to its own identity.
 %
@@ -749,7 +810,6 @@ If they are equal, then the member wins and the algorithm stops.
 If the nominee is greater, then the member forwards the nomination to its
 successor.
 %
-\begin{figure}[h]
 \begin{code}
 node state@Member{next}
   Envelope{message=Nominate{nominee}} = do
@@ -760,28 +820,37 @@ node state@Member{next}
         |  otherwise       -> putStrLn "Ignored nominee"
     return state
 \end{code}
-\caption{Node behavior upon receiving a nomination.}
-\label{fig:ring-nominate}
-\end{figure}
+%% \begin{figure}[h]
+%% \caption{Node behavior upon receiving a nomination.}
+%% \label{fig:nodeNominate}
+%% \end{figure}
+\end{samepage}
+
 
 \subsubsection{Initialization}
-\label{sec:ring-init}
+\label{sec:main1-init}
 
+
+\begin{samepage}
+\noindent
 The main thread performs several steps to initialize the algorithm:
-\lk{style thing: whenever you have a list like this (a few places), you can use a list environment.  We have space, and it might make things more readable.}
-(1) Create some number of actor threads.
-(2) Randomize the order of the \verb|ThreadId|s in a list.
-(3) Inform each thread of the \verb|ThreadId| that follows it in the random
-order (its successor).
-(4) Tell one thread to start the algorithm.
+%
+\begin{enumerate}
+    \item Create some number of actor threads.
+
+    \item Randomize the order of the \verb|ThreadId|s in a list.
+
+    \item Inform each thread of the \verb|ThreadId| that follows it in the
+    random order (its successor).
+
+    \item Tell every thread to start the algorithm.
+\end{enumerate}
 %
 These tasks are implemented in \verb|ringElection|.\footnote{
     The implementation shown doesn't handle degenerate rings of size 0 or 1,
     but we consider that out of scope of the demonstration.
 }
-\lk{How are you deciding whether to make code a figure or not?  You could do it based on how long the code is, but this one is actually longer than \Cref{fig:ring-nominate}. Whatever we do, let's pick a consistent approach}
 %
-\begin{samepage}
 \begin{code}
 ringElection :: Int -> IO () -> IO [ThreadId]
 ringElection n actor = do
@@ -794,16 +863,19 @@ ringElection n actor = do
     return ring
 \end{code}
 \end{samepage}
-%
-Finally, the election algorithm is initiated in \verb|main1| by passing the
-node handler and the uninitialized state to \verb|run|.
-%
-This results in an \verb|IO ()| value representing the behavior of a node
-actor, which we pass to \verb|ringElection| to be run on several threads.
-%
-We include a trace of \verb|main1| in Appendix \ref{sec:main1-trace}.
-%
+
+
 \begin{samepage}
+\noindent
+Finally, in \verb|main1| we construct an \verb|IO| action representing the
+behavior of a node actor by passing the node intent function and the
+uninitialized state constructor to the message receipt main-loop.
+%
+To initiate the election algorithm we pass the \verb|IO| action to
+\verb|ringElection| which will fork it to several threads.
+%
+A trace of \verb|main1| is included in \Cref{sec:main1-trace}.
+%
 \begin{code}
 main1 :: Int -> IO ()
 main1 count = do
@@ -818,8 +890,10 @@ main1 count = do
 }
 \end{samepage}
 
+
 \subsection{Adding a victory round}
 \label{sec:dyn-ring}
+
 
 The solution we have shown solves the ring leader-election problem
 insofar as a single node concludes that it has won.
@@ -827,86 +901,124 @@ insofar as a single node concludes that it has won.
 However, it is also desirable for the other nodes to learn the outcome of the
 election.
 %
-To that end, we will extend the existing solution using the dynamic types
-support from \Cref{sec:dynamic-types} to add an additional message type
-and behaviors. \lk{Explain why we need dynamic types to do this.}
+Since there is no message constructor to inform nodes of the election outcome,
+we will define a new message type whose constructor indicates a declaration of
+the winner.
 
-The additions are:
+
+We will extend the existing solution by wrapping it with an intent function
+that processes messages of either the old or the new message types, with
+distinct behavior for each, leveraging the dynamic types support from
+\Cref{sec:dynamic-types}.
 %
-(1) Each node will keep track of the greatest nominee it has seen.
+The new behaviors are:
 %
-(2) When the winner self-identifies, they will start an extra round
-declaring themselves winner.
-%
-(3) Upon receiving a winner declaration, nodes will compare their greatest
-nominee seen with the winner declaration; if agreeable, then they forward the
-declaration, otherwise they ignore it.
+\begin{itemize}
+    \item Each node will keep track of the greatest nominee it has seen.
+
+    \item When the winner self-identifies, they will start an extra round
+    declaring themselves winner.
+
+    \item Upon receiving a winner declaration, a node compares the greatest
+    nominee it has seen with the winner. If they are the same, then the node
+    forwards the declaration to its successor.
+\end{itemize}
+
 
 When a node receives a declaration of the winner that they agree with, they
 have ``learned'' that node is indeed the winner.
 %
 When the winner receives their own declaration, everyone has learned they are
-the winner.
+the winner and the algorithm terminates.
+%
+If the winner declaration doesn't make it all the way around the ring, then the
+algorithm terminates without confirming a winner.
+
 
 \subsubsection{State and messages}
 
-Each node now has a \verb|Node| paired with a \verb|ThreadId| that
-represents the greatest nominee it has seen.
+
+\begin{samepage}
+\noindent
+Each node now pairs the old node state with a \verb|ThreadId| which is the
+greatest nominee it has seen.
 %
 \begin{code}
 type Node' = (Node, ThreadId)
 \end{code}
-%
-The new message type has only one constructor to declare the winner.
+\end{samepage}
+
+
+\begin{samepage}
+\noindent
+The new message type has only one constructor, and it is used to declare some
+node the winner.
 %
 \begin{code}
 data Winner = Winner ThreadId
     deriving Show
 instance Exception Winner
 \end{code}
+\end{samepage}
+
 
 \subsubsection{Actor behavior}
 
-The handler function for the new actor will use \verb|Node'| as described, but we
-declare its message type to be \verb|SomeException|.
+
+\begin{samepage}
+\noindent
+The intent function for the new actor will use \verb|Node'| as described, and
+we declare its message type to be \verb|SomeException|.
+%
+This will allow it to receive either \verb|Msg| or \verb|Winner| values and
+branch on which is received.
 %
 \begin{code}
-node' :: Handler Node' SomeException
+node' :: Intent Node' SomeException
 \end{code}
-%
-Recall the implementation of \verb|run| from Section \ref{sec:dynamic-types}.
-%
-That function calls \verb|fromException| which here is inferred to return
-\verb|Maybe SomeException| and succeeds unconditionally.
-%
-The actor handler function must now deal with this, and so we enable
-\verb|ViewPatterns| to perform downcasts in pattern matches.
+\end{samepage}
 
+
+\noindent
+Recall the implementation of the actor thread main-loop function, \verb|run|,
+from \Cref{sec:dynamic-recv-loop}.
+%
+When we apply \verb|node'| to the main-loop, \verb|run|, its call to
+\verb|fromException| will be inferred to return \verb|Maybe SomeException|
+which succeeds unconditionally.
+%
+The \verb|node'| intent function must then perform its own downcasts, and so we
+enable \verb|ViewPatterns| ease the presentation.
+%
 There are two main cases, corresponding to the two message types the actor will
 handle.
-%
+
+
+\begin{samepage}
 The first case applies when a node downcasts the envelope contents to
 \verb|Msg|.
 %
-It tracks the last-seen nominee and triggers the winner round.
+This case tracks the last-seen nominee and triggers the victory round.
 %
-There are several steps:
+We annotate it as follows:
 %
-(1) Delegate to the held node by putting the revealed \verb|Msg| back into the
-envelope and passing it through the \verb|node| handler function from Section
-\ref{sec:ring-impl}.
+\begin{enumerate}
+    \item Delegate to the held node by putting the revealed \verb|Msg| back
+    into its envelope and passing it through the intent function, \verb|node|,
+    from \Cref{sec:ring-intent-fun}.
+    %
+    %%Return that resulting node state in all of the cases below.
+    %
+    \item If the message is a nomination of the current node, start the winner
+    round because the election is over.
+    %
+    \item Otherwise the election is ongoing so keep track of the greatest
+    nominee seen.
+    %
+    \item For any other \verb|Msg| constructors, only return the updated node
+    state.
+\end{enumerate}
 %
-Return that resulting node state in all of the cases below.
-%
-(2) If the message is a nomination of the current node, start the winner round
-because the election is over.
-%
-(3) Otherwise the election is ongoing so keep track of the greatest nominee
-seen.
-%
-(4) For any other \verb|Msg| constructors, only return the updated state.
-%
-\begin{samepage}
 \begin{code}
 node' (n, great)
   e@Envelope{message=fromException -> Just m} = do
@@ -921,18 +1033,23 @@ node' (n, great)
         _ -> return (n', great) {-"\quad\quad\hfill (4)"-}
 \end{code}
 \end{samepage}
-%
+
+
+\begin{samepage}
 The second case applies when a node downcasts the envelope contents to a winner
 declaration.
 %
-State is unchanged in all three cases:
+%% The node compares the declared winner to itself and to the greatest nominee
+%% it has seen.
 %
-If the current node is declared winner, the algorithm stops.
+If the current node is declared winner, the algorithm terminates successfully.
 %
-If the greatest nominee the current node has seen is declared winner, the node forwards
-the declaration.
+If the greatest nominee the current node has seen is declared winner, the node
+forwards the declaration to its successor.
 %
-If some unknown node is declared winner, the node complains and ignores the message.
+Otherwise the algorithm terminates unsuccessfully.
+%
+State is unchanged in each of these branches.
 %
 \begin{code}
 node' state@(Member{next}, great)
@@ -945,19 +1062,23 @@ node' state@(Member{next}, great)
             | otherwise -> putStrLn "Unexpected winner"
     return state
 \end{code}
+\end{samepage}
+
 
 \subsubsection{Initialization}
-\label{sec:ring2-init}
+\label{sec:main2-init}
 
-The extended ring leader-election can reuse the same scaffolding as before; we
-only define a \verb|main2| function.
+
+\begin{samepage}
+\noindent
+The extended ring leader-election can reuse the same initialization scaffolding
+as before; we only define a \verb|main2| function.
 %
-As part of the \verb|IO ()| action passed to \verb|ringElection|, each thread
-initializes its greatest nominee seen to itself.
+As part of the \verb|IO| action passed to \verb|ringElection|, each thread
+initializes the greatest nominee seen to itself.
 %
 A trace of \verb|main2| is in Appendix \ref{sec:main2-trace}.
 %
-\begin{samepage}
 \begin{code}
 main2 :: Int -> IO ()
 main2 count = do
@@ -977,15 +1098,98 @@ main2 count = do
 
 
 
+\section{What hath we wrought?}
 
-\subsection{TODO: Performance evaluation}
+\Cref{fig:sendStatic,fig:runStatic} show that we have in only a few lines of
+code discovered an actor framework within the RTS which makes no explicit use
+of channels, references, or locks and imports just a few names from default
+modules.
+%
+The support for dynamic types, shown in \Cref{fig:send,fig:run} as separate
+definitions, can be folded into \Cref{fig:sendStatic,fig:runStatic} for only a
+few additional lines.
+%
+While the likelihood of double sends might temper enthusiasm for this
+discovery, despite minor brokenness it is notable that this is possible and
+shocking that it is so easy.
 
-\plr{TODO}
+\subsection{Almost a COPL}
+
+Which requirements to be a COPL does this framework display?
+%
+RTS threads behave as independent processes, and although not strongly
+isolated and able to share state, they have a unique hidden \verb|ThreadId|.
+
+The implementation as shown encourages communication via \emph{reliable
+synchronous message passing with FIFO order}.
+%
+We call it synchronous because ``\verb|throwTo| does not return until the
+exception is received by the target thread''
+\cite{controlDotException}.\footnote{
+	``Synchronous for me, but not for thee'' might be the most correct
+	characterization. Senders may experience GHC's asynchronous exceptions as
+	synchronous, but recipients will always perceive them as asynchronous.
+}
+%
+This means that a sender may block if the recipient never reaches an
+interruptible point (e.g. its intent function enters an infinite loop in pure
+computation).
+%
+Assuming intent functions terminate, instead the framework will tend to
+exhibit the behavior of \emph{reliable asynchronous message passing with FIFO
+order} and occasional double-sends.
+%
+By wrapping calls to the send function with \verb|forkIO|
+\cite{marlow2001async}, we obtain \emph{reliable asynchronous message passing
+without FIFO order} even in the presence of non-terminating intent
+functions.\footnote{
+    If thread $T_1$ forks thread $T_2$ to send message $M_2$, and then $T_1$
+    forks thread $T_3$ to send message $M_3$, the RTS scheduler may first run
+    $T_3$ resulting in $M_3$ reaching the recipient before $M_2$, violating
+    FIFO if both messages have the same recipient.
+}
+%
+FIFO can be recovered by message sequence numbers or (albeit, jumping the
+shark) use of an outbox-thread per actor.
+%
+An actor can reliably inform others of its termination with use of
+\verb|forkFinally|.\footnote{
+	\verb|forkIO| and \verb|forkFinally| are defined in
+	\texttt{Control.Concurrent} in \texttt{base-4.15.1.0}.
+}
+
+Our choice to wrap a user-defined message type in a known envelope type has the
+benefit of allowing the actor main-loop to distinguish between messages and
+exceptions, allowing the latter to terminate the thread as intended.
+%
+At the same time this choice runs afoul of the \emph{name distribution problem}
+\cite{armstrong2003} by indiscriminately informing all recipients of the sender
+process identifier.
+%
+One strategy hide to an actor's name and restore the lost security isolation is
+to wrap calls to the send function with \verb|forkIO|.
+%
+Another strategy would be to define two constructors for envelope, and elide
+the ``sender'' field from one.
+
+From this discussion in is clear that this actor framework is almost a COPL.
+%
+With conscientious attention to the termination and idempotence of intent
+functions, the framework might be considered practical.
 
 
 
 
-\section{Feature subsumption}
+
+\subsection{Pithy statement about performance}
+
+\plr{TODO} "Almost as good as channels"
+
+
+
+
+
+\subsection{Feature subsumption}
 
 \lk{Let's figure out what the point is that we want to make here.}
 
@@ -1020,12 +1224,19 @@ could block?
 \citet[p.~40]{sussman1975interpreter} say, ``we discovered that the "actors"
 and the lambda expressions were identical in implementation.
 
+extended ``awkward squad'' \cite{peytonjones2001tackling}
+
 
 
 
 
 
 \section{TODO: Conclusion}
+
+%
+We hope the existence of this accidental actor framework 
+, we expect to see it deployed for industrial applications throughout
+the Haskell-sphere.
 
 \plr{TODO}
 
@@ -1136,7 +1347,7 @@ endVerb = putStrLn "\\end{verbatim}"
 \subsection{Election trace}
 \label{sec:main1-trace}
 
-In Section \ref{sec:ring-init} we defined \verb|main1| to run a ring
+In Section \ref{sec:main1-init} we defined \verb|main1| to run a ring
 leader-election.
 %
 Here's an example trace.
@@ -1148,7 +1359,7 @@ Here's an example trace.
 \subsection{Dynamic types trace}
 \label{sec:main2-trace}
 
-In Section \ref{sec:ring2-init} we defined \verb|main2| to run a ring
+In Section \ref{sec:main2-init} we defined \verb|main2| to run a ring
 leader-election with a winner declaration round.
 %
 Here's an example trace.
