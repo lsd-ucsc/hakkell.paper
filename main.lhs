@@ -1366,15 +1366,15 @@ Here's an example trace.
 \subsection{Performance evaluation code}
 
 
-For the ring leader-election solution we implemented the time to termination
+For the ring leader-election solution we have shown, the time to termination
 is:
 %
-The time necessary for the winner's self nomination to pass around the ring
-once, plus the time for the winner's declaration to pass around the ring once,
+The time necessary for the winner's self-nomination to pass around the ring
+once, plus the time for the winner-declaration to pass around the ring once,
 at minimum.
 %
-Termination can be detected when a node receives a winner declaration with its
-own identity.
+Termination is detected when a node receives a winner declaration with its own
+identity.
 
 
 We will benchmark time to termination using the \verb|criterion| package.
@@ -1382,15 +1382,18 @@ We will benchmark time to termination using the \verb|criterion| package.
 For this, we will need an \verb|IO| action which executes the algorithm, cleans
 up its resources, and then returns.
 %
-Our initialization thread will kill itself when termination is detected.
+We will make an initialiazation actor to launch the algorithm, clean up, and
+kill itself when termination is detected.
 %
 We employ \verb|withAsync| and \verb|waitAsync| to detect when the
-initialization thread has died and return from the benchmark.
+initialization actor has died and return from the benchmark.
 
-First we define a benchmarking-node which extends a node.
+
+First we define a benchmarking-node, which extends node with additional
+behavior.
 %
-When a benchmarking-node detects that it is confirmed as winner, it sends that
-message to a designated subscriber.
+When a benchmarking-node detects that it is confirmed as winner, it sends the
+winner-declaration message to a designated subscriber.
 %
 \begin{code}
 benchNode :: ThreadId -> Intent Node' SomeException
@@ -1406,7 +1409,7 @@ benchNode _ state e = node' state e
 
 
 Next we define a benchmark-launcher actor which starts the algorithm with
-benchmarking-nodes and kills itself when it receives a winner declaration.
+benchmarking-nodes and cleans up when it receives a winner declaration.
 %
 \begin{code}
 benchLaunch :: Int -> Intent (Maybe [ThreadId]) SomeException
@@ -1428,8 +1431,10 @@ benchLaunch count (Just ring)
 \end{code}
 
 
-We define a function that runs a single \verb|benchLaunch| actor, waits for it
-to terminate, and prints the result.
+We define \verb|benchRing| to be the function which \verb|criterion| will
+measure. It will run a single \verb|benchLaunch| actor, wait for it to
+terminate, and print any result.
+%
 \begin{code}
 benchRing :: Int -> IO ()
 benchRing n = do
@@ -1440,7 +1445,9 @@ benchRing n = do
             A.waitCatch a >>= print)
 \end{code}
 
-Finally, we define a criterion benchmark which  ........
+
+Finally, we define a criterion benchmark which runs \verb|benchRing| once for
+several ring sizes.
 %
 \begin{code}
 benchMain :: IO ()
@@ -1463,7 +1470,6 @@ benchMain = Cr.defaultMain
 %%  hDuplicateTo fd stdout
 %%  hClose fd
 %%  -- Clean up election
-
 
 
 Using \verb|criterion|, we call 
