@@ -15,3 +15,8 @@ done
 
 grep --color=always . /sys/devices/system/cpu/intel_pstate/status
 grep --color=always . /sys/devices/system/cpu/cpu*/cpufreq/{scaling_governor,scaling_max_freq,scaling_min_freq}
+
+if ps aux | grep -q firefox; then
+    echo 'Error: close firefox and other applications before benchmark'
+    false
+fi
