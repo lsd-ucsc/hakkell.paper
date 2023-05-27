@@ -1469,17 +1469,20 @@ Finally, it also compares to an implementation of ring leader-election using
 \verb|Control.Concurrent.Chan| (one of the more normal ways to do things in
 Haskell).
 %
+These alternates are shown in \Cref{sec:alt-impls}.
+%
 \begin{code}
 benchMain :: IO ()
 benchMain = Cr.defaultMain
-    [ Cr.bgroup "actors" $ fmap actor counts
+    [ Cr.bgroup "fork & kill" $ fmap control counts
+    , Cr.bgroup "actor ring" $ fmap actor counts
     ]
   where
     counts = [2^n | n <- [2..11]]
-    actor n
-        = Cr.bench ("ring n=" ++ show n)
-        . Cr.nfIO
-        $ benchRing n
+    control n =
+        Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchControl n
+    actor n =
+        Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchRing n
 \end{code}
 \end{samepage}
 %
@@ -1489,6 +1492,22 @@ our repo) to replace all printlines with \verb|pure ()|.
 This is necessary because the printlines introduce latency and dramatically
 inflate the algorithm runtime.
 
+
+
+\subsection{Alternate implementations}
+\label{sec:alt-impls}
+
+This section has the source code for alternate implementations compared to the
+actor implementation by the benchmark.
+
+\begin{code}
+benchControl :: Int -> IO ()
+benchControl n = do
+    nodes <- sequence . replicate n $ forkIO (return ())
+    mapM_ killThread nodes
+\end{code}
+
+--- --- ---
 
 % It's necessary to have a main function, but I'm excluding it from appearing
 % in the document.
@@ -1509,9 +1528,11 @@ main = do
 
             putStrLn "main2"
             main2 count
+            putStrLn ""
 
             putStrLn "benchRing"
             benchRing count
+            putStrLn ""
 
             endVerb
         _ -> benchMain
