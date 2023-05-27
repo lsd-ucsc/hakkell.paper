@@ -42,6 +42,7 @@
 %format >>  = "\mathbin{>\hspace{-0.4em}>}"
 %format =<< = "\mathbin{=\hspace{-0.3em}<\hspace{-0.4em}<}"
 %format  << =                 "\mathbin{<\hspace{-0.4em}<}"
+%format ^   = "^"
 %format [   = "["
 %format {   = "\!\{"
 %%%%format ]   = "]"
@@ -220,10 +221,10 @@ import Control.Concurrent (forkIO, killThread)
 import System.Random (RandomGen, randomR, getStdRandom)
 
 -- Trace appendix
-import System.IO (hSetBuffering, stdout, BufferMode(..), openFile, IOMode(..))
+import System.IO (hSetBuffering, stdout, BufferMode(..))
 
 -- Perf eval appendix
-import GHC.IO.Handle (Handle, hDuplicate, hDuplicateTo)
+import Control.Exception (assert)
 import System.Environment (getArgs)
 import qualified Control.Concurrent.Async as A
 import qualified Control.Concurrent.Chan as Ch
@@ -974,6 +975,7 @@ instance Exception Winner
 
 
 \subsubsection{Actor behavior}
+\label{sec:ring2-intent-fun}
 
 
 \begin{samepage}
@@ -1363,11 +1365,11 @@ Here's an example trace.
 \perform{beginVerb >> putStrLn "> main2 8" >> main2 8 >> endVerb }
 \normalsize
 
-\subsection{Performance evaluation code}
+\subsection{Performance evaluation detail}
 
 
-For the ring leader-election solution we have shown, the time to termination
-is:
+For the (extended) ring leader-election solution we have shown, the time to
+termination is:
 %
 The time necessary for the winner's self-nomination to pass around the ring
 once, plus the time for the winner-declaration to pass around the ring once,
@@ -1390,8 +1392,8 @@ initialization actor has died and return from the benchmark.
 
 
 \begin{samepage}
-First we define a benchmarking-node, which extends node with additional
-behavior.
+First we define a benchmarking-node, which extends \verb|node'|
+(\Cref{sec:ring2-intent-fun}) with additional behavior.
 %
 When a benchmarking-node detects that it is confirmed as winner, it sends the
 winner-declaration message to a designated subscriber.
@@ -1429,9 +1431,9 @@ benchLaunch count Nothing
 
 benchLaunch count (Just ring)
   Envelope{message=fromException->Just (Winner w)} = do
-    putStrLn ("Terminated with winner " ++ show w)
     mapM_ killThread ring
-    killThread =<< myThreadId
+    assert (w == maximum ring) $
+        myThreadId >>= killThread
     return Nothing
 \end{code}
 \end{samepage}
@@ -1440,8 +1442,8 @@ benchLaunch count (Just ring)
 \begin{samepage}
 \noindent
 We define \verb|benchRing| to be the function which \verb|criterion| will
-measure. It will run a single \verb|benchLaunch| actor, wait for it to
-terminate, and output any result.
+measure. It will run a single \verb|benchLaunch| actor, send a \verb|Start|
+message to it, wait for apoptosis, and output any result.
 %
 \begin{code}
 benchRing :: Int -> IO ()
@@ -1457,24 +1459,25 @@ benchRing n = do
 
 \begin{samepage}
 \noindent
-Finally, we define a criterion benchmark which runs \verb|benchRing| once for
+Finally, we define a benchmark-main which runs \verb|benchRing| for each of
 several ring sizes.
 %
 As a control, it also runs a function that starts up some number of threads
-which immediately terminate.
+that immediately terminate.
 %
-To compare with the normal way of doing things in Haskell, we include an
-implementation using channels form \verb|Control.Concurrent.Chan|.
+Finally, it also compares to an implementation of ring leader-election using
+\verb|Control.Concurrent.Chan| (one of the more normal ways to do things in
+Haskell).
 %
 \begin{code}
 benchMain :: IO ()
 benchMain = Cr.defaultMain
-    [ Cr.bgroup "actors" $ fmap actors counts
+    [ Cr.bgroup "actors" $ fmap actor counts
     ]
   where
     counts = [2^n | n <- [2..11]]
-    actors n
-        = Cr.bench ("ring<" ++ show n ++ ">")
+    actor n
+        = Cr.bench ("ring n=" ++ show n)
         . Cr.nfIO
         $ benchRing n
 \end{code}
@@ -1482,9 +1485,10 @@ benchMain = Cr.defaultMain
 %
 When producing benchmarks for this paper, we ran an extra step (available in
 our repo) to replace all printlines with \verb|pure ()|.
+%
+This is necessary because the printlines introduce latency and dramatically
+inflate the algorithm runtime.
 
-
-Using \verb|criterion|, we call 
 
 % It's necessary to have a main function, but I'm excluding it from appearing
 % in the document.
