@@ -1451,7 +1451,7 @@ benchMain = Cr.defaultMain
         Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchControl n
     actor n =
         Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchRing n
-    channel n = 
+    channel n =
         Cr.bench ("n=" ++ show n) . Cr.nfIO $ channelRing n
 \end{code}
 \end{samepage}
@@ -1617,7 +1617,6 @@ channelRing n = do
     done <- Mv.newEmptyMVar
     let mkNode (rcv, snd) = do
             great <- myThreadId
-            print great
             chanNode done rcv snd (Uninitialized, great)
     -- In-order ring
     chans <- sequence . replicate n $ Ch.newChan
