@@ -36,8 +36,9 @@ clean: $(TEXSRC)
 
 clean-all: $(TEXSRC)
 	latexmk -C
-	#rm -fv main.{bbl,ptb,tex}
-	#rm -fv main.{,noprint.}{hi,o}
+	rm -fv main.{bbl,ptb,tex}
+	rm -fv main.{,noprint.}{hi,o}
+	rm -fv main{,.elf}
 
 preview: $(TEXSRC)
 	latexmk -pvc
