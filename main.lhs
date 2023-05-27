@@ -40,6 +40,8 @@
 %format ++  = "\mathbin{+\hspace{-0.2em}+}"
 %format >>= = "\mathbin{>\hspace{-0.4em}>\hspace{-0.3em}=}"
 %format >>  = "\mathbin{>\hspace{-0.4em}>}"
+%format =<< = "\mathbin{=\hspace{-0.3em}<\hspace{-0.4em}<}"
+%format  << =                 "\mathbin{<\hspace{-0.4em}<}"
 %format [   = "["
 %format {   = "\!\{"
 %%%%format ]   = "]"
@@ -216,7 +218,16 @@ import Control.Exception (TypeError(..))
 import Control.Exception (SomeException)
 import Control.Concurrent (forkIO, killThread)
 import System.Random (RandomGen, randomR, getStdRandom)
-import System.IO (hSetBuffering, stdout, BufferMode(..))
+
+-- Trace appendix
+import System.IO (hSetBuffering, stdout, BufferMode(..), openFile, IOMode(..))
+
+-- Perf eval appendix
+import GHC.IO.Handle (Handle, hDuplicate, hDuplicateTo)
+import System.Environment (getArgs)
+import qualified Control.Concurrent.Async as A
+import qualified Control.Concurrent.Chan as Ch
+import qualified Criterion.Main as Cr
 \end{code}
 } % end ignore
 
@@ -1100,8 +1111,8 @@ main2 count = do
 
 \section{What hath we wrought?}
 
-\Cref{fig:sendStatic,fig:runStatic} show that we have in only a few lines of
-code discovered an actor framework within the RTS which makes no explicit use
+\Cref{fig:sendStatic,fig:runStatic} show that we have, in only a few lines of
+code, discovered an actor framework within the RTS which makes no explicit use
 of channels, references, or locks and imports just a few names from default
 modules.
 %
@@ -1149,7 +1160,7 @@ functions.\footnote{
     FIFO if both messages have the same recipient.
 }
 %
-FIFO can be recovered by message sequence numbers or (albeit, jumping the
+FIFO can be recovered by message sequence numbers or by (albeit, jumping the
 shark) use of an outbox-thread per actor.
 %
 An actor can reliably inform others of its termination with use of
@@ -1279,22 +1290,6 @@ Ack the PLV people
 
 \section{Appendix}
 
-% It's necessary to have a main function, but I'm excluding it from appearing
-% in the document.
-\ignore{
-\begin{code}
-main :: IO ()
-main = do
-    putStrLn "Enter count:"
-    count <- fmap read getLine
-    beginVerb
-    main1 count
-    putStrLn ""
-    main2 count
-    endVerb
-\end{code}
-}
-
 \subsection{Permute}
 
 In Section \ref{sec:ring-impl} we provided the implementation of a ring
@@ -1368,8 +1363,138 @@ Here's an example trace.
 \perform{beginVerb >> putStrLn "> main2 8" >> main2 8 >> endVerb }
 \normalsize
 
+\subsection{Performance evaluation code}
 
 
+For the ring leader-election solution we implemented the time to termination
+is:
+%
+The time necessary for the winner's self nomination to pass around the ring
+once, plus the time for the winner's declaration to pass around the ring once,
+at minimum.
+%
+Termination can be detected when a node receives a winner declaration with its
+own identity.
+
+
+We will benchmark time to termination using the \verb|criterion| package.
+%
+For this, we will need an \verb|IO| action which executes the algorithm, cleans
+up its resources, and then returns.
+%
+Our initialization thread will kill itself when termination is detected.
+%
+We employ \verb|withAsync| and \verb|waitAsync| to detect when the
+initialization thread has died and return from the benchmark.
+
+First we define a benchmarking-node which extends a node.
+%
+When a benchmarking-node detects that it is confirmed as winner, it sends that
+message to a designated subscriber.
+%
+\begin{code}
+benchNode :: ThreadId -> Intent Node' SomeException
+benchNode subscriber state
+  e@Envelope{message=fromException->Just (Winner w)} = do
+    self <- myThreadId
+    if w == self
+        then send subscriber (Winner w)
+        else return ()
+    node' state e
+benchNode _ state e = node' state e
+\end{code}
+
+
+Next we define a benchmark-launcher actor which starts the algorithm with
+benchmarking-nodes and kills itself when it receives a winner declaration.
+%
+\begin{code}
+benchLaunch :: Int -> Intent (Maybe [ThreadId]) SomeException
+
+benchLaunch count Nothing
+  Envelope{message=fromException->Just Start} = do
+    launcher <- myThreadId
+    ring <- ringElection count $ do
+        great <- myThreadId
+        run (benchNode launcher) (Uninitialized, great)
+    return $ Just ring
+
+benchLaunch count (Just ring)
+  Envelope{message=fromException->Just (Winner w)} = do
+    putStrLn ("Terminated with winner " ++ show w)
+    mapM_ killThread ring
+    killThread =<< myThreadId
+    return Nothing
+\end{code}
+
+
+We define a function that runs a single \verb|benchLaunch| actor, waits for it
+to terminate, and prints the result.
+\begin{code}
+benchRing :: Int -> IO ()
+benchRing n = do
+    A.withAsync
+        (run (benchLaunch n) Nothing)
+        (\a -> do
+            send (A.asyncThreadId a) Start
+            A.waitCatch a >>= print)
+\end{code}
+
+Finally, we define a criterion benchmark which  ........
+%
+\begin{code}
+benchMain :: IO ()
+benchMain = Cr.defaultMain
+    [ Cr.bgroup "actors" $ fmap actors counts
+    ]
+  where
+    counts = [2^n | n <- [1..10]]
+    actors n
+        = Cr.bench ("ring<" ++ show n ++ ">")
+        . Cr.nfIO
+        $ benchRing n
+\end{code}
+%%  -- Turn off output
+%%  fd <- hDuplicate stdout
+%%  null <- openFile "/dev/null" AppendMode
+%%  hDuplicateTo null stdout
+%%  -- Launch election
+%%  -- Turn on stdout
+%%  hDuplicateTo fd stdout
+%%  hClose fd
+%%  -- Clean up election
+
+
+
+Using \verb|criterion|, we call 
+
+% It's necessary to have a main function, but I'm excluding it from appearing
+% in the document.
+\ignore{
+\begin{code}
+main :: IO ()
+main = do
+    args <- getArgs
+    case args of
+        [n] -> do
+            let count = read n
+            putStrLn ("Count: " ++ n)
+            beginVerb
+
+            putStrLn "main1"
+            main1 count
+            putStrLn ""
+
+            putStrLn "main2"
+            main2 count
+
+            putStrLn "benchRing"
+            benchRing count
+
+            endVerb
+        _ -> benchMain
+\end{code}
+}
 
 
 

@@ -19,7 +19,7 @@ mkShell {
   name = "tex-environment";
   buildInputs = [
     texlive.combined.scheme-full
-    (haskellPackages.ghcWithPackages (p: with p; [random doctest QuickCheck lhs2tex]))
+    (haskellPackages.ghcWithPackages (p: with p; [random async criterion doctest QuickCheck lhs2tex]))
     ghcid
   ];
 }
