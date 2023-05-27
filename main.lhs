@@ -34,7 +34,10 @@
 \let\Bbbk\undefined
 %include polycode.fmt
 \long\def\ignore#1{}
-
+%%%% deindent comments
+\renewcommand\onelinecommentchars{-{}- }
+\visiblecomments
+%%%% prettier formatting
 %format <$> = "\mathbin{\langle\$\rangle}"
 %format <*> = "\mathbin{\langle*\rangle}"
 %format ++  = "\mathbin{+\hspace{-0.2em}+}"
@@ -228,6 +231,7 @@ import Control.Exception (assert)
 import System.Environment (getArgs)
 import qualified Control.Concurrent.Async as A
 import qualified Control.Concurrent.Chan as Ch
+import qualified Control.Concurrent.MVar as Mv
 import qualified Criterion.Main as Cr
 \end{code}
 } % end ignore
@@ -811,7 +815,7 @@ node state@Member{next}
 
 \begin{samepage}
 \noindent
-%% Figure \ref{fig:nodeNominate} shows the case that characterizes this
+%% \Cref{fig:nodeNominate} shows the case that characterizes this
 %% algorithm.
 %% %
 When a member of the ring receives a \verb|Nominate| message, it compares the
@@ -1090,7 +1094,7 @@ as before; we only define a \verb|main2| function.
 As part of the \verb|IO| action passed to \verb|ringElection|, each thread
 initializes the greatest nominee seen to itself.
 %
-A trace of \verb|main2| is in Appendix \ref{sec:main2-trace}.
+A trace of \verb|main2| is in \Cref{sec:main2-trace}.
 %
 \begin{code}
 main2 :: Int -> IO ()
@@ -1294,7 +1298,7 @@ Ack the PLV people
 
 \subsection{Permute}
 
-In Section \ref{sec:ring-impl} we provided the implementation of a ring
+In \Cref{sec:ring-impl} we provided the implementation of a ring
 leader-election in our actor framework.
 %
 The implementation used \verb|permute| to randomize the list of
@@ -1324,46 +1328,6 @@ permute pool0 gen0
 
 
 
-
-
-
-\ignore{
-\begin{code}
-beginVerb :: IO ()
-beginVerb = do
-    hSetBuffering stdout LineBuffering
-    putStrLn "\\begin{verbatim}"
-
-endVerb :: IO ()
-endVerb = putStrLn "\\end{verbatim}"
-\end{code}
-}
-
-%options ghci -threaded -rtsopts -with-rtsopts=-N
-
-\subsection{Election trace}
-\label{sec:main1-trace}
-
-In Section \ref{sec:main1-init} we defined \verb|main1| to run a ring
-leader-election.
-%
-Here's an example trace.
-
-\footnotesize
-\perform{beginVerb >> putStrLn "> main1 8" >> main1 8 >> endVerb }
-\normalsize
-
-\subsection{Dynamic types trace}
-\label{sec:main2-trace}
-
-In Section \ref{sec:main2-init} we defined \verb|main2| to run a ring
-leader-election with a winner declaration round.
-%
-Here's an example trace.
-
-\footnotesize
-\perform{beginVerb >> putStrLn "> main2 8" >> main2 8 >> endVerb }
-\normalsize
 
 \subsection{Performance evaluation detail}
 
@@ -1429,12 +1393,15 @@ benchLaunch count Nothing
         run (benchNode launcher) (Uninitialized, great)
     return $ Just ring
 
-benchLaunch count (Just ring)
-  Envelope{message=fromException->Just (Winner w)} = do
+benchLaunch _ (Just ring)
+  Envelope{message=
+  fromException->Just (Winner w)} = do
     mapM_ killThread ring
     assert (w == maximum ring) $
         myThreadId >>= killThread
     return Nothing
+
+benchLaunch _ _ _ = error "benchLaunch: unhandled"
 \end{code}
 \end{samepage}
 
@@ -1476,13 +1443,16 @@ benchMain :: IO ()
 benchMain = Cr.defaultMain
     [ Cr.bgroup "fork & kill" $ fmap control counts
     , Cr.bgroup "actor ring" $ fmap actor counts
+    , Cr.bgroup "channel ring" $ fmap channel counts
     ]
   where
-    counts = [2^n | n <- [2..11]]
+    counts = [2^n | n <- [2..11::Int]]
     control n =
         Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchControl n
     actor n =
         Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchRing n
+    channel n = 
+        Cr.bench ("n=" ++ show n) . Cr.nfIO $ channelRing n
 \end{code}
 \end{samepage}
 %
@@ -1494,12 +1464,18 @@ inflate the algorithm runtime.
 
 
 
+
+
+
 \subsection{Alternate implementations}
 \label{sec:alt-impls}
 
 This section has the source code for alternate implementations compared to the
 actor implementation by the benchmark.
 
+\subsubsection{Control}
+First the control, which only forks threads and then kills them.
+%
 \begin{code}
 benchControl :: Int -> IO ()
 benchControl n = do
@@ -1507,7 +1483,213 @@ benchControl n = do
     mapM_ killThread nodes
 \end{code}
 
---- --- ---
+
+\subsubsection{Channel-based}
+Next, a channel-based ring leader-election.
+%
+Each node will have references to a send-channel and a receive-channel.
+%
+We reuse the message types (via an \verb|Either|), but ignore the \verb|next|
+argument because we pass in a send-channel on construction.
+%
+\begin{code}
+type ChMsg = Either Msg Winner
+type Ch = Ch.Chan ChMsg
+\end{code}
+
+
+It is unnecessary to split the channel-based implementation into two nodes,
+but we do so so it is easy to reference against the actor-based implementation.
+%
+This structural similarity hopefully has the added benefit of focusing
+benchmark differences onto the communication mechanisms instead of anecdotal
+differences.
+%
+\begin{itemize}
+    \item
+    In \Cref{fig:chanNode} we implement the main-loop, \texttt{chanNode}.
+    %
+    It leaves off with definitions of send-functions in its where-clause.
+
+    \item
+    \Cref{fig:chanNodePart} shows \texttt{nodePart} which reimplements
+    \texttt{node}, within the where-clause of \texttt{chanNode}.
+
+    \item
+    In \Cref{fig:chanNodePrimePart}, \texttt{node'Part} reimplements
+    \texttt{node'} and the benchmark-node, still within the where-clause of
+    \texttt{chanNode}.
+    %
+    We signal termination by placing the confirmed winner's \texttt{ThreadId}
+    into the ``done'' \texttt{MVar}.
+
+    \item
+    Finally \Cref{fig:channelRing} initializes the algorithm with a function
+    similar to \texttt{ringElection}, but using channels instead of passing in
+    \texttt{ThreadId}s.
+\end{itemize}
+
+\begin{figure}[h]
+\caption{Main-loop for channel-based implementation of ring leader-election.
+Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
+\label{fig:chanNode}
+\begin{code}
+chanNode :: Mv.MVar ThreadId -> Ch -> Ch -> Node' -> IO ()
+chanNode done recvCh sendCh st = do
+    chanNode done recvCh sendCh
+        =<< node'Part st
+        =<< Ch.readChan recvCh
+  where
+    sendMsg = Ch.writeChan sendCh . Left
+    sendWinner = Ch.writeChan sendCh . Right
+\end{code}
+\end{figure}
+
+\begin{figure}[h]
+\caption{Channel-based reimplementation of \verb|node| defined in the
+where-clause of \Cref{fig:chanNode}.}
+\label{fig:chanNodePart}
+\begin{code}
+    nodePart :: Node -> Msg -> IO Node
+    nodePart Uninitialized Init{next} = do
+        return Member{next}
+    nodePart state@Member{next} Start = do
+        self <- myThreadId
+        sendMsg $ Nominate self
+        return state
+    nodePart state@Member{next} Nominate{nominee} = do
+        self <- myThreadId
+        case () of
+         _  |  self == nominee -> putStrLn (show self ++ ": I win")
+            |  self <  nominee -> sendMsg $ Nominate nominee
+            |  otherwise       -> putStrLn "Ignored nominee"
+        return state
+\end{code}
+\end{figure}
+
+\begin{figure}[h]
+\caption{Channel-based reimplementation of \verb|node'| defined in the
+where-clause of \Cref{fig:chanNode}}
+\label{fig:chanNodePrimePart}
+\begin{code}
+    node'Part :: Node' -> Either Msg Winner -> IO Node'
+    node'Part (n, great) (Left m) = do
+        self <- myThreadId
+        n' <- nodePart n m
+        case m of
+            Nominate{nominee} ->
+                if self == nominee
+                then sendWinner (Winner self)
+                    >> return (n', great)
+                else return (n', max nominee great)
+            _ -> return (n', great)
+    node'Part state@(n, great) (Right m) = do
+        self <- myThreadId
+        case m of
+            Winner w
+                | w == self -> putStrLn (show self ++ ": Confirmed")
+                            >> Mv.putMVar done self
+                | w == great -> sendWinner (Winner w)
+                | otherwise -> putStrLn "Unexpected winner"
+        return state
+\end{code}
+\end{figure}
+
+\begin{figure}[h]
+\caption{
+    Initialization routine for channel-based reimplementation of ring
+    leader-election.
+    %
+    First define a function to run a channel-node on the ``done'' \texttt{MVar}
+    and two provided channels.
+    %
+    Next construct channels and a ring of un-evaluated nodes \emph{in order}.
+    %
+    Finally permute the nodes and fork them out of order.
+    %
+    At this point the nodes are assigned random thread identifiers.
+}
+\label{fig:channelRing}
+\begin{code}
+channelRing :: Int -> IO ()
+channelRing n = do
+    -- Function to run channel-node
+    done <- Mv.newEmptyMVar
+    let mkNode (rcv, snd) = do
+            great <- myThreadId
+            print great
+            chanNode done rcv snd (Uninitialized, great)
+    -- In-order ring
+    chans <- sequence . replicate n $ Ch.newChan
+    let nodeActs = map mkNode
+            (zip chans $ tail chans ++ [head chans])
+    -- Out-of-order ring
+    ringActs <- getStdRandom $ permute nodeActs
+    ring <- mapM forkIO ringActs
+    -- Start the election
+    mapM_ (\c -> Ch.writeChan c . Left $ Init undefined) chans
+    mapM_ (\c -> Ch.writeChan c . Left $ Start) chans
+    -- Wait for termination
+    w <- Mv.takeMVar done
+    mapM_ killThread ring
+    assert (w == maximum ring) $
+        return ()
+\end{code}
+\end{figure}
+
+
+
+
+\ignore{
+\begin{code}
+beginVerb :: IO ()
+beginVerb = do
+    hSetBuffering stdout LineBuffering
+    putStrLn "\\begin{verbatim}"
+
+endVerb :: IO ()
+endVerb = putStrLn "\\end{verbatim}"
+\end{code}
+}
+
+%options ghci -threaded -rtsopts -with-rtsopts=-N
+
+\subsection{Election trace}
+\label{sec:main1-trace}
+
+In \Cref{sec:main1-init} we defined \verb|main1| to run a ring
+leader-election.
+%
+Here's an example trace.
+
+\footnotesize
+\perform{beginVerb >> putStrLn "> main1 8" >> main1 8 >> endVerb }
+\normalsize
+
+\subsection{Dynamic types trace}
+\label{sec:main2-trace}
+
+In \Cref{sec:main2-init} we defined \verb|main2| to run a ring
+leader-election with a winner declaration round.
+%
+Here's an example trace.
+
+\footnotesize
+\perform{beginVerb >> putStrLn "> main2 8" >> main2 8 >> endVerb }
+\normalsize
+
+\subsection{Channel node election trace}
+\label{sec:channelRing-trace}
+
+In \Cref{sec:alt-impls} we defined \verb|channelRing| to run a ring
+leader-election with a winner declaration round using channels for
+communication.
+%
+Here's an example trace.
+
+\footnotesize
+\perform{beginVerb >> putStrLn "> channelRing 8" >> channelRing 8 >> endVerb }
+\normalsize
 
 % It's necessary to have a main function, but I'm excluding it from appearing
 % in the document.
@@ -1532,6 +1714,10 @@ main = do
 
             putStrLn "benchRing"
             benchRing count
+            putStrLn ""
+
+            putStrLn "channelRing"
+            channelRing count
             putStrLn ""
 
             endVerb
