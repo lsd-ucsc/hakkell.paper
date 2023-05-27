@@ -17,11 +17,14 @@ bench: $(patsubst %.pdf, %.bench.csv, $(OUTPUTS))
 	ghc -fno-code $^ # just typecheck
 	lhs2TeX $^ > $@
 
-%.bench.csv: %.elf
+%.bench.csv: %.bench.elf
+	# turn of CPU scaling
+	./benchprep.sh
 	./$< --csv $@ --output $*.bench.html --verbosity 2
 
-%.elf: %.noprint.lhs
-	ghc -O -threaded -rtsopts -with-rtsopts=-N $< -o $@
+%.bench.elf: %.noprint.lhs
+	# compile threaded, optimized, but w/o let floating
+	ghc -O -fno-full-laziness -threaded -rtsopts -with-rtsopts=-N $< -o $@
 
 %.noprint.lhs: %.lhs noprint.py
 	python noprint.py < $< > $@
