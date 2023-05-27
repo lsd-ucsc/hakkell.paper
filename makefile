@@ -1,4 +1,4 @@
-.PHONY: all clean clean-all preview onchange
+.PHONY: all clean clean-all preview onchange bench
 
 PAPER = main
 INPUTS = $(PAPER).lhs $(PAPER).bib
@@ -8,15 +8,17 @@ TEXSRC = $(patsubst %.lhs, %.tex, $(INPUTS))
 
 all: $(OUTPUTS)
 
-%.pdf: %.tex %.bench.raw
+bench: $(patsubst %.pdf, %.bench.csv, $(OUTPUTS))
+
+%.pdf: %.tex
 	latexmk -pdf $<
 
 %.tex: %.lhs
 	ghc -fno-code $^ # just typecheck
 	lhs2TeX $^ > $@
 
-%.bench.raw: %.elf
-	./$< --raw $@ --output $%.bench.html
+%.bench.csv: %.elf
+	./$< --csv $@ --output $*.bench.html --verbosity 2
 
 %.elf: %.noprint.lhs
 	ghc -O -threaded -rtsopts -with-rtsopts=-N $< -o $@

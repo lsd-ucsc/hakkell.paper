@@ -1389,6 +1389,7 @@ We employ \verb|withAsync| and \verb|waitAsync| to detect when the
 initialization actor has died and return from the benchmark.
 
 
+\begin{samepage}
 First we define a benchmarking-node, which extends node with additional
 behavior.
 %
@@ -1398,7 +1399,8 @@ winner-declaration message to a designated subscriber.
 \begin{code}
 benchNode :: ThreadId -> Intent Node' SomeException
 benchNode subscriber state
-  e@Envelope{message=fromException->Just (Winner w)} = do
+  e@Envelope{message=
+  fromException->Just (Winner w)} = do
     self <- myThreadId
     if w == self
         then send subscriber (Winner w)
@@ -1406,8 +1408,11 @@ benchNode subscriber state
     node' state e
 benchNode _ state e = node' state e
 \end{code}
+\end{samepage}
 
 
+\begin{samepage}
+\noindent
 Next we define a benchmark-launcher actor which starts the algorithm with
 benchmarking-nodes and cleans up when it receives a winner declaration.
 %
@@ -1429,11 +1434,14 @@ benchLaunch count (Just ring)
     killThread =<< myThreadId
     return Nothing
 \end{code}
+\end{samepage}
 
 
+\begin{samepage}
+\noindent
 We define \verb|benchRing| to be the function which \verb|criterion| will
 measure. It will run a single \verb|benchLaunch| actor, wait for it to
-terminate, and print any result.
+terminate, and output any result.
 %
 \begin{code}
 benchRing :: Int -> IO ()
@@ -1444,10 +1452,19 @@ benchRing n = do
             send (A.asyncThreadId a) Start
             A.waitCatch a >>= print)
 \end{code}
+\end{samepage}
 
 
+\begin{samepage}
+\noindent
 Finally, we define a criterion benchmark which runs \verb|benchRing| once for
 several ring sizes.
+%
+As a control, it also runs a function that starts up some number of threads
+which immediately terminate.
+%
+To compare with the normal way of doing things in Haskell, we include an
+implementation using channels form \verb|Control.Concurrent.Chan|.
 %
 \begin{code}
 benchMain :: IO ()
@@ -1455,21 +1472,16 @@ benchMain = Cr.defaultMain
     [ Cr.bgroup "actors" $ fmap actors counts
     ]
   where
-    counts = [2^n | n <- [1..10]]
+    counts = [2^n | n <- [2..11]]
     actors n
         = Cr.bench ("ring<" ++ show n ++ ">")
         . Cr.nfIO
         $ benchRing n
 \end{code}
-%%  -- Turn off output
-%%  fd <- hDuplicate stdout
-%%  null <- openFile "/dev/null" AppendMode
-%%  hDuplicateTo null stdout
-%%  -- Launch election
-%%  -- Turn on stdout
-%%  hDuplicateTo fd stdout
-%%  hClose fd
-%%  -- Clean up election
+\end{samepage}
+%
+When producing benchmarks for this paper, we ran an extra step (available in
+our repo) to replace all printlines with \verb|pure ()|.
 
 
 Using \verb|criterion|, we call 
