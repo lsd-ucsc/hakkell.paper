@@ -1515,7 +1515,7 @@ type Ch = Ch.Chan ChMsg
 
 
 It is unnecessary to split the channel-based implementation into a simple node
-and an extended node, but we do so so it is easier to reference against the
+and an extended node, but we do so it is easier to reference against the
 actor-based implementation.
 %
 This structural similarity hopefully has the added benefit of focusing
@@ -1536,8 +1536,7 @@ differences.
     \Cref{sec:ring-intent-fun}.
     %
     This part has no state because its successor-channel is given on
-    construction; for the same reason it doesn't require the \verb|Init|
-    message.
+    construction; it requires no \verb|Init| message for the same reason.
 
     \item
     In \Cref{fig:chanNodePrimePart}, still within the where-clause of
@@ -1559,7 +1558,8 @@ differences.
 Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
 \label{fig:chanNode}
 \begin{code}
-chanNode :: Mv.MVar ThreadId -> (Ch, Ch) -> ThreadId -> IO ()
+chanNode ::
+    Mv.MVar ThreadId -> (Ch, Ch) -> ThreadId -> IO ()
 chanNode done chans st = do
     chanNode done chans =<< node'Part st =<< recv
   where
@@ -1615,8 +1615,9 @@ where-clause of \Cref{fig:chanNode}}
         self <- myThreadId
         case m of
             Winner w
-                | w == self -> putStrLn (show self ++ ": Confirmed")
-                            >> Mv.putMVar done self
+                | w == self
+                    -> putStrLn (show self ++ ": Confirmed")
+                    >> Mv.putMVar done self
                 | w == great -> sendWinner (Winner w)
                 | otherwise -> putStrLn "Unexpected winner"
         return great
@@ -1641,21 +1642,21 @@ where-clause of \Cref{fig:chanNode}}
 \begin{code}
 channelRing :: Int -> IO ()
 channelRing n = do
-    -- Function to run channel-node
+    -- (1) Define a channel-node main function.
     done <- Mv.newEmptyMVar
     let mkNode chans = do
             great <- myThreadId
             chanNode done chans great
-    -- In-order ring
+    -- (2) Make an in-order ring linked by chans.
     chans <- sequence . replicate n $ Ch.newChan
     let nodeActs = map mkNode
             (zip chans $ tail chans ++ [head chans])
-    -- Out-of-order ring
+    -- (3) Permute the ring and fork to assign random IDs.
     ringActs <- getStdRandom $ permute nodeActs
     ring <- mapM forkIO ringActs
-    -- Start the election
+    -- (4) Start the election.
     mapM_ (\c -> Ch.writeChan c . Left $ Start) chans
-    -- Wait for termination
+    -- (5) Wait for termination and clean up.
     w <- Mv.takeMVar done
     mapM_ killThread ring
     assert (w == maximum ring) $
