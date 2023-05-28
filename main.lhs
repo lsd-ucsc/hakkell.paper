@@ -1342,6 +1342,7 @@ permute pool0 gen0
 
 
 \subsection{Performance evaluation detail}
+\label{sec:perf-eval-detail}
 
 
 For the (extended) ring leader-election solution we have shown, the time to
@@ -1505,8 +1506,7 @@ Next, a channel-based ring leader-election.
 %
 Each node will have references to a send-channel and a receive-channel.
 %
-We reuse the message types (via an \verb|Either|), but ignore the \verb|next|
-argument because we pass in a send-channel on construction.
+We reuse the message types via an \verb|Either|.
 %
 \begin{code}
 type ChMsg = Either Msg Winner
@@ -1514,8 +1514,9 @@ type Ch = Ch.Chan ChMsg
 \end{code}
 
 
-It is unnecessary to split the channel-based implementation into two nodes,
-but we do so so it is easy to reference against the actor-based implementation.
+It is unnecessary to split the channel-based implementation into a simple node
+and an extended node, but we do so so it is easier to reference against the
+actor-based implementation.
 %
 This structural similarity hopefully has the added benefit of focusing
 benchmark differences onto the communication mechanisms instead of anecdotal
@@ -1525,16 +1526,24 @@ differences.
     \item
     In \Cref{fig:chanNode} we implement the main-loop, \texttt{chanNode}.
     %
+    The only state maintained is the greatest nominee seen.
+    %
     It leaves off with definitions of send-functions in its where-clause.
 
     \item
-    \Cref{fig:chanNodePart} shows \texttt{nodePart} which reimplements
-    \texttt{node}, within the where-clause of \texttt{chanNode}.
+    \Cref{fig:chanNodePart} shows \texttt{nodePart}, within the where-clause of
+    \texttt{chanNode}, which reimplements the behavior of a ring node from
+    \Cref{sec:ring-intent-fun}.
+    %
+    This part has no state because its successor-channel is given on
+    construction; for the same reason it doesn't require the \verb|Init|
+    message.
 
     \item
-    In \Cref{fig:chanNodePrimePart}, \texttt{node'Part} reimplements
-    \texttt{node'} and the benchmark-node, still within the where-clause of
-    \texttt{chanNode}.
+    In \Cref{fig:chanNodePrimePart}, still within the where-clause of
+    \texttt{chanNode}, \texttt{node'Part} reimplements the behavior of the
+    victory-round node (\Cref{sec:ring2-intent-fun}) and the benchmark-node
+    (\Cref{sec:perf-eval-detail}).
     %
     We signal termination by placing the confirmed winner's \texttt{ThreadId}
     into the ``done'' \texttt{MVar}.
