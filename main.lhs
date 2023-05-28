@@ -1385,11 +1385,12 @@ When a benchmarking-node detects that it is confirmed as winner, it sends the
 winner-declaration message to a designated subscriber.
 %
 \begin{code}
-benchNode subscriber state e@Envelope{message} = do
+benchNode :: Mv.MVar ThreadId -> Intent Node' SomeException
+benchNode done state e@Envelope{message} = do
     state' <- node' state e
     self <- myThreadId
     case fromException message of
-        Just m@(Winner w) | w == self -> send subscriber m
+        Just (Winner w) | w == self -> Mv.putMVar done w
         _ -> return ()
     return state'
 \end{code}
