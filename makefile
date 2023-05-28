@@ -40,7 +40,7 @@ build = ghc -O -fno-full-laziness -threaded -rtsopts -with-rtsopts=-N4
 %.noprint.lhs: %.lhs noprint.py
 	python noprint.py < $< > $@
 	# verify no printlines remain
-	if grep --color=always -i '\<putstr\|putstrln\|print\>' $@; then false; fi
+	if grep --color=always -i '\<\(putstr\|putstrln\|print\)\>' $@; then false; fi
 
 clean: $(TEXSRC)
 	latexmk -c
