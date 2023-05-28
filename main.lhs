@@ -1550,14 +1550,13 @@ differences.
 Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
 \label{fig:chanNode}
 \begin{code}
-chanNode :: Mv.MVar ThreadId -> Ch -> Ch -> ThreadId -> IO ()
-chanNode done recvCh sendCh great = do
-    chanNode done recvCh sendCh
-        =<< node'Part great
-        =<< Ch.readChan recvCh
+chanNode :: Mv.MVar ThreadId -> (Ch, Ch) -> ThreadId -> IO ()
+chanNode done chans st = do
+    chanNode done chans =<< node'Part st =<< recv
   where
-    sendMsg = Ch.writeChan sendCh . Left
-    sendWinner = Ch.writeChan sendCh . Right
+    recv = Ch.readChan (fst chans)
+    sendMsg = Ch.writeChan (snd chans) . Left
+    sendWinner = Ch.writeChan (snd chans) . Right
 \end{code}
 \end{figure}
 
@@ -1635,9 +1634,9 @@ channelRing :: Int -> IO ()
 channelRing n = do
     -- Function to run channel-node
     done <- Mv.newEmptyMVar
-    let mkNode (rcv, snd) = do
+    let mkNode chans = do
             great <- myThreadId
-            chanNode done rcv snd great
+            chanNode done chans great
     -- In-order ring
     chans <- sequence . replicate n $ Ch.newChan
     let nodeActs = map mkNode
