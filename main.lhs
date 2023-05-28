@@ -1400,8 +1400,6 @@ benchLaunch _ (Just ring)
     assert (w == maximum ring) $
         myThreadId >>= killThread
     return Nothing
-
-benchLaunch _ _ _ = error "benchLaunch: unhandled"
 \end{code}
 \end{samepage}
 
@@ -1534,10 +1532,10 @@ differences.
 Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
 \label{fig:chanNode}
 \begin{code}
-chanNode :: Mv.MVar ThreadId -> Ch -> Ch -> Node' -> IO ()
-chanNode done recvCh sendCh st = do
+chanNode :: Mv.MVar ThreadId -> Ch -> Ch -> ThreadId -> IO ()
+chanNode done recvCh sendCh great = do
     chanNode done recvCh sendCh
-        =<< node'Part st
+        =<< node'Part great
         =<< Ch.readChan recvCh
   where
     sendMsg = Ch.writeChan sendCh . Left
@@ -1550,20 +1548,19 @@ chanNode done recvCh sendCh st = do
 where-clause of \Cref{fig:chanNode}.}
 \label{fig:chanNodePart}
 \begin{code}
-    nodePart :: Node -> Msg -> IO Node
-    nodePart Uninitialized Init{next} = do
-        return Member{next}
-    nodePart state@Member{next} Start = do
+    nodePart :: Msg -> IO ()
+    nodePart Start = do
         self <- myThreadId
+        putStrLn (show self ++ ": nominate self")
         sendMsg $ Nominate self
-        return state
-    nodePart state@Member{next} Nominate{nominee} = do
+    nodePart Nominate{nominee} = do
         self <- myThreadId
         case () of
-         _  |  self == nominee -> putStrLn (show self ++ ": I win")
-            |  self <  nominee -> sendMsg $ Nominate nominee
-            |  otherwise       -> putStrLn "Ignored nominee"
-        return state
+         _  | self == nominee -> putStrLn (show self ++ ": I win")
+            | self <  nominee
+                -> putStrLn (show self ++ ": nominate " ++ show nominee)
+                >> sendMsg (Nominate nominee)
+            | otherwise       -> putStrLn "Ignored nominee"
 \end{code}
 \end{figure}
 
@@ -1572,18 +1569,18 @@ where-clause of \Cref{fig:chanNode}.}
 where-clause of \Cref{fig:chanNode}}
 \label{fig:chanNodePrimePart}
 \begin{code}
-    node'Part :: Node' -> Either Msg Winner -> IO Node'
-    node'Part (n, great) (Left m) = do
+    node'Part :: ThreadId -> Either Msg Winner -> IO ThreadId
+    node'Part great (Left m) = do
+        nodePart m
         self <- myThreadId
-        n' <- nodePart n m
         case m of
             Nominate{nominee} ->
                 if self == nominee
                 then sendWinner (Winner self)
-                    >> return (n', great)
-                else return (n', max nominee great)
-            _ -> return (n', great)
-    node'Part state@(n, great) (Right m) = do
+                    >> return great
+                else return $ max nominee great
+            _ -> return great
+    node'Part great (Right m) = do
         self <- myThreadId
         case m of
             Winner w
@@ -1591,7 +1588,7 @@ where-clause of \Cref{fig:chanNode}}
                             >> Mv.putMVar done self
                 | w == great -> sendWinner (Winner w)
                 | otherwise -> putStrLn "Unexpected winner"
-        return state
+        return great
 \end{code}
 \end{figure}
 
@@ -1617,7 +1614,7 @@ channelRing n = do
     done <- Mv.newEmptyMVar
     let mkNode (rcv, snd) = do
             great <- myThreadId
-            chanNode done rcv snd (Uninitialized, great)
+            chanNode done rcv snd great
     -- In-order ring
     chans <- sequence . replicate n $ Ch.newChan
     let nodeActs = map mkNode
@@ -1626,7 +1623,6 @@ channelRing n = do
     ringActs <- getStdRandom $ permute nodeActs
     ring <- mapM forkIO ringActs
     -- Start the election
-    mapM_ (\c -> Ch.writeChan c . Left $ Init undefined) chans
     mapM_ (\c -> Ch.writeChan c . Left $ Start) chans
     -- Wait for termination
     w <- Mv.takeMVar done
