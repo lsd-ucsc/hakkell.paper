@@ -410,7 +410,7 @@ specified recipient.
 %
 For the purpose of explication in this paper, it also prints a trace.
 %
-\begin{figure}[h]
+\begin{figure}
 \begin{code}
 sendStatic :: Exception a => ThreadId -> a -> IO ()
 sendStatic recipient message = do
@@ -456,7 +456,7 @@ does not return.
 It masks asynchronous exceptions so they will only be raised at well-defined
 points and runs its loop under that mask.
 %
-\begin{figure}[h]
+\begin{figure}
 \begin{code}
 runStatic :: Exception a => Intent s a -> s -> IO ()
 runStatic intent initialState = mask_ $ loop (initialState, [])
@@ -605,7 +605,7 @@ All inflight messages will have the type \verb|Envelope SomeException|.
 %
 We define a new send function which converts messages before sending.
 %
-\begin{figure}[h]
+\begin{figure}
 \begin{code}
 send :: Exception a => ThreadId -> a -> IO ()
 send recipient = sendStatic recipient . toException
@@ -640,7 +640,7 @@ type-error.\footnote{
     helpful type-error message for debugging actor programs.
 }
 %
-\begin{figure}[h]
+\begin{figure}
 \begin{code}
 runDyn :: Exception a => Intent s a -> s -> IO ()
 runDyn intentStatic = runStatic intent
@@ -712,7 +712,7 @@ Otherwise the nomination is ignored.
 %
 We implement and extend that solution below.
 
-\begin{figure}[h]
+\begin{figure}
 \lk{To help visualize the algorithm, I think it would be helpful to have a
 figure with an illustration of the ring, some sent messages, and the algorithm
 in progress, kind of like in the ``message chains'' paper}
@@ -844,7 +844,7 @@ node state@Member{next}
         |  otherwise       -> putStrLn "Ignored nominee"
     return state
 \end{code}
-%% \begin{figure}[h]
+%% \begin{figure}
 %% \caption{Node behavior upon receiving a nomination.}
 %% \label{fig:nodeNominate}
 %% \end{figure}
@@ -1533,7 +1533,7 @@ differences.
     \texttt{ThreadId}s.
 \end{itemize}
 
-\begin{figure}[h]
+\begin{figure}
 \caption{Main-loop for channel-based implementation of ring leader-election.
 Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
 \label{fig:chanNode}
@@ -1549,7 +1549,7 @@ chanNode done chans st = do
 \end{code}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}
 \caption{Channel-based reimplementation of \verb|node| defined in the
 where-clause of \Cref{fig:chanNode}.}
 \label{fig:chanNodePart}
@@ -1575,7 +1575,7 @@ where-clause of \Cref{fig:chanNode}.}
 \end{code}
 }
 
-\begin{figure}[h]
+\begin{figure}
 \caption{Channel-based reimplementation of \verb|node'| defined in the
 where-clause of \Cref{fig:chanNode}}
 \label{fig:chanNodePrimePart}
@@ -1604,7 +1604,7 @@ where-clause of \Cref{fig:chanNode}}
 \end{code}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}
 \caption{
     Initialization routine for channel-based reimplementation of ring
     leader-election.
