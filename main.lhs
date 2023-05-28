@@ -18,6 +18,7 @@
 \documentclass[sigplan,screen,review,anonymous]{acmart}
 
 \usepackage{cleveref}
+\usepackage{enumitem} % style lists globally
 
 \newcommand{\newcommenter}[3]{%
   \newcommand{#1}[1]{%
@@ -28,7 +29,10 @@
 \newcommenter{\plr}{magenta}{PLR}
 \newcommenter{\lk}{blue}{LK}
 
+% make numbered lists use parenthesized numerals
 \renewcommand{\labelenumi}{(\arabic{enumi})}
+\setlist[itemize]{leftmargin=1.5em}
+\setlist[itemize]{leftmargin=2.0em}
 
 %%%% lhs2Tex (*.lhs) document
 \let\Bbbk\undefined
@@ -108,22 +112,21 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-    The Glasgow Haskell Compiler is well known for its fully featured runtime
-    system (RTS) which includes green threads, asynchronous exceptions, and
-    recently, delimited continuations.
-    \plr{Leaving "green threads" in because it's part of being a fully-featured
-    runtime. A language with a less fully-featured runtime uses OS threads.}
+    The Glasgow Haskell Compiler is known for its fully featured runtime
+    system (RTS) which includes lightweight threads, asynchronous exceptions, and --
+    recently -- delimited continuations.
+    \plr{Leaving "lightweight threads" in because it's part of being a
+    fully-featured runtime. A language with a less fully-featured runtime uses
+    OS threads.}
     %
     The combination of these features, and forthcoming support for algebraic
-    effects, is powerful.
-    %
-    A programmer may complete the same task in many different ways, some more
-    advisable than others.
+    effects is powerful enough that a programmer may complete the same task in
+    many different ways -- some more advisable than others.
     \plr{I've tweaked the last sentence to hopefully not seem like a
     non-sequitur and better lead into the following paragraph.}
 
     We present a user-accessible actor framework hidden in plain sight within
-    GHC's RTS and demonstrate it on a classic example.
+    the RTS and demonstrate it on a classic example.
     %
     We then extend both the framework and example to the realm of dynamic
     types.
@@ -187,82 +190,107 @@
 
 
 
-\section{TODO: Introduction}
+\section{Introduction}
 
-\noindent using the tools throwTo and catch
+The most commonly used implementation of Haskell today is the Glasow Haskell
+Compiler (GHC) \cite{fausak2022} together with its runtime system (RTS).
+%
+The RTS is featureful and boasts support for lightweight threads, two kinds of
+profiling, transactional memory, asynchronous exceptions, and a slew of other
+feautures.
+%
+Combined with the \verb|base| package libraries, a programmer can get a lot
+done without ever reaching into the extensive set of community packages on
+Hackage (and more when you do!).
 
-\noindent This paper is written as a literate Haskell program.\footnote{
-    We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
-    %
-    The actor framework imports the modules \verb|Control.Exception| and
-    \verb|Control.Concurrent|.
-    %
-    We enable the extensions \verb|NamedFieldPuns| and
-    \verb|DuplicateRecordFields| for the convenience of presenting the
-    framework.
-    %
-    The example additionally imports the module \verb|System.Random| and
-    enables the extension \verb|ViewPatterns|.
-}
+In that spirit, we noticed that there's nothing really stopping one from
+abusing the tools \verb|throwTo| and \verb|catch| to play a game of pass.
+%
+Since any user-defined datatype can be used as an asynchronous exception, why
+not implement message passing algorithms on that substrate?
+%
+We pursued this line of thought and in this paper we present an actor framework
+hidden just under the surface of the RTS.
 
-\ignore{
-\begin{code}
-{-# LANGUAGE NamedFieldPuns #-}        -- Section 2
-{-# LANGUAGE DuplicateRecordFields #-} -- Section 3.2
-{-# LANGUAGE ViewPatterns #-}          -- Section 3.3
+The actor framework we present is not an advancement:
+%
+It is easy to use, but easy to use wrongly.
+%
+It has acceptable throughput, but is slower than accepted tools (\verb|Chan|
+and \verb|STM|).
+%
+It requires no appreciable dependencies, no explicitly mutable data structures
+or references, no effort to achieve synchronization, and very little code, but
+is also exceedingly difficult to debug (as are problems with asynchronous
+exceptions).
 
--- Section 2.1, 2.2
-import Control.Exception (Exception(..), throwTo, catch, mask_)
-import Control.Concurrent (ThreadId, myThreadId, threadDelay)
+Should it be possible to implement the actor framework we present here?
+%
+It's \emph{almost} practical.
+%
+Given that it's \emph{almost} there, and yet emphatically, should not be used
+in practice, we question why it's possible in the first place, much less so
+easy.
+%
+Like many people, we choose Haskell because it is a tool that typically
+prevents ``whole classes of errors,'' and also because it is a joy to use (most
+of the time).
+%
+But in this paper we achieve dynamically typed ``spooky action at a distance''
+with frighteningly little effort.
+%
+Should the user accessible interface to the asynchronous exception system be
+constrained?
 
-import Control.Exception (getMaskingState, MaskingState(..))
+\paragraph{An extended ``awkward squad''}
 
--- Section 2.3
-import Control.Exception (TypeError(..))
+A user of the RTS may soon enjoy software transactional memory, asynchronous
+exceptions, delimited continuations, extensible algebraic effects, and more,
+all together in the same tub.
+%
+The water is warm, jump in!
+\plr{The list above is better the more powerful the features are; STM doesn't
+fit; what are some other powerful GHC features?}
+%
+Which of these features can be implemented in terms of the other?
+%
+And should their full power be exposed so that we can do so?
+%
+Let's explore one example (actors on exceptions) and have a think about it.
 
--- Section 3.2
-import Control.Exception (SomeException)
-import Control.Concurrent (forkIO, killThread)
-import System.Random (RandomGen, randomR, getStdRandom)
 
--- Trace appendix
-import System.IO (hSetBuffering, stdout, BufferMode(..))
 
--- Perf eval appendix
-import Control.Exception (assert)
-import System.Environment (getArgs)
-import qualified Control.Concurrent.Chan as Ch
-import qualified Control.Concurrent.MVar as Mv
-import qualified Criterion.Main as Cr
-\end{code}
-} % end ignore
 
 \subsection{Exceptions in GHC}
+
 \plr{Should I re-title this to indicate that the point is that asynchronous
 exceptions are weird?}
+
+\plr{I introduce all three kinds of exceptions to draw the contrast that
+asynchronous exceptions are weird. The topic sentences of the next three
+paragraphs indicate this by comparing their power/unsafety to mutable
+references and using words like "peculiar" and "surprisingly".}
 
 The Glasgow Haskell Compiler (GHC) supports three varieties of exceptions, all
 of which may be caught in the IO monad and otherwise cause the program to
 terminate.
 %
-\plr{I introduce all three kinds of exceptions to draw the contrast that
-asynchronous exceptions are weird. The topic sentences of the next three
-paragraphs indicate this with words "uniquely", "peculiar", and
-"surprisingly".}
-\emph{Imprecise exceptions} arise in pure code from expressions such as
-\verb|(div 1 0)| which cannot be reduced further.
-%
-\emph{Synchronous exceptions} are thrown when side effects in the IO monad
-cannot proceed, such as \verb|(readFile "\0")|.
-%
-\emph{Asynchronous exceptions} are thrown by threads \emph{distinct from the
-current one}, or by the RTS itself, to communicate conditions requiring the
-thread to terminate: thread cancellation, user interrupts, or memory limits.
+\begin{itemize}
+    \item[--] \emph{Imprecise exceptions} arise in pure code from expressions such as
+    \verb|(div 1 0)| which cannot be reduced further.
+    %
+    \item[--] \emph{Synchronous exceptions} are thrown when side effects in the IO monad
+    cannot proceed, such as \verb|(readFile "\0")|.
+    %
+    \item[--] \emph{Asynchronous exceptions} are thrown by threads \emph{distinct from the
+    current one}, or by the RTS itself, to communicate conditions requiring the
+    thread to terminate: thread cancellation, user interrupts, or memory limits.
+\end{itemize}
 %
 We focus exclusively on asynchronous exceptions for the rest of the paper.
 
-Asynchronous exceptions uniquely allow syntactically-distant parts of a program
-to interact.
+Asynchronous exceptions allow syntactically-distant parts of a program
+to interact in unexpected ways, much like mutable references.
 %
 A thread needs only the \verb|ThreadId| of another
 to throw a \verb|ThreadKilled| exception to it.
@@ -280,19 +308,16 @@ thread by another'' \cite{marlow2001async}.
 %
 A thread may throw any exception to any thread for any reason.
 %
-Standard exceptions may be reused to extend greetings as in,
+This absence of restrictions means that standard exceptions may be reused for
+any purpose, such as to extend greetings:
 \verb|(\x -> throwTo x $ AssertionFailed "hello")|.
 %
-User-defined datatypes may even be thrown as asynchronous exceptions by
-declaring an instance of \verb|Exception| \cite{marlow2006extensible}.
+Even
+user-defined datatypes may be thrown as asynchronous exceptions by
+declaring an empty instance of \verb|Exception| \cite{marlow2006extensible}.
 %
-Given the two lines of declarations below, it is possible to greet in
-vernacular, \verb|(\x -> throwTo x Hi)|.
-%
-\begin{spec}
-data Greet = Hi | Hello deriving Show
-instance Exception Greet
-\end{spec}
+For example, with the declarations in \Cref{fig:greet} it is possible to greet
+in vernacular: \verb|(\x -> throwTo x Hi)|.
 
 Asynchronous exceptions may be caught by the receiving thread for
 either cleanup or surprisingly, recovery.
@@ -300,10 +325,8 @@ either cleanup or surprisingly, recovery.
 An example of recovery includes ``inform[ing] the program when memory is
 running out [so] it can take remedial action'' \cite{marlow2001async}.
 %
-The ability to recover from a termination signal seems innocuous, but combined
-with the rest, asynchronous exceptions facilitate ``spooky action at a
-distance'' in ways one might want to constrain in a functional programming
-language.
+The ability to recover from a termination signal seems innocuous, but
+it leaves asynchronous exceptions open to be repurposed.
 
 \subsection{The actor model}
 
@@ -320,6 +343,9 @@ We flesh out this definition by saying, an actor is a green thread\footnote{
     %
     A language using OS threads would likely be too heavyweight to support
     actor programming, due to the large numbers of actors used.
+    %
+    The \emph{Akka} framework in Java gets around the lack of green threads in
+    the JVM by dynamically scheduling actors onto OS threads.
 } with some state and an inbox.
 %
 Upon receipt of a message to its inbox, the actor may perform some actions:
@@ -332,7 +358,7 @@ inbox.
 We will approximate this model with Haskell's asynchronous exceptions as the
 primary metaphor for message passing.
 
-More specifically, \plr{More concretely,} we think of an actor framework as
+More concretely, we think of an actor framework as
 having the characteristics that \citet{armstrong2003} lists for a
 \emph{concurrency-oriented programming language} (COPL).
 %
@@ -358,6 +384,20 @@ While an actor system within an instance of the RTS cannot satisfy all of these
 requirements (e.g., termination of the main thread is not strongly isolated
 from the child threads), we will show that ours satisfies many requirements of
 being COPL with relatively little effort.
+
+
+
+
+
+\begin{figure}
+%\raggedright
+\begin{spec}
+data Greet = Hi | Hello deriving Show
+instance Exception Greet
+\end{spec}
+\caption{\verb|Show| and \verb|Exception| instances are all that is required to become an asynchronous exception.}
+\label{fig:greet}
+\end{figure}
 
 
 
