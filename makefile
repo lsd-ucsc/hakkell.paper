@@ -24,7 +24,7 @@ bench: $(patsubst %.pdf, %.bench.csv, $(OUTPUTS))
 
 %.bench.elf: %.noprint.lhs
 	# compile threaded, optimized, but w/o let floating
-	ghc -O -fno-full-laziness -threaded -rtsopts -with-rtsopts=-N $< -o $@
+	ghc -O -fno-full-laziness -threaded -rtsopts -with-rtsopts=-N4 $< -o $@
 
 %.noprint.lhs: %.lhs noprint.py
 	python noprint.py < $< > $@
