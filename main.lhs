@@ -226,12 +226,11 @@ import Control.Concurrent (forkIO, killThread)
 import System.Random (RandomGen, randomR, getStdRandom)
 
 -- Trace appendix
-import System.IO (hSetBuffering, hPutStrLn, stdout, BufferMode(..))
+import System.IO (hSetBuffering, stdout, BufferMode(..))
 
 -- Perf eval appendix
 import Control.Exception (assert)
 import System.Environment (getArgs)
-import qualified Control.Concurrent.Async as A
 import qualified Control.Concurrent.Chan as Ch
 import qualified Control.Concurrent.MVar as Mv
 import qualified Criterion.Main as Cr
