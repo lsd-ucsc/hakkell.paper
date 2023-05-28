@@ -8,7 +8,8 @@ TEXSRC = $(patsubst %.lhs, %.tex, $(INPUTS))
 
 all: $(OUTPUTS)
 
-bench: $(patsubst %.pdf, %.bench.csv, $(OUTPUTS))
+bench: $(PAPER).bench.csv
+prof:  $(PAPER).prof.elf.eventlog
 
 %.pdf: %.tex
 	latexmk -pdf $<
@@ -18,13 +19,23 @@ bench: $(patsubst %.pdf, %.bench.csv, $(OUTPUTS))
 	lhs2TeX $^ > $@
 
 %.bench.csv: %.bench.elf
-	# turn of CPU scaling
+	# turn off CPU scaling
 	./benchprep.sh
 	./$< --csv $@ --output $*.bench.html --verbosity 2
 
+%.prof.elf.eventlog: %.prof.elf
+	./$< --output $@.html -m glob '*/*2048' --verbosity 2 +RTS -ls
+
+
+# compile threaded, optimized, but w/o let floating
+build = ghc -O -fno-full-laziness -threaded -rtsopts -with-rtsopts=-N4
+
 %.bench.elf: %.noprint.lhs
-	# compile threaded, optimized, but w/o let floating
-	ghc -O -fno-full-laziness -threaded -rtsopts -with-rtsopts=-N4 $< -o $@
+	$(build) $< -o $@
+
+%.prof.elf: %.noprint.lhs
+	$(build) -eventlog $< -o $@
+
 
 %.noprint.lhs: %.lhs noprint.py
 	python noprint.py < $< > $@
