@@ -842,6 +842,12 @@ node state@Member{next}
 %% \end{figure}
 \end{samepage}
 
+\ignore{
+\begin{code}
+node _ _ = error "node: unhandled"
+\end{code}
+}
+
 
 \subsubsection{Initialization}
 \label{sec:main1-init}
@@ -1080,6 +1086,12 @@ node' state@(Member{next}, great)
     return state
 \end{code}
 \end{samepage}
+
+\ignore{
+\begin{code}
+node' _ _ = error "node': unhandled"
+\end{code}
+}
 
 
 \subsubsection{Initialization}
@@ -1403,6 +1415,12 @@ benchLaunch _ (Just ring)
 \end{code}
 \end{samepage}
 
+\ignore{
+\begin{code}
+benchLaunch _ _ _ = error "benchLaunch: unhandled"
+\end{code}
+}
+
 
 \begin{samepage}
 \noindent
@@ -1563,6 +1581,11 @@ where-clause of \Cref{fig:chanNode}.}
             | otherwise       -> putStrLn "Ignored nominee"
 \end{code}
 \end{figure}
+\ignore{
+\begin{code}
+    nodePart _ = error "nodePart: unhandled"
+\end{code}
+}
 
 \begin{figure}[h]
 \caption{Channel-based reimplementation of \verb|node'| defined in the
