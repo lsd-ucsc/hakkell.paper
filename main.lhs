@@ -215,6 +215,8 @@
 import Control.Exception (Exception(..), throwTo, catch, mask_)
 import Control.Concurrent (ThreadId, myThreadId, threadDelay)
 
+import Control.Exception (getMaskingState, MaskingState(..))
+
 -- Section 2.3
 import Control.Exception (TypeError(..))
 
@@ -224,7 +226,7 @@ import Control.Concurrent (forkIO, killThread)
 import System.Random (RandomGen, randomR, getStdRandom)
 
 -- Trace appendix
-import System.IO (hSetBuffering, stdout, BufferMode(..))
+import System.IO (hSetBuffering, hPutStrLn, stdout, BufferMode(..))
 
 -- Perf eval appendix
 import Control.Exception (assert)
@@ -641,8 +643,8 @@ type-error.\footnote{
 %
 \begin{figure}[h]
 \begin{code}
-run :: Exception a => Intent s a -> s -> IO ()
-run intentStatic = runStatic intent
+runDyn :: Exception a => Intent s a -> s -> IO ()
+runDyn intentStatic = runStatic intent
   where
     intent state e@Envelope{sender, message} =
         case fromException message of
@@ -650,6 +652,13 @@ run intentStatic = runStatic intent
             Nothing
                 -> throwTo sender (TypeError "...")
                 >> return state
+
+run :: Exception a => Intent s a -> s -> IO ()
+run intent state = do
+    ms <- getMaskingState
+    case ms of
+        MaskedInterruptible -> runDyn intent state
+        _ -> error "always apply a mask before forking an actor thread"
 \end{code}
 \caption{Downcast before processing.}
 \label{fig:run}
@@ -1411,8 +1420,7 @@ benchLaunch _ (Just ring)
   fromException->Just (Winner w)} = do
     mapM_ killThread ring
     assert (w == maximum ring) $
-        myThreadId >>= killThread
-    return Nothing
+        return Nothing
 \end{code}
 \end{samepage}
 
@@ -1432,11 +1440,14 @@ message to it, wait for apoptosis, and output any result.
 \begin{code}
 benchRing :: Int -> IO ()
 benchRing n = do
+  mask_ $ do
     A.withAsync
         (run (benchLaunch n) Nothing)
         (\a -> do
             send (A.asyncThreadId a) Start
-            A.waitCatch a >>= print)
+            A.wait a)
+            -- XXX use of waitCatch silences errors in noprint.lhs
+    hPutStrLn stdout "after"
 \end{code}
 \end{samepage}
 
