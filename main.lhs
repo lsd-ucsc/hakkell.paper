@@ -1407,14 +1407,24 @@ message to it, wait for apoptosis, and output any result.
 \begin{code}
 benchRing :: Int -> IO ()
 benchRing n = do
-  mask_ $ do
-    A.withAsync
-        (run (benchLaunch n) Nothing)
-        (\a -> do
-            send (A.asyncThreadId a) Start
-            A.wait a)
-            -- XXX use of waitCatch silences errors in noprint.lhs
-    hPutStrLn stdout "after"
+    launcher <- myThreadId
+    nodes <- sequence . replicate n . mask_ . forkIO $ do
+        great <- myThreadId
+        run (benchNode launcher) (Uninitialized, great)
+    ring <- getStdRandom $ permute nodes
+    mapM_
+        (\(self, next) -> send self Init{next}) {-"\hfill (3)"-}
+        (zip ring $ tail ring ++ [head ring])
+    start ring `catch` done ring
+  where
+    start ring = do
+        mapM_ (\t -> send t Start) ring
+        threadDelay (10 * 1000000)
+    done ring Envelope{message=fromException -> Just (Winner w)} = do
+        mapM_ killThread ring
+        assert (w == maximum ring) $
+            return ()
+    done _ _ = error "done: unhandled"
 \end{code}
 \end{samepage}
 
