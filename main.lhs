@@ -1399,36 +1399,6 @@ benchNode _ state e = node' state e
 \end{samepage}
 
 
-\begin{samepage}
-\noindent
-Next we define a benchmark-launcher actor which starts the algorithm with
-benchmarking-nodes and cleans up when it receives a winner declaration.
-%
-\begin{code}
-benchLaunch :: Int -> Intent (Maybe [ThreadId]) SomeException
-
-benchLaunch count Nothing
-  Envelope{message=fromException->Just Start} = do
-    launcher <- myThreadId
-    ring <- ringElection count $ do
-        great <- myThreadId
-        run (benchNode launcher) (Uninitialized, great)
-    return $ Just ring
-
-benchLaunch _ (Just ring)
-  Envelope{message=
-  fromException->Just (Winner w)} = do
-    mapM_ killThread ring
-    assert (w == maximum ring) $
-        return Nothing
-\end{code}
-\end{samepage}
-
-\ignore{
-\begin{code}
-benchLaunch _ _ _ = error "benchLaunch: unhandled"
-\end{code}
-}
 
 
 \begin{samepage}
