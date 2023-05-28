@@ -1408,24 +1408,16 @@ message to it, wait for apoptosis, and output any result.
 \begin{code}
 benchRing :: Int -> IO ()
 benchRing n = do
-    launcher <- myThreadId
-    nodes <- sequence . replicate n . mask_ . forkIO $ do
+
+    done <- Mv.newEmptyMVar
+    ring <- ringElection n $ do
         great <- myThreadId
-        run (benchNode launcher) (Uninitialized, great)
-    ring <- getStdRandom $ permute nodes
-    mapM_
-        (\(self, next) -> send self Init{next}) {-"\hfill (3)"-}
-        (zip ring $ tail ring ++ [head ring])
-    start ring `catch` done ring
-  where
-    start ring = do
-        mapM_ (\t -> send t Start) ring
-        threadDelay (10 * 1000000)
-    done ring Envelope{message=fromException -> Just (Winner w)} = do
-        mapM_ killThread ring
-        assert (w == maximum ring) $
-            return ()
-    done _ _ = error "done: unhandled"
+        run (benchNode done) (Uninitialized, great)
+
+    w <- Mv.takeMVar done
+    mapM_ killThread ring
+    assert (w == maximum ring) $
+        return ()
 \end{code}
 \end{samepage}
 
