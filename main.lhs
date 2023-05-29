@@ -18,7 +18,7 @@
 \documentclass[sigplan,screen,review,anonymous]{acmart}
 
 \usepackage{cleveref}
-\usepackage{enumitem} % style lists globally
+\usepackage{enumitem} % style lists
 \usepackage{caption} % align captions globally
 \usepackage{tikz}
 \usepackage{pifont}
@@ -34,9 +34,6 @@
 
 % make numbered lists use parenthesized numerals
 \renewcommand{\labelenumi}{(\arabic{enumi})}
-% reduce list indentation
-\setlist[itemize]{leftmargin=1.5em}
-\setlist[itemize]{leftmargin=2.0em}
 % left align captions
 \captionsetup{
     singlelinecheck = false
@@ -49,6 +46,8 @@
 %%%% deindent comments
 \renewcommand\onelinecommentchars{-{}- }
 \visiblecomments
+%%%% run traces
+%options ghci -threaded -rtsopts -with-rtsopts=-N
 %%%% prettier formatting
 %format <$> = "\mathbin{\langle\$\rangle}"
 %format <*> = "\mathbin{\langle*\rangle}"
@@ -283,7 +282,7 @@ The Glasgow Haskell Compiler (GHC) supports three varieties of exceptions, all
 of which may be caught in the IO monad and otherwise cause the program to
 terminate.
 %
-\begin{itemize}
+\begin{itemize}[leftmargin=1.5em]
     \item[--] \emph{Imprecise exceptions} arise in pure code from expressions such as
     \verb|(div 1 0)| which cannot be reduced further.
     %
@@ -578,13 +577,14 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
 
 
 
+
 The loop in \Cref{fig:runStatic} has two pieces of state: that of the intent
 function, and an inbox of messages to be processed.
 %
 The loop body is divided roughly into three cases by an exception
 handler and a case-split on the inbox list.
 %
-\begin{enumerate}
+\begin{enumerate}[leftmargin=2em]
     \item If the inbox is empty, sleep for an arbitrary length of time and then
     recurse on the unchanged actor state and the empty inbox.
     
@@ -790,16 +790,26 @@ messages of different types, by extending an actor that doesn't.
 
 
 
-\subsection{Another safety issue (NAME TBD)}
+\subsection{Safe initialization}
 
-\plr{This paragraph raises an issue that's relevant to the content of
-\Cref{fig:runStatic}, but I don't know where to put in in the flow of section
-\Cref{sec:receiving-catching}.}
+\plr{This mini section raises an issue that's relevant to the content of
+\Cref{fig:runStatic}, but it doesn't fit into the flow of
+\Cref{sec:receiving-catching}.
+Reasons this probably shouldn't be in \Cref{sec:receiving-catching}:
+\Cref{fig:run} uses \Cref{fig:runDyn} which isn't defined until
+\Cref{sec:dynamic-recv-loop}.
+\Cref{sec:receiving-catching} has a very tight narrative and needs to be simple
+or we'll lose readers.
+}
 
-When creating an actor-thread it is important that no exception arrive before
-\verb|runStatic| (\Cref{fig:runStatic}) installs its exception handler, and so
-forking must also be masked.
+When creating an actor thread it is important that no exception arrive before
+the actor main-loop (\Cref{fig:runStatic}) installs its exception handler.
 %
+If this happened, the execption would cause the newly created thread to die.
+%
+To avoid this, the fork step prior to entering the actor main-loop must be
+masked (this is in addition to the mask within the main-loop).
+
 \Cref{fig:run} defines the main-loop wrapper we will use for examples in
 \Cref{sec:ring-impl}.
 %
@@ -855,11 +865,13 @@ We implement and extend that solution below.
 \begin{figure}
 \include{ring.tex}
 \caption{
-    In-progress ring leader-election with seven nodes.
+    In-progress ring leader-election with seven nodes
+    (\citeauthor{chang1979decentralextrema}'
+    \citeyear{chang1979decentralextrema} solution).
     %
     The node identities are unique and randomly distributed.
     %
-    Currently two nominations are in progress:
+    Two nomination chains are shown:
     %
     Node 5 nominated itself and was accepted by nodes 3, 1, and 4; next node 4
     will nominate 5 to node 6 (who will reject it).
@@ -874,35 +886,39 @@ We implement and extend that solution below.
 
 \subsection{Implementing a leader-election}
 
-\subsubsection{State and messages}
 
 
 
-\noindent
-Each node begins uninitialized, and is later made a member of the ring
-when it learns the identity of its successor.
+Each node begins uninitialized, and later becomes a member of the ring when
+it learns the identity of its successor.
 %
-Therefore our node state type will have two constructors.
+We define two constructors in \Cref{fig:node-state} to represent these node
+states.
 %
+\begin{figure}
+\raggedright
 \begin{code}
 data Node = Uninitialized | Member {next::ThreadId}
 \end{code}
-
-
-
-
-\noindent
-The main thread will create multiple node actors and then initialize the ring by
-informing each node of its successor.
+\caption{Nodes can be in one of two states.}
+\label{fig:node-state}
+\end{figure}
 %
-Next, the main thread will rapidly instruct every node actor to start running
-the leader election algorithm.
+Three messages (defined in \Cref{fig:node-msg}) will be used to run the
+election:
+\begin{itemize}[leftmargin=15mm]
+    \item[\verb|Init|] After creating nodes, the main thread initializes
+    the ring by informing each node of its successor.
+    %
+    \item[\verb|Start|] The main thread rapidly instructs every node to start
+    the leader election.
+    %
+    \item[\verb|Nominate|] The nodes carry out the election by sending and
+    receiving nominations.
+\end{itemize}
 %
-Finally, the nodes will carry out the algorithm by forwarding or ignoring
-nominations.
-%
-Accordingly, our message type has three constructors.
-%
+\begin{figure}
+\raggedright
 \begin{code}
 data Msg
     = Init{next::ThreadId}
@@ -911,10 +927,13 @@ data Msg
     deriving Show
 instance Exception Msg
 \end{code}
+\caption{Nodes accept three different messages.}
+\label{fig:node-msg}
+\end{figure}
 
 
 
-\noindent
+\subsubsection{Election termination}
 The node with the greatest identity that nominates itself will eventually
 receive its own nomination after it has circulated the entire ring.
 %
@@ -927,23 +946,27 @@ If no nomination makes it all the way around the ring, then the algorithm
 terminates without a winner.
 
 
-\subsubsection{Actor behavior}
+
+
+
+\subsubsection{Node-actor behavior}
 \label{sec:ring-intent-fun}
 
 
 
-\noindent
-The intent function for a node actor will have state of type \verb|Node|
-and pass messages of type \verb|Msg|. We describe each case separately.
+\begin{samepage}
+The intent function for a node actor will have state defined in
+\Cref{fig:node-state} and pass messages defined in \Cref{fig:node-msg}.
+%
+We describe each case here below.
 %
 \begin{code}
 node :: Intent Node Msg
 \end{code}
-
-
-
-
-\noindent
+\end{samepage}
+%
+%
+\begin{samepage}
 When an uninitialized node receives an \verb|Init| message, it becomes a member
 of the ring and remembers its successor.
 %
@@ -952,29 +975,24 @@ node Uninitialized
   Envelope{message=Init{next}} = do
     return Member{next}
 \end{code}
-
-
-
-
-\noindent
-When a member of the ring receives a \verb|Start| message, it sends a message
-to its successor in the ring to nominate itself.
+\end{samepage}
+%
+%
+\begin{samepage}
+When a member of the ring receives a \verb|Start| message,
+it nominates itself to its successor in the ring.
 %
 \begin{code}
-node state@Member{next}
+node Member{next}
   Envelope{message=Start} = do
     self <- myThreadId
     send next $ Nominate self
-    return state
+    return Member{next}
 \end{code}
-
-
-
-
-\noindent
-%% \Cref{fig:nodeNominate} shows the case that characterizes this
-%% algorithm.
-%% %
+\end{samepage}
+%
+%
+\begin{samepage}
 When a member of the ring receives a \verb|Nominate| message, it compares the
 nominee to its own identity.
 %
@@ -985,20 +1003,17 @@ successor.
 %
 \begin{code}
 node state@Member{next}
-  Envelope{message=Nominate{nominee}} = do
+  Envelope{message=Nominate{nominee=nom}} = do
     self <- myThreadId
     case () of
-     _  |  self == nominee -> putStrLn (show self ++ ": I win")
-        |  self <  nominee -> send next (Nominate nominee)
-        |  otherwise       -> putStrLn "Ignored nominee"
+     _  |  self == nom -> putStrLn (show self ++ ": I win")
+        |  self <  nom -> send next (Nominate nom)
+        |  otherwise   -> putStrLn "Ignored nomination"
     return state
 \end{code}
-%% \begin{figure}
-%% \caption{Node behavior upon receiving a nomination.}
-%% \label{fig:nodeNominate}
-%% \end{figure}
-
-
+\end{samepage}
+%
+%
 \ignore{
 \begin{code}
 node _ _ = error "node: unhandled"
@@ -1006,67 +1021,92 @@ node _ _ = error "node: unhandled"
 }
 
 
-\subsubsection{Initialization}
+
+\subsubsection{Election initialization}
 \label{sec:main1-init}
 
 
 
-\noindent
-The main thread performs several steps to initialize the algorithm:
-%
-\begin{enumerate}
-    \item Create some number of actor threads.
-
-    \item Randomize the order of the \verb|ThreadId|s in a list.
-
-    \item Inform each thread of the \verb|ThreadId| that follows it in the
-    random order (its successor).
-
-    \item Tell every thread to start the algorithm.
-\end{enumerate}
-%
-These tasks are implemented in \verb|ringElection|.\footnote{
+The initialization function \verb|ringElection| is implemented\footnote{
     The implementation shown doesn't handle degenerate rings of size 0 or 1,
     but we consider that out of scope of the demonstration.
-}
+    %
+    Also, we don't show thread cleanup here.
+} in \Cref{fig:ringElection}.
 %
-\begin{code}
-ringElection :: Int -> IO () -> IO [ThreadId]
-ringElection n actor = do
-    nodes <- sequence . replicate n $ forkIO actor {-"\quad\quad\hfill (1)"-}
-    ring <- getStdRandom $ permute nodes {-"\hfill (2)"-}
-    mapM_
-        (\(self, next) -> send self Init{next}) {-"\hfill (3)"-}
-        (zip ring $ tail ring ++ [head ring])
-    mapM_ (\t -> send t Start) ring {-"\hfill (4)"-}
-    return ring
-\end{code}
-
-
-
-
-\noindent
-Finally, in \verb|main1| we construct an \verb|IO| action representing the
-behavior of a node actor by passing the node intent function and the
-uninitialized state constructor to the message receipt main-loop.
+To start an election it
+takes the size of the ring
+and an unevaluated \verb|IO| action representing node behavior,
+and then performs the following steps:
 %
-To initiate the election algorithm we pass the \verb|IO| action to
-\verb|ringElection| which will fork it to several threads.
+\begin{enumerate}[leftmargin=2em]
+    \item Create actors with asynchronous exceptions masked.
+
+    \item Randomize the order of the actor \verb|ThreadId|s.
+
+    \item Inform each actor of the \verb|ThreadId| that follows it in the
+    random order (its successor).
+
+    \item Instruct each actor to start the algorithm.
+\end{enumerate}
 %
-A trace of \verb|main1| is included in \Cref{sec:main1-trace}.
-%
+\ignore{
 \begin{code}
 main1 :: Int -> IO ()
 main1 count = do
-    ring <- ringElection count $ run node Uninitialized
-    return ()
+    ring <-
 \end{code}
+}
+%
+It can be called as follows, using the actor main-loop from \Cref{fig:run}.
+%
+An election trace appears in \Cref{fig:main1-trace}.
+%
+\begin{center}
+\begin{code}
+        ringElection count $ run node Uninitialized
+\end{code}
+\end{center}
+%
 \ignore{
 \begin{code}
+    return ()
     threadDelay 1000000
     mapM_ killThread ring
 \end{code}
 }
+
+
+\begin{figure}[h]
+\raggedright
+\begin{code}
+ringElection :: Int -> IO () -> IO [ThreadId]
+ringElection n actor = do
+    nodes <- sequence . replicate n . mask_ $ forkIO actor {-"\quad\hfill (1)"-}
+    ring <- getStdRandom $ permute nodes {-"\quad\quad\hfill (2)"-}
+    mapM_
+        (\(t, next) -> send t Init{next}) {-"\quad\quad\hfill (3)"-}
+        (zip ring $ tail ring ++ [head ring])
+    mapM_ (\t -> send t Start) ring {-"\quad\quad\hfill (4)"-}
+    return ring
+\end{code}
+\caption{Ring leader-election initialization.
+    \plr{Make sure this doesn't float into the definition of \verb|node|.}
+}
+\label{fig:ringElection}
+\end{figure}
+
+
+\begin{figure}
+\raggedright
+\footnotesize
+\perform{beginVerb >> main1 5 >> endVerb}
+\normalsize
+\caption{A ring leader-election trace.}
+\label{fig:main1-trace}
+\end{figure}
+
+
 
 
 
@@ -1092,13 +1132,13 @@ distinct behavior for each, leveraging the dynamic types support from
 %
 The new behaviors are:
 %
-\begin{itemize}
-    \item Each node will keep track of the greatest nominee it has seen.
+\begin{itemize}[leftmargin=1.5em]
+    \item[--] Each node will keep track of the greatest nominee it has seen.
 
-    \item When the winner self-identifies, they will start an extra round
+    \item[--] When the winner self-identifies, they will start an extra round
     declaring themselves winner.
 
-    \item Upon receiving a winner declaration, a node compares the greatest
+    \item[--] Upon receiving a winner declaration, a node compares the greatest
     nominee it has seen with the winner. If they are the same, then the node
     forwards the declaration to its successor.
 \end{itemize}
@@ -1816,8 +1856,6 @@ endVerb :: IO ()
 endVerb = putStrLn "\\end{verbatim}"
 \end{code}
 }
-
-%options ghci -threaded -rtsopts -with-rtsopts=-N
 
 \subsection{Election trace}
 \label{sec:main1-trace}
