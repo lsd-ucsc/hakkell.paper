@@ -19,6 +19,7 @@
 
 \usepackage{cleveref}
 \usepackage{enumitem} % style lists globally
+\usepackage{caption} % align captions globally
 
 \newcommand{\newcommenter}[3]{%
   \newcommand{#1}[1]{%
@@ -31,8 +32,14 @@
 
 % make numbered lists use parenthesized numerals
 \renewcommand{\labelenumi}{(\arabic{enumi})}
+% reduce list indentation
 \setlist[itemize]{leftmargin=1.5em}
 \setlist[itemize]{leftmargin=2.0em}
+% left align captions
+\captionsetup{
+    justification = raggedright,
+    singlelinecheck = false
+}
 
 %%%% lhs2Tex (*.lhs) document
 \let\Bbbk\undefined
@@ -337,15 +344,15 @@ virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
 We flesh out this definition by saying, an actor is a green thread\footnote{
-    A \emph{green thread} is a lightweight thread of control implemented in a
-    programming language runtime and dynamically mapped to a CPU by a scheduler
-    in the runtime.
+    A \emph{green thread} (also ``lightweight thread,'' ``userspace thread'')
+    is a thread not bound to an OS thread but dynamically mapped to a CPU by a
+    language level scheduler.
     %
-    A language using OS threads would likely be too heavyweight to support
-    actor programming, due to the large numbers of actors used.
+    A language with only OS threads would likely support actor programming
+    poorly, due to the large numbers of actors required.
     %
     The \emph{Akka} framework in Java gets around the lack of green threads in
-    the JVM by dynamically scheduling actors onto OS threads.
+    the JVM by scheduling actors onto OS threads itself.
 } with some state and an inbox.
 %
 Upon receipt of a message to its inbox, the actor may perform some actions:
@@ -405,7 +412,7 @@ instance Exception Greet
 
 \section{Actor framework implementation}
 
-In our actor framework implementation, an actor is a Haskell thread running a
+In our framework, an actor is a Haskell thread running a
 provided main-loop function.
 %
 The main-loop function mediates message receipt and makes calls to a
@@ -414,36 +421,79 @@ user-defined intent function.
 Here we describe the minimal abstractions around such threads which realize the
 actor model.
 %
-\plr{Would it add to the paper to name the framework "Hakkell"? Or would it
-just be distracting. I was thinking maybe the title of this section could be
-"Hakkell framework implementation" or maybe there could be a footnote
-somewhere.}
+This paper is a literate Haskell program.\footnote{
+    We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
+    %
+    The actor framework imports \verb|Control.Exception| and
+    \verb|Control.Concurrent|, and we use the extensions \verb|NamedFieldPuns|
+    and \verb|DuplicateRecordFields| for convenience of its presentation.
+    %
+    The example section additionally imports the module \verb|System.Random|
+    and uses the extension \verb|ViewPatterns|.
+    %
+    The appendices have other imports which we don't decribe here.
+}
+
+\ignore{
+\begin{code}
+{-# LANGUAGE NamedFieldPuns #-}        -- Section 2
+{-# LANGUAGE DuplicateRecordFields #-} -- Section 3.2
+{-# LANGUAGE ViewPatterns #-}          -- Section 3.3
+
+-- Section 2.1, 2.2
+import Control.Exception (Exception(..), throwTo, catch, mask_)
+import Control.Concurrent (ThreadId, myThreadId, threadDelay)
+
+import Control.Exception (getMaskingState, MaskingState(..))
+
+-- Section 2.3
+import Control.Exception (TypeError(..))
+
+-- Section 3.2
+import Control.Exception (SomeException)
+import Control.Concurrent (forkIO, killThread)
+import System.Random (RandomGen, randomR, getStdRandom)
+
+-- Trace appendix
+import System.IO (hSetBuffering, stdout, BufferMode(..))
+
+-- Perf eval appendix
+import Control.Exception (assert)
+import System.Environment (getArgs)
+import qualified Control.Concurrent.Chan as Ch
+import qualified Control.Concurrent.MVar as Mv
+import qualified Criterion.Main as Cr
+\end{code}
+} % end ignore
+
+
+
+
+
 
 \subsection{Sending (throwing) messages}
 \label{sec:sending-throwing}
 
-\begin{samepage}
-\noindent
 To send a message we will throw an exception to the recipient's thread
 identifier.
 %
 So that the recipient may respond, we define a self-addressed envelope data
-type.
+type in \Cref{fig:envelope} and declare the required instances.
 %
-This envelope and the message content must both be instances of
-\verb|Exception| and \verb|Show|.
-%
+\begin{figure}
+\raggedright
 \begin{code}
 data Envelope a = Envelope { sender :: ThreadId, message :: a }
     deriving Show
 
 instance Exception a => Exception (Envelope a)
 \end{code}
-\end{samepage}
+\caption{A self-addressed envelope contains a message.}
+\label{fig:envelope}
+\end{figure}
 
 
-\begin{samepage}
-\noindent
+
 \Cref{fig:sendStatic} defines a send function which reads the current thread
 identifier, constructs a self-addressed envelope, and throws it to the
 specified recipient.
@@ -451,6 +501,7 @@ specified recipient.
 For the purpose of explication in this paper, it also prints a trace.
 %
 \begin{figure}
+\raggedright
 \begin{code}
 sendStatic :: Exception a => ThreadId -> a -> IO ()
 sendStatic recipient message = do
@@ -459,10 +510,10 @@ sendStatic recipient message = do
                           ++ " to " ++ show recipient)
     throwTo recipient Envelope{sender, message}
 \end{code}
-\caption{Send a message in a self-addressed envelope.}
+\caption{Send throws the message as an exception.}
 \label{fig:sendStatic}
 \end{figure}
-\end{samepage}
+
 
 
 
@@ -471,32 +522,39 @@ sendStatic recipient message = do
 \label{subsec:receiving-catching}
 
 
-\begin{samepage}
-\noindent
-Every actor thread runs a provided main-loop function to manage message receipt
-and processing.
+An actor is defined by how it behaves in response messages.
 %
-The main-loop function installs an exception handler to accumulate messages in an inbox
-and calls a user-defined intent function on each.
+A user-defined intent function, with the type shown in \Cref{fig:intent}, 
+encodes behavior as state transition that takes a self-addressed envelope
+argument.
 %
-The user-defined intent function encodes actor behavior as a state transition
-that takes a self-addressed envelope as its second argument.
-%
+\begin{figure}
+\raggedright
 \begin{code}
 type Intent st msg = st -> Envelope msg -> IO st
 \end{code}
-\end{samepage}
+\caption{Actor behavior is encoded as a transition system.}
+\label{fig:intent}
+\end{figure}
 
 
-\begin{samepage}
-\noindent
-The main-loop, takes an \verb|Intent| function and its initial actor state and
-does not return.
+
+
+
+Every actor thread will run a provided main-loop function to manage message
+receipt and processing.
+%
+The main-loop function installs an exception handler to accumulate messages in
+an inbox and calls a user-defined intent function on each.
+%
+Therefore the main-loop in \Cref{fig:runStatic} takes an \verb|Intent| function
+and its initial state and does not return.
 %
 It masks asynchronous exceptions so they will only be raised at well-defined
 points and runs its loop under that mask.
 %
 \begin{figure}
+\raggedright
 \begin{code}
 runStatic :: Exception a => Intent s a -> s -> IO ()
 runStatic intent initialState = mask_ $ loop (initialState, [])
@@ -504,29 +562,29 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
     loop (state, inbox) =
         catch
             (case inbox of
-                [] -> threadDelay 60000000 >> return (state, inbox)
-                x:xs -> (,{-"\!"-}) <$> intent state x <*> return xs)
-            (\e@Envelope{} -> return (state, inbox ++ [e]))
+                [] -> threadDelay 60000000 {-"\hfill(1)"-}
+                    >> return (state, inbox)
+                x:xs ->
+                    (,{-"\!"-}) <$> intent state x <*> return xs) {-"\hfill(2)"-}
+            (\e@Envelope{} ->
+                return (state, inbox ++ [e])) {-"\hfill(3)"-}
         >>= loop
 \end{code}
-\caption{Actor-thread message-receipt main-loop.}
+\caption{Actor threads receive messages in a main-loop.}
 \label{fig:runStatic}
 \end{figure}
-\end{samepage}
 
 
-\noindent
-The loop has two pieces of state: that of the intent function, and an inbox of
-messages to be processed.
+
+The loop in \Cref{fig:runStatic} has two pieces of state: that of the intent
+function, and an inbox of messages to be processed.
 %
 The loop body is divided roughly into three cases by an exception
 handler and a case-split on the inbox list.
 %
 \begin{enumerate}
-    \item If the inbox is empty, sleep for 60 seconds and then recurse on the
-    unchanged actor state and the empty inbox.
-    %
-    We will see length of the sleep is arbitrary.
+    \item If the inbox is empty, sleep for an arbitrary length of time and then
+    recurse on the unchanged actor state and the empty inbox.
     
     \item If the inbox has a message, call the intent function and recurse on
     the updated actor state and remainder of the inbox.
@@ -535,9 +593,7 @@ handler and a case-split on the inbox list.
     recurse on the unchanged actor state and an inbox with the new envelope
     appended to the end.
 \end{enumerate}
-
-
-\noindent
+%
 In the normal course of things, an actor will start with an empty inbox and go
 to sleep.
 %
@@ -546,10 +602,15 @@ If a message is received during sleep, the actor will wake (because
 its inbox, and recurse.
 %
 On the next loop iteration, the actor will process that message and once again
-recurse on an empty inbox.
+have an empty inbox.
 %
 Exceptions are masked outside of interruptible actions so that the bookkeeping
 of recursing with updated state through the loop is not disrupted.
+
+When creating a thread it is important that no exception arrive before
+\verb|runStatic| installs its exception handler, and so forking must also be
+masked.
+
 
 
 \paragraph{Unsafety}
@@ -558,8 +619,15 @@ Before moving forward, let us acknowledge that this is \emph{not safe}.
 %
 An exception may arrive while executing the intent function.
 %
-Despite the exception mask which we have intentionally left in place, if the
-intent function executes an interruptible action, then it will be preempted.
+Despite the exception mask which we have intentionally left in place,\footnote{
+    It is best practice to use \texttt{mask} instead of \texttt{mask\_}, and
+    ``restore'' the masking state of the context before calling the intent
+    function.
+    %
+    However for our purpose here, using \texttt{mask\_} doesn't change much.
+
+} if the intent function executes an interruptible action, then
+it will be preempted.
 %
 In this case the intent function's work will be unfinished.
 %
@@ -581,7 +649,16 @@ However recall that message sending is implemented with \verb|throwTo| which is
 %
 Here be dragons.
 %
-The best recommendation we can make is for the idempotence of intent functions.
+The best recommendation we can make is for the idempotence of intent
+functions.\footnote{
+    We have also considered a design in which the intent function returns an
+    outbox of messages.
+    %
+    It is then up to the main-loop to carefully send those messages and deal
+    with possible interruption.
+    %
+    While this might work, we opt for the simpler presentation seen here.
+}
 
 
 
@@ -635,33 +712,22 @@ obtain one from the RTS.
 \subsubsection{Sending dynamic messages}
 
 
-\begin{samepage}
-\noindent
+
 Instead of sending an \verb|Envelope| of some application-specific message
-type, we convert messages to the ``any type'' in Haskell's exception
-hierarchy, \verb|SomeException|.
+type we convert messages to the ``any type'' in Haskell's
+exception hierarchy, \verb|SomeException|.
 %
-All inflight messages will have the type \verb|Envelope SomeException|.
-%
-We define a new send function which converts messages before sending.
-%
-\begin{figure}
-\begin{code}
-send :: Exception a => ThreadId -> a -> IO ()
-send recipient = sendStatic recipient . toException
-\end{code}
-\caption{Upcast before sending.}
-\label{fig:send}
-\end{figure}
-\end{samepage}
+\Cref{fig:send} defines a new send function which converts messages before
+sending, so that all inflight messages will have the type \verb|Envelope
+SomeException|.
+
 
 
 \subsubsection{Receiving dynamic messages}
 \label{sec:dynamic-recv-loop}
 
 
-\begin{samepage}
-\noindent
+
 On the receiving side, messages must now be downcast to the \verb|Intent|
 function's message type.
 %
@@ -679,8 +745,19 @@ type-error.\footnote{
     the function \texttt{Data.Typeable.typeOf} can be used to construct a very
     helpful type-error message for debugging actor programs.
 }
-%
+
 \begin{figure}
+\raggedright
+\begin{code}
+send :: Exception a => ThreadId -> a -> IO ()
+send recipient = sendStatic recipient . toException
+\end{code}
+\caption{Upcast before sending.}
+\label{fig:send}
+\end{figure}
+
+\begin{figure}
+\raggedright
 \begin{code}
 runDyn :: Exception a => Intent s a -> s -> IO ()
 runDyn intentStatic = runStatic intent
@@ -768,7 +845,7 @@ message arrow originates at the greatest node and shows no sign of stopping}
 \subsubsection{State and messages}
 
 
-\begin{samepage}
+
 \noindent
 Each node begins uninitialized, and is later made a member of the ring
 when it learns the identity of its successor.
@@ -778,10 +855,10 @@ Therefore our node state type will have two constructors.
 \begin{code}
 data Node = Uninitialized | Member {next::ThreadId}
 \end{code}
-\end{samepage}
 
 
-\begin{samepage}
+
+
 \noindent
 The main thread will create multiple node actors and then initialize the ring by
 informing each node of its successor.
@@ -802,7 +879,7 @@ data Msg
     deriving Show
 instance Exception Msg
 \end{code}
-\end{samepage}
+
 
 
 \noindent
@@ -822,7 +899,7 @@ terminates without a winner.
 \label{sec:ring-intent-fun}
 
 
-\begin{samepage}
+
 \noindent
 The intent function for a node actor will have state of type \verb|Node|
 and pass messages of type \verb|Msg|. We describe each case separately.
@@ -830,10 +907,10 @@ and pass messages of type \verb|Msg|. We describe each case separately.
 \begin{code}
 node :: Intent Node Msg
 \end{code}
-\end{samepage}
 
 
-\begin{samepage}
+
+
 \noindent
 When an uninitialized node receives an \verb|Init| message, it becomes a member
 of the ring and remembers its successor.
@@ -843,10 +920,10 @@ node Uninitialized
   Envelope{message=Init{next}} = do
     return Member{next}
 \end{code}
-\end{samepage}
 
 
-\begin{samepage}
+
+
 \noindent
 When a member of the ring receives a \verb|Start| message, it sends a message
 to its successor in the ring to nominate itself.
@@ -858,10 +935,10 @@ node state@Member{next}
     send next $ Nominate self
     return state
 \end{code}
-\end{samepage}
 
 
-\begin{samepage}
+
+
 \noindent
 %% \Cref{fig:nodeNominate} shows the case that characterizes this
 %% algorithm.
@@ -888,7 +965,7 @@ node state@Member{next}
 %% \caption{Node behavior upon receiving a nomination.}
 %% \label{fig:nodeNominate}
 %% \end{figure}
-\end{samepage}
+
 
 \ignore{
 \begin{code}
@@ -901,7 +978,7 @@ node _ _ = error "node: unhandled"
 \label{sec:main1-init}
 
 
-\begin{samepage}
+
 \noindent
 The main thread performs several steps to initialize the algorithm:
 %
@@ -932,10 +1009,10 @@ ringElection n actor = do
     mapM_ (\t -> send t Start) ring {-"\hfill (4)"-}
     return ring
 \end{code}
-\end{samepage}
 
 
-\begin{samepage}
+
+
 \noindent
 Finally, in \verb|main1| we construct an \verb|IO| action representing the
 behavior of a node actor by passing the node intent function and the
@@ -958,7 +1035,7 @@ main1 count = do
     mapM_ killThread ring
 \end{code}
 }
-\end{samepage}
+
 
 
 \subsection{Adding a victory round}
@@ -1008,7 +1085,7 @@ algorithm terminates without confirming a winner.
 \subsubsection{State and messages}
 
 
-\begin{samepage}
+
 \noindent
 Each node now pairs the old node state with a \verb|ThreadId| which is the
 greatest nominee it has seen.
@@ -1016,10 +1093,10 @@ greatest nominee it has seen.
 \begin{code}
 type Node' = (Node, ThreadId)
 \end{code}
-\end{samepage}
 
 
-\begin{samepage}
+
+
 \noindent
 The new message type has only one constructor, and it is used to declare some
 node the winner.
@@ -1029,14 +1106,14 @@ data Winner = Winner ThreadId
     deriving Show
 instance Exception Winner
 \end{code}
-\end{samepage}
+
 
 
 \subsubsection{Actor behavior}
 \label{sec:ring2-intent-fun}
 
 
-\begin{samepage}
+
 \noindent
 The intent function for the new actor will use \verb|Node'| as described, and
 we declare its message type to be \verb|SomeException|.
@@ -1047,7 +1124,7 @@ branch on which is received.
 \begin{code}
 node' :: Intent Node' SomeException
 \end{code}
-\end{samepage}
+
 
 
 \noindent
@@ -1065,7 +1142,7 @@ There are two main cases, corresponding to the two message types the actor will
 handle.
 
 
-\begin{samepage}
+
 The first case applies when a node downcasts the envelope contents to
 \verb|Msg|.
 %
@@ -1103,10 +1180,10 @@ node' (n, great)
             else return (n', max nominee great) {-"\quad\quad\hfill (3)"-}
         _ -> return (n', great) {-"\quad\quad\hfill (4)"-}
 \end{code}
-\end{samepage}
 
 
-\begin{samepage}
+
+
 The second case applies when a node downcasts the envelope contents to a winner
 declaration.
 %
@@ -1133,7 +1210,7 @@ node' state@(Member{next}, great)
             | otherwise -> putStrLn "Unexpected winner"
     return state
 \end{code}
-\end{samepage}
+
 
 \ignore{
 \begin{code}
@@ -1146,7 +1223,7 @@ node' _ _ = error "node': unhandled"
 \label{sec:main2-init}
 
 
-\begin{samepage}
+
 \noindent
 The extended ring leader-election can reuse the same initialization scaffolding
 as before; we only define a \verb|main2| function.
@@ -1170,7 +1247,7 @@ main2 count = do
     mapM_ killThread ring
 \end{code}
 }
-\end{samepage}
+
 
 
 
@@ -1368,7 +1445,7 @@ Its implementation is as follows:
 %
 Repeatedly pop a random element from the input and add it to the output.
 %
-\begin{samepage}
+
 \begin{code}
 permute :: RandomGen g => [a] -> g -> ([a], g)
 permute pool0 gen0
@@ -1384,7 +1461,7 @@ permute pool0 gen0
     pop (x:xs) n = (x:) <$> pop xs (n - 1)
     pop [] _ = error "pop empty list"
 \end{code}
-\end{samepage}
+
 
 
 
@@ -1416,7 +1493,6 @@ We employ \verb|withAsync| and \verb|waitAsync| to detect when the
 initialization actor has died and return from the benchmark.
 
 
-\begin{samepage}
 First we define a benchmarking-node, which extends \verb|node'|
 (\Cref{sec:ring2-intent-fun}) with additional behavior.
 %
@@ -1433,12 +1509,12 @@ benchNode done state e@Envelope{message} = do
         _ -> return ()
     return state'
 \end{code}
-\end{samepage}
 
 
 
 
-\begin{samepage}
+
+
 \noindent
 We define \verb|benchRing| to be the function which \verb|criterion| will
 measure. It will run a single \verb|benchLaunch| actor, send a \verb|Start|
@@ -1458,10 +1534,10 @@ benchRing n = do
     assert (w == maximum ring) $
         return ()
 \end{code}
-\end{samepage}
 
 
-\begin{samepage}
+
+
 \noindent
 Finally, we define a benchmark-main which runs \verb|benchRing| for each of
 several ring sizes.
@@ -1491,7 +1567,7 @@ benchMain = Cr.defaultMain
     channel n =
         Cr.bench ("n=" ++ show n) . Cr.nfIO $ channelRing n
 \end{code}
-\end{samepage}
+
 %
 When producing benchmarks for this paper, we ran an extra step (available in
 our repo) to replace all printlines with \verb|pure ()|.
@@ -1511,7 +1587,13 @@ This section has the source code for alternate implementations compared to the
 actor implementation by the benchmark.
 
 \subsubsection{Control}
-First the control, which only forks threads and then kills them.
+The experimental control only forks threads and then kills them.
+%
+It's useful for establishing whether or not, for example, laziness has caused
+our non-control implementations to perform no work.
+%
+The other implementations should take longer than the control because they are
+doing more work.
 %
 \begin{code}
 benchControl :: Int -> IO ()
@@ -1522,11 +1604,10 @@ benchControl n = do
 
 
 \subsubsection{Channel-based}
-Next, a channel-based ring leader-election.
+In the channel-based ring leader-election, each node has references to a
+send-channel and a receive-channel.
 %
-Each node will have references to a send-channel and a receive-channel.
-%
-We reuse the message types via an \verb|Either|.
+We reuse the message types from before via an \verb|Either|.
 %
 \begin{code}
 type ChMsg = Either Msg Winner
@@ -1574,9 +1655,7 @@ differences.
 \end{itemize}
 
 \begin{figure}
-\caption{Main-loop for channel-based implementation of ring leader-election.
-Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
-\label{fig:chanNode}
+\raggedright
 \begin{code}
 chanNode ::
     Mv.MVar ThreadId -> (Ch, Ch) -> ThreadId -> IO ()
@@ -1587,12 +1666,13 @@ chanNode done chans st = do
     sendMsg = Ch.writeChan (snd chans) . Left
     sendWinner = Ch.writeChan (snd chans) . Right
 \end{code}
+\caption{Main-loop for channel-based implementation of ring leader-election.
+Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
+\label{fig:chanNode}
 \end{figure}
 
 \begin{figure}
-\caption{Channel-based reimplementation of \verb|node| defined in the
-where-clause of \Cref{fig:chanNode}.}
-\label{fig:chanNodePart}
+\raggedright
 \begin{code}
     nodePart :: Msg -> IO ()
     nodePart Start = do
@@ -1604,10 +1684,14 @@ where-clause of \Cref{fig:chanNode}.}
         case () of
          _  | self == nominee -> putStrLn (show self ++ ": I win")
             | self <  nominee
-                -> putStrLn (show self ++ ": nominate " ++ show nominee)
+                -> putStrLn (show self ++ ": nominate "
+                    ++ show nominee)
                 >> sendMsg (Nominate nominee)
             | otherwise       -> putStrLn "Ignored nominee"
 \end{code}
+\caption{Channel-based reimplementation of \verb|node| defined in the
+where-clause of \Cref{fig:chanNode}.}
+\label{fig:chanNodePart}
 \end{figure}
 \ignore{
 \begin{code}
@@ -1616,9 +1700,7 @@ where-clause of \Cref{fig:chanNode}.}
 }
 
 \begin{figure}
-\caption{Channel-based reimplementation of \verb|node'| defined in the
-where-clause of \Cref{fig:chanNode}}
-\label{fig:chanNodePrimePart}
+\raggedright
 \begin{code}
     node'Part :: ThreadId -> Either Msg Winner -> IO ThreadId
     node'Part great (Left m) = do
@@ -1642,23 +1724,13 @@ where-clause of \Cref{fig:chanNode}}
                 | otherwise -> putStrLn "Unexpected winner"
         return great
 \end{code}
+\caption{Channel-based reimplementation of \verb|node'| defined in the
+where-clause of \Cref{fig:chanNode}}
+\label{fig:chanNodePrimePart}
 \end{figure}
 
 \begin{figure}
-\caption{
-    Initialization routine for channel-based reimplementation of ring
-    leader-election.
-    %
-    First define a function to run a channel-node on the ``done'' \texttt{MVar}
-    and two provided channels.
-    %
-    Next construct channels and a ring of un-evaluated nodes \emph{in order}.
-    %
-    Finally permute the nodes and fork them out of order.
-    %
-    At this point the nodes are assigned random thread identifiers.
-}
-\label{fig:channelRing}
+\raggedright
 \begin{code}
 channelRing :: Int -> IO ()
 channelRing n = do
@@ -1682,6 +1754,20 @@ channelRing n = do
     assert (w == maximum ring) $
         return ()
 \end{code}
+\caption{
+    Initialization routine for channel-based reimplementation of ring
+    leader-election.
+    %
+    First define a function to run a channel-node on the ``done'' \texttt{MVar}
+    and two provided channels.
+    %
+    Next construct channels and a ring of un-evaluated nodes \emph{in order}.
+    %
+    Finally permute the nodes and fork them out of order.
+    %
+    At this point the nodes are assigned random thread identifiers.
+}
+\label{fig:channelRing}
 \end{figure}
 
 
