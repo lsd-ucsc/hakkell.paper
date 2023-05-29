@@ -39,7 +39,6 @@
 \setlist[itemize]{leftmargin=2.0em}
 % left align captions
 \captionsetup{
-    justification = raggedright,
     singlelinecheck = false
 }
 
@@ -855,7 +854,21 @@ We implement and extend that solution below.
 
 \begin{figure}
 \include{ring.tex}
-\caption{Ring election visual TODO}
+\caption{
+    In-progress ring leader-election with seven nodes.
+    %
+    The node identities are unique and randomly distributed.
+    %
+    Currently two nominations are in progress:
+    %
+    Node 5 nominated itself and was accepted by nodes 3, 1, and 4; next node 4
+    will nominate 5 to node 6 (who will reject it).
+    %
+    Concurrently, node 6 nominated itself and was accepted by node 2 but
+    rejected by node 7.
+    %
+    For this election to achieve termination, node 7 must nominate itself.
+}
 \label{fig:ring-election-visual}
 \end{figure}
 
