@@ -1,7 +1,7 @@
 .PHONY: all clean clean-all preview onchange bench
 
 PAPER = main
-INPUTS = $(PAPER).lhs $(PAPER).bib
+INPUTS = $(PAPER).lhs ring.tex $(PAPER).bib
 OUTPUTS = $(PAPER).pdf
 
 TEXSRC = $(patsubst %.lhs, %.tex, $(INPUTS))
@@ -11,7 +11,7 @@ all: $(OUTPUTS)
 bench: $(PAPER).bench.csv
 prof:  $(PAPER).prof.elf.eventlog
 
-%.pdf: %.tex
+$(PAPER).pdf: $(PAPER).tex ring.tex $(PAPER).bib
 	latexmk -pdf $<
 
 %.tex: %.lhs

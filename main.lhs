@@ -20,6 +20,8 @@
 \usepackage{cleveref}
 \usepackage{enumitem} % style lists globally
 \usepackage{caption} % align captions globally
+\usepackage{tikz}
+\usepackage{pifont}
 
 \newcommand{\newcommenter}[3]{%
   \newcommand{#1}[1]{%
@@ -830,12 +832,7 @@ Otherwise the nomination is ignored.
 We implement and extend that solution below.
 
 \begin{figure}
-\lk{To help visualize the algorithm, I think it would be helpful to have a
-figure with an illustration of the ring, some sent messages, and the algorithm
-in progress, kind of like in the ``message chains'' paper}
-\plr{ring with seven nodes; two have message arrows bouncing around the outside
-of the ring; one message arrow terminates in an X at a greater node, the other
-message arrow originates at the greatest node and shows no sign of stopping}
+\include{ring.tex}
 \caption{Ring election visual TODO}
 \label{fig:ring-election-visual}
 \end{figure}
