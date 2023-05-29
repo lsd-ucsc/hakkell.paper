@@ -521,7 +521,7 @@ sendStatic recipient message = do
 
 
 \subsection{Receiving (catching) messages}
-\label{subsec:receiving-catching}
+\label{sec:receiving-catching}
 
 
 An actor is defined by how it behaves in response messages.
@@ -578,6 +578,7 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
 
 
 
+
 The loop in \Cref{fig:runStatic} has two pieces of state: that of the intent
 function, and an inbox of messages to be processed.
 %
@@ -609,9 +610,6 @@ have an empty inbox.
 Exceptions are masked outside of interruptible actions so that the bookkeeping
 of recursing with updated state through the loop is not disrupted.
 
-When creating a thread it is important that no exception arrive before
-\verb|runStatic| installs its exception handler, and so forking must also be
-masked.
 
 
 
@@ -770,18 +768,11 @@ runDyn intentStatic = runStatic intent
             Nothing
                 -> throwTo sender (TypeError "...")
                 >> return state
-
-run :: Exception a => Intent s a -> s -> IO ()
-run intent state = do
-    ms <- getMaskingState
-    case ms of
-        MaskedInterruptible -> runDyn intent state
-        _ -> error "always apply a mask before forking an actor thread"
 \end{code}
 \caption{Downcast before processing.}
-\label{fig:run}
+\label{fig:runDyn}
 \end{figure}
-\end{samepage}
+
 
 
 The changes shown so far haven't directly empowered actor intent functions to
@@ -800,13 +791,44 @@ messages of different types, by extending an actor that doesn't.
 
 
 
+\subsection{Another safety issue (NAME TBD)}
+
+\plr{This paragraph raises an issue that's relevant to the content of
+\Cref{fig:runStatic}, but I don't know where to put in in the flow of section
+\Cref{sec:receiving-catching}.}
+
+When creating an actor-thread it is important that no exception arrive before
+\verb|runStatic| (\Cref{fig:runStatic}) installs its exception handler, and so
+forking must also be masked.
+%
+\Cref{fig:run} defines the main-loop wrapper we will use for examples in
+\Cref{sec:ring-impl}.
+%
+It performs a best-effort check and issues a helpful reminder to mask the
+creation of actor threads.
+
+\begin{figure}
+\raggedright
+\begin{code}
+run :: Exception a => Intent s a -> s -> IO ()
+run intent state = do
+    ms <- getMaskingState
+    case ms of
+        MaskedInterruptible -> runDyn intent state
+        _ -> error "mask the forking of actor threads"
+\end{code}
+\caption{Prevent initialization errors by masking forks.}
+\label{fig:run}
+\end{figure}
+
+
+
 
 \section{Example: Ring leader-election}
 \label{sec:ring-impl}
 
-The problem of \emph{ring leader-election} is to designate one ``leader'' node
-among a network of communicating nodes organized in a ring topology
-\cite{lelann1977distributed}.
+The problem of \emph{ring leader-election} is to designate one node
+among a network of communicating nodes organized in a ring topology.
 %
 Each node has a unique identity, and identities are totally ordered.
 %
@@ -1256,7 +1278,7 @@ code, discovered an actor framework within the RTS which makes no explicit use
 of channels, references, or locks and imports just a few names from default
 modules.
 %
-The support for dynamic types, shown in \Cref{fig:send,fig:run} as separate
+The support for dynamic types, shown in \Cref{fig:send,fig:runDyn} as separate
 definitions, can be folded into \Cref{fig:sendStatic,fig:runStatic} for only a
 few additional lines.
 %
