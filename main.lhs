@@ -1027,28 +1027,33 @@ node _ _ = error "node: unhandled"
 
 
 
-The initialization function \verb|ringElection| is implemented\footnote{
-    The implementation shown doesn't handle degenerate rings of size 0 or 1,
+The election initialization function\footnote{
+    The implementation shown doesn't handle rings of size 0 or 1,
     but we consider that out of scope of the demonstration.
     %
     Also, we don't show thread cleanup here.
-} in \Cref{fig:ringElection}.
+}
+is implemented in \Cref{fig:ringElection}.
 %
-To start an election it
-takes the size of the ring
+It takes the size of the ring
 and an unevaluated \verb|IO| action representing node behavior,
-and then performs the following steps:
+and then performs the following steps to start an election:
 %
 \begin{enumerate}[leftmargin=2em]
-    \item Create actors with asynchronous exceptions masked.
+    \item Create actors (with asynchronous exceptions masked).
 
-    \item Randomize the order of the actor \verb|ThreadId|s.
+    \item Randomize the order of actor \verb|ThreadId|s.
 
     \item Inform each actor of the \verb|ThreadId| that follows it in the
-    random order (its successor).
+    random order (its successor) with an \verb|Init| message.
 
-    \item Instruct each actor to start the algorithm.
+    \item Send each actor the \verb|Start| message to kick things off.
 \end{enumerate}
+%
+To call the election initialization function, we construct an \verb|IO| action
+by passing the node intent function and the initial node state to the actor
+main-loop from \Cref{fig:run}:
+%%%%\begin{figure}[b]
 %
 \ignore{
 \begin{code}
@@ -1057,10 +1062,6 @@ main1 count = do
     ring <-
 \end{code}
 }
-%
-It can be called as follows, using the actor main-loop from \Cref{fig:run}.
-%
-An election trace appears in \Cref{fig:main1-trace}.
 %
 \begin{center}
 \begin{code}
@@ -1075,6 +1076,11 @@ An election trace appears in \Cref{fig:main1-trace}.
     mapM_ killThread ring
 \end{code}
 }
+%
+%%%%\caption{Calling convention}
+%%%%\label{fig:call-ringElection}
+%%%%\end{figure}
+An election trace appears in \Cref{fig:main1-trace}.
 
 
 \begin{figure}[h]
