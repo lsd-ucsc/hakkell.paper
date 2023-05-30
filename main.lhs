@@ -892,20 +892,11 @@ We implement and extend that solution below.
 Each node begins uninitialized, and later becomes a member of the ring when
 it learns the identity of its successor.
 %
-We define two constructors in \Cref{fig:node-state} to represent these node
-states.
+To represent this we define two contsructors in \Cref{fig:node-types} for node
+state type, \verb|Node|.
 %
-\begin{figure}
-\raggedright
-\begin{code}
-data Node = Uninitialized | Member {next::ThreadId}
-\end{code}
-\caption{Nodes can be in one of two states.}
-\label{fig:node-state}
-\end{figure}
-%
-Three messages (defined in \Cref{fig:node-msg}) will be used to run the
-election:
+Three messages (also defined in \Cref{fig:node-types} as type, \verb|Msg|) will
+be used to run the election:
 \begin{itemize}[leftmargin=15mm]
     \item[\verb|Init|] After creating nodes, the main thread initializes
     the ring by informing each node of its successor.
@@ -920,15 +911,21 @@ election:
 \begin{figure}
 \raggedright
 \begin{code}
+data Node = Uninitialized | Member {next::ThreadId}
+
 data Msg
     = Init{next::ThreadId}
     | Start
     | Nominate{nominee::ThreadId}
     deriving Show
+
 instance Exception Msg
 \end{code}
-\caption{Nodes accept three different messages.}
-\label{fig:node-msg}
+\caption{
+    Election nodes can be in one of two states,
+    and they accept three different messages.
+}
+\label{fig:node-types}
 \end{figure}
 
 
@@ -954,19 +951,18 @@ terminates without a winner.
 
 
 
-\begin{samepage}
-The intent function for a node actor will have state defined in
-\Cref{fig:node-state} and pass messages defined in \Cref{fig:node-msg}.
+The intent function for a node actor will have state of type \verb|Node| and
+receive messages of type \verb|Msg|, as defined in \Cref{fig:node-types}.
 %
-We describe each case here below.
+We show its implementation and describe each case here below.
+%
+\plr{These three cases for the implementation of \verb|node| is the only code
+outside of a figure. I think it reads better in-flow of the prose.}
 %
 \begin{code}
 node :: Intent Node Msg
 \end{code}
-\end{samepage}
 %
-%
-\begin{samepage}
 When an uninitialized node receives an \verb|Init| message, it becomes a member
 of the ring and remembers its successor.
 %
@@ -975,10 +971,7 @@ node Uninitialized
   Envelope{message=Init{next}} = do
     return Member{next}
 \end{code}
-\end{samepage}
 %
-%
-\begin{samepage}
 When a member of the ring receives a \verb|Start| message,
 it nominates itself to its successor in the ring.
 %
@@ -989,10 +982,7 @@ node Member{next}
     send next $ Nominate self
     return Member{next}
 \end{code}
-\end{samepage}
 %
-%
-\begin{samepage}
 When a member of the ring receives a \verb|Nominate| message, it compares the
 nominee to its own identity.
 %
@@ -1011,8 +1001,6 @@ node state@Member{next}
         |  otherwise   -> putStrLn "Ignored nomination"
     return state
 \end{code}
-\end{samepage}
-%
 %
 \ignore{
 \begin{code}
@@ -1108,7 +1096,7 @@ ringElection n actor = do
 \footnotesize
 \perform{beginVerb >> main1 5 >> endVerb}
 \normalsize
-\caption{A ring leader-election trace.}
+\caption{A trace of the ring leader-election solution.}
 \label{fig:main1-trace}
 \end{figure}
 
