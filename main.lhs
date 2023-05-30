@@ -1059,7 +1059,6 @@ main1 count = do
 %
 \ignore{
 \begin{code}
-    return ()
     threadDelay 1000000
     mapM_ killThread ring
 \end{code}
@@ -1178,7 +1177,7 @@ instance Exception Winner
 
 \subsubsection{Declaration-round termination}
 %
-When a node receives a declaration of the winner
+When an extended-node receives a declaration of the winner
 that matches their greatest nominee seen,
 they have ``learned'' that node is indeed the winner.
 %
@@ -1188,6 +1187,8 @@ and the algorithm terminates.
 %
 If the winner declaration doesn't make it all the way around the ring,
 then the algorithm terminates without confirming a winner.
+
+
 
 
 
@@ -1228,29 +1229,25 @@ SomeException -> Maybe a} always succeeds when \texttt{a} is
 belongs in.}
 
 
-
-
-
-
 The first case of \verb|exnode|, shown in \Cref{fig:exnode-case-msg}, applies
-when a node downcasts the envelope contents to \verb|Msg|.
+when an extended-node downcasts the envelope contents to \verb|Msg|.
 %
-We annotate it as follows:
+In each of its branches, node state is updated by delegating part of message
+handling to the held-node.
+%
+We annotate the rest of \Cref{fig:exnode-case-msg} as follows:
 \plr{I would like to put this list into the caption, but was unable to.}
 %
-\begin{enumerate}
-    \item Delegate to the held node by putting the revealed \verb|Msg| back
+\begin{enumerate}[leftmargin=2em]
+    \item Delegate to the held-node by putting the revealed \verb|Msg| back
     into its envelope and passing it through the intent function, \verb|node|,
     from from \Cref{sec:ring-intent-fun}.
     %
-    \item If the message is a nomination of the current node, start the winner
-    round because the election is over.
+    \item If the message is a nomination of the current extended-node, start
+    the winner round because the election is over. \plr{If you want to shorten this, remove "extended-"}
     %
     \item Otherwise the election is ongoing so keep track of the greatest
     nominee seen.
-    %
-    \item For any other \verb|Msg| constructors, only return the updated node
-    state.
 \end{enumerate}
 %
 \begin{figure}
@@ -1266,31 +1263,31 @@ exnode (n, great)
             then send next (Winner self) {-"\quad\quad\hfill (2)"-}
                 >> return (n', great)
             else return (n', max nominee great) {-"\quad\quad\hfill (3)"-}
-        _ -> return (n', great) {-"\quad\quad\hfill (4)"-}
+        _ -> return (n', great)
 \end{code}
 \caption{
-    When \verb|exnode| receives a \verb|Msg|, it delegates to \verb|node|,
-    tracks the greatest nominee seen, and triggers the winner-declaration
-    round.
+    When \verb|exnode| receives a \verb|Msg|, it delegates to \verb|node|.
+    It may also update the greatest nominee seen or trigger the
+    winner-declaration round.
 }
 \label{fig:exnode-case-msg}
 \end{figure}
 
 
-
-
-The second case applies when a node downcasts the envelope contents to a winner
-declaration.
+The second case of \verb|exnode| applies when a node downcasts the envelope
+contents to a winner declaration.
+%
+Its implementation is shown in \Cref{fig:exnode-case-winner}.
 %
 If the current node is declared winner, the algorithm terminates successfully.
 %
 If the greatest nominee the current node has seen is declared winner, the node
 forwards the declaration to its successor.
 %
-Otherwise the algorithm terminates unsuccessfully.
-%
 State is unchanged in each of these branches.
 %
+\begin{figure}
+\raggedright
 \begin{code}
 exnode state@(Member{next}, great)
   Envelope{message=fromException -> Just m} = do
@@ -1302,6 +1299,12 @@ exnode state@(Member{next}, great)
             | otherwise -> putStrLn "Unexpected winner"
     return state
 \end{code}
+\caption{
+    When \verb|exnode| receives a \verb|Winner|, it manages the
+    winner-declaration round.
+}
+\label{fig:exnode-case-winner}
+\end{figure}
 
 
 \ignore{
@@ -1311,35 +1314,46 @@ exnode _ _ = error "exnode: unhandled"
 }
 
 
-\subsubsection{Initialization}
+
+
+\subsubsection{Extended-election initialization}
 \label{sec:main2-init}
 
 
-
-\noindent
-The extended ring leader-election can reuse the same initialization scaffolding
-as before; we only define a \verb|main2| function.
+The extended ring leader-election reuses the
+initialization scaffolding from before
+(\Cref{fig:ringElection}).
 %
-As part of the \verb|IO| action passed to \verb|ringElection|, each thread
-initializes the greatest nominee seen to itself.
+The only change is that the \verb|IO| action passed to
+\verb|ringElection| initializes the greatest nominee seen
+to itself.
 %
-A trace of \verb|main2| is in \Cref{sec:main2-trace}.
+It is called like this:
 %
+\ignore{
 \begin{code}
 main2 :: Int -> IO ()
 main2 count = do
-    ring <- ringElection count $ do
-        great <- myThreadId
-        run exnode (Uninitialized, great)
-    return ()
+    ring <-
 \end{code}
+}
+%
+\begin{center}
+\begin{code}
+        ringElection count $ do
+            great <- myThreadId
+            run exnode (Uninitialized, great)
+\end{code}
+\end{center}
+%
 \ignore{
 \begin{code}
     threadDelay 1000000
     mapM_ killThread ring
 \end{code}
 }
-
+%
+A trace of an extended-election is in \Cref{sec:main2-trace}.
 
 
 
