@@ -1104,9 +1104,8 @@ ringElection n actor = do
 
 
 
-\subsection{Adding a victory round}
+\subsection{Extending the leader election}
 \label{sec:dyn-ring}
-
 
 The solution we have shown solves the ring leader-election problem
 insofar as a single node concludes that it has won.
@@ -1114,114 +1113,135 @@ insofar as a single node concludes that it has won.
 However, it is also desirable for the other nodes to learn the outcome of the
 election.
 %
+Since it is sometimes necessary to extend a system without modifying the
+original, we will show how to extend the original ring leader-election to add a
+winner-declaration round.
+
 Since there is no message constructor to inform nodes of the election outcome,
 we will define a new message type whose constructor indicates a declaration of
-the winner.
-
-
-We will extend the existing solution by wrapping it with an intent function
-that processes messages of either the old or the new message types, with
-distinct behavior for each, leveraging the dynamic types support from
-\Cref{sec:dynamic-types}.
+who is the winner.
+%
+We will extend the existing node intent function by wrapping it with a new
+intent function that processes messages of either the old or the new message
+types, with distinct behavior for each, leveraging the dynamic types support
+from \Cref{sec:dynamic-types}.
 %
 The new behaviors are:
 %
 \begin{itemize}[leftmargin=1.5em]
-    \item[--] Each node will keep track of the greatest nominee it has seen.
+    \item[--] Each node remembers the greatest nominee it has seen.
 
     \item[--] When the winner self-identifies, they will start an extra round
     declaring themselves winner.
 
     \item[--] Upon receiving a winner declaration, a node compares the greatest
-    nominee it has seen with the winner. If they are the same, then the node
-    forwards the declaration to its successor.
+    nominee it has seen with the declared-winner.
+    %
+    If they are the same, then the node forwards the declaration to its
+    successor.
 \end{itemize}
 
-
-When a node receives a declaration of the winner that they agree with, they
-have ``learned'' that node is indeed the winner.
+Extended-nodes will store the original node state (\Cref{fig:node-types})
+paired with the identity of the greatest nominee they have seen.
 %
-When the winner receives their own declaration, everyone has learned they are
-the winner and the algorithm terminates.
+This new extended-node state is shown in \Cref{fig:exnode-types} as type,
+\verb|Exnode|.
 %
-If the winner declaration doesn't make it all the way around the ring, then the
-algorithm terminates without confirming a winner.
-
-
-\subsubsection{State and messages}
-
-
-
-\noindent
-Each node now pairs the old node state with a \verb|ThreadId| which is the
-greatest nominee it has seen.
+\plr{I'm trying to give the extended nodes a name that's more distinct from
+Node than Node' (nodeprime). I'm hoping that Node vs Exnode is more easy to
+keep a handle on.}
 %
+The new message type (\verb|Winner|, also in \Cref{fig:exnode-types}) has only
+one constructor and is used to declare some node the winner.
+%
+\begin{figure}
+\raggedright
 \begin{code}
-type Node' = (Node, ThreadId)
-\end{code}
+type Exnode = (Node, ThreadId)
 
+data Winner = Winner ThreadId deriving Show
 
-
-
-\noindent
-The new message type has only one constructor, and it is used to declare some
-node the winner.
-%
-\begin{code}
-data Winner = Winner ThreadId
-    deriving Show
 instance Exception Winner
 \end{code}
+\caption{
+    Extended-nodes store node state alongside the greatest nominee
+    seen.
+    %
+    They accept one message in addition to those in \Cref{fig:node-types}.
+}
+\label{fig:exnode-types}
+\end{figure}
 
 
 
-\subsubsection{Actor behavior}
+
+
+\subsubsection{Declaration-round termination}
+%
+When a node receives a declaration of the winner
+that matches their greatest nominee seen,
+they have ``learned'' that node is indeed the winner.
+%
+When the winner receives their own declaration,
+\emph{everyone} has learned they are the winner,
+and the algorithm terminates.
+%
+If the winner declaration doesn't make it all the way around the ring,
+then the algorithm terminates without confirming a winner.
+
+
+
+
+\subsubsection{Exnode-actor behavior}
 \label{sec:ring2-intent-fun}
 
 
-
-\noindent
-The intent function for the new actor will use \verb|Node'| as described, and
-we declare its message type to be \verb|SomeException|.
+The intent function for the new actor will have state \verb|Exnode| and
+receive messages of type \verb|SomeException|.
 %
 This will allow it to receive either \verb|Msg| or \verb|Winner| values and
 branch on which is received.
 %
 \begin{code}
-node' :: Intent Node' SomeException
+exnode :: Intent Exnode SomeException
 \end{code}
 
 
-
-\noindent
-Recall the implementation of the actor thread main-loop function, \verb|run|,
-from \Cref{sec:dynamic-recv-loop}.
+Recall the implementation of the actor main-loop function,
+\verb|runDyn| from \Cref{fig:runDyn}.
 %
-When we apply \verb|node'| to the main-loop, \verb|run|, its call to
-\verb|fromException| will be inferred to return \verb|Maybe SomeException|
+When we apply \verb|exnode| to \verb|runDyn|,
+the call to \verb|fromException| in \verb|runDyn|
+is inferred to return \verb|Maybe SomeException|
 which succeeds unconditionally.
 %
-The \verb|node'| intent function must then perform its own downcasts, and so we
-enable \verb|ViewPatterns| ease the presentation.
+The \verb|exnode| intent function must then perform its own downcasts,
+and we enable \verb|ViewPatterns| ease our presentation.
 %
-There are two main cases, corresponding to the two message types the actor will
-handle.
-
-
-
-The first case applies when a node downcasts the envelope contents to
-\verb|Msg|.
+There are two main cases,
+corresponding to the two message types the actor will handle,
+which we explain below.
 %
-This case tracks the last-seen nominee and triggers the victory round.
+\plr{This paragraph was an aside to explain that \texttt{fromException ::
+SomeException -> Maybe a} always succeeds when \texttt{a} is
+\texttt{SomeException}. It's a bit out-of-flow, but there's no other place it
+belongs in.}
+
+
+
+
+
+
+The first case of \verb|exnode|, shown in \Cref{fig:exnode-case-msg}, applies
+when a node downcasts the envelope contents to \verb|Msg|.
 %
 We annotate it as follows:
+\plr{I would like to put this list into the caption, but was unable to.}
 %
 \begin{enumerate}
     \item Delegate to the held node by putting the revealed \verb|Msg| back
     into its envelope and passing it through the intent function, \verb|node|,
-    from \Cref{sec:ring-intent-fun}.
-    %
-    %%Return that resulting node state in all of the cases below.
+    from from \Cref{sec:ring-intent-fun}.
     %
     \item If the message is a nomination of the current node, start the winner
     round because the election is over.
@@ -1233,8 +1253,10 @@ We annotate it as follows:
     state.
 \end{enumerate}
 %
+\begin{figure}
+\raggedright
 \begin{code}
-node' (n, great)
+exnode (n, great)
   e@Envelope{message=fromException -> Just m} = do
     self <- myThreadId
     n'@Member{next} <- node n e{message=m} {-"\quad\quad\hfill (1)"-}
@@ -1246,15 +1268,19 @@ node' (n, great)
             else return (n', max nominee great) {-"\quad\quad\hfill (3)"-}
         _ -> return (n', great) {-"\quad\quad\hfill (4)"-}
 \end{code}
+\caption{
+    When \verb|exnode| receives a \verb|Msg|, it delegates to \verb|node|,
+    tracks the greatest nominee seen, and triggers the winner-declaration
+    round.
+}
+\label{fig:exnode-case-msg}
+\end{figure}
 
 
 
 
 The second case applies when a node downcasts the envelope contents to a winner
 declaration.
-%
-%% The node compares the declared winner to itself and to the greatest nominee
-%% it has seen.
 %
 If the current node is declared winner, the algorithm terminates successfully.
 %
@@ -1266,7 +1292,7 @@ Otherwise the algorithm terminates unsuccessfully.
 State is unchanged in each of these branches.
 %
 \begin{code}
-node' state@(Member{next}, great)
+exnode state@(Member{next}, great)
   Envelope{message=fromException -> Just m} = do
     self <- myThreadId
     case m of
@@ -1280,7 +1306,7 @@ node' state@(Member{next}, great)
 
 \ignore{
 \begin{code}
-node' _ _ = error "node': unhandled"
+exnode _ _ = error "exnode: unhandled"
 \end{code}
 }
 
@@ -1304,7 +1330,7 @@ main2 :: Int -> IO ()
 main2 count = do
     ring <- ringElection count $ do
         great <- myThreadId
-        run node' (Uninitialized, great)
+        run exnode (Uninitialized, great)
     return ()
 \end{code}
 \ignore{
@@ -1559,16 +1585,16 @@ We employ \verb|withAsync| and \verb|waitAsync| to detect when the
 initialization actor has died and return from the benchmark.
 
 
-First we define a benchmarking-node, which extends \verb|node'|
+First we define a benchmarking-node, which extends \verb|exnode|
 (\Cref{sec:ring2-intent-fun}) with additional behavior.
 %
 When a benchmarking-node detects that it is confirmed as winner, it sends the
 winner-declaration message to a designated subscriber.
 %
 \begin{code}
-benchNode :: Mv.MVar ThreadId -> Intent Node' SomeException
+benchNode :: Mv.MVar ThreadId -> Intent Exnode SomeException
 benchNode done state e@Envelope{message} = do
-    state' <- node' state e
+    state' <- exnode state e
     self <- myThreadId
     case fromException message of
         Just (Winner w) | w == self -> Mv.putMVar done w
@@ -1707,8 +1733,8 @@ differences.
 
     \item
     In \Cref{fig:chanNodePrimePart}, still within the where-clause of
-    \texttt{chanNode}, \texttt{node'Part} reimplements the behavior of the
-    victory-round node (\Cref{sec:ring2-intent-fun}) and the benchmark-node
+    \texttt{chanNode}, \texttt{exnodePart} reimplements the behavior of the
+    winner-round node (\Cref{sec:ring2-intent-fun}) and the benchmark-node
     (\Cref{sec:perf-eval-detail}).
     %
     We signal termination by placing the confirmed winner's \texttt{ThreadId}
@@ -1726,7 +1752,7 @@ differences.
 chanNode ::
     Mv.MVar ThreadId -> (Ch, Ch) -> ThreadId -> IO ()
 chanNode done chans st = do
-    chanNode done chans =<< node'Part st =<< recv
+    chanNode done chans =<< exnodePart st =<< recv
   where
     recv = Ch.readChan (fst chans)
     sendMsg = Ch.writeChan (snd chans) . Left
@@ -1768,8 +1794,8 @@ where-clause of \Cref{fig:chanNode}.}
 \begin{figure}
 \raggedright
 \begin{code}
-    node'Part :: ThreadId -> Either Msg Winner -> IO ThreadId
-    node'Part great (Left m) = do
+    exnodePart :: ThreadId -> Either Msg Winner -> IO ThreadId
+    exnodePart great (Left m) = do
         nodePart m
         self <- myThreadId
         case m of
@@ -1779,7 +1805,7 @@ where-clause of \Cref{fig:chanNode}.}
                     >> return great
                 else return $ max nominee great
             _ -> return great
-    node'Part great (Right m) = do
+    exnodePart great (Right m) = do
         self <- myThreadId
         case m of
             Winner w
@@ -1790,7 +1816,7 @@ where-clause of \Cref{fig:chanNode}.}
                 | otherwise -> putStrLn "Unexpected winner"
         return great
 \end{code}
-\caption{Channel-based reimplementation of \verb|node'| defined in the
+\caption{Channel-based reimplementation of \verb|exnode| defined in the
 where-clause of \Cref{fig:chanNode}}
 \label{fig:chanNodePrimePart}
 \end{figure}
