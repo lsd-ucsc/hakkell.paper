@@ -47,7 +47,7 @@ clean: $(TEXSRC)
 
 clean-all: $(TEXSRC)
 	latexmk -C
-	rm -fv main.{bbl,ptb,tex}
+	rm -fv main.{bbl,ptb,tex,xcp}
 	rm -fv main.{,noprint.}{hi,o}
 	rm -fv main{,.elf}
 
