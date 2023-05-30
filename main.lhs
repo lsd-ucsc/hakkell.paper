@@ -1451,7 +1451,15 @@ functions, the framework might be considered practical.
 
 \subsection{Pithy statement about performance}
 
-\plr{TODO} "Almost as good as channels"
+\plr{TODO}
+
+\plr{
+\begin{itemize}
+    \item when constrained to 4 capabilities in the threaded RTS, usually chan based implementaton takes 0.3 the time of actor based implementation for up to 2048 nodes
+    \item when given 8 capabilities in the threaded RTS, chan based implementation takes up to 0.9 the time of actor based implementation for 4096 to 16384 nodes
+\end{itemize}
+It's hard to interpret
+}
 
 
 
@@ -1500,11 +1508,6 @@ extended ``awkward squad'' \cite{peytonjones2001tackling}
 
 
 \section{TODO: Conclusion}
-
-%
-We hope the existence of this accidental actor framework 
-, we expect to see it deployed for industrial applications throughout
-the Haskell-sphere.
 
 \plr{TODO}
 
@@ -1605,6 +1608,20 @@ kill itself when termination is detected.
 %
 We employ \verb|withAsync| and \verb|waitAsync| to detect when the
 initialization actor has died and return from the benchmark.
+
+\paragraph{Difficult}
+\plr{
+\begin{itemize}
+    \item Difficult to communicate between actor-world and functional-world
+    because actors do not return values. (Actors do not return!)
+    %
+    \item Difficult to use message passing for this purpose: A non-actor thread
+    (a thread not running an actor mainloop) cannot easily fork a child actor
+    and receive a message from that child. Race conditions, I think.
+    %
+    \item Instead we use a mutable cell for communication.
+\end{itemize}
+}
 
 
 First we define a benchmarking-node, which extends \verb|exnode|
