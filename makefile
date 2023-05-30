@@ -44,12 +44,15 @@ build = ghc -O -threaded -fno-full-laziness -rtsopts -with-rtsopts=-N4
 
 clean: $(TEXSRC)
 	latexmk -c
+	rm -fv *.{o,hi}
 
 clean-all: $(TEXSRC)
 	latexmk -C
 	rm -fv main.{bbl,ptb,tex,xcp}
-	rm -fv main.{,noprint.}{hi,o}
-	rm -fv main{,.elf}
+	rm -fv main.noprint.*
+	rm -fv main.bench.*
+	rm -fv main.prof.*
+	diff -y <(git ls-files | sort) <(ls -a | sort)
 
 preview: $(TEXSRC)
 	latexmk -pvc
