@@ -336,6 +336,7 @@ The ability to recover from a termination signal seems innocuous, but
 it leaves asynchronous exceptions open to be repurposed.
 
 \subsection{The actor model}
+\label{sec:actor-model}
 
 The actor model is a computational paradigm characterized by message passing.
 %
@@ -1360,22 +1361,23 @@ A trace of an extended-election is in \Cref{sec:main2-trace}.
 
 \section{What hath we wrought?}
 
-\Cref{fig:sendStatic,fig:runStatic} show that we have, in only a few lines of
-code, discovered an actor framework within the RTS which makes no explicit use
-of channels, references, or locks and imports just a few names from default
-modules.
+\Cref{fig:sendStatic,fig:runStatic}
+(\verb|sendStatic| and \verb|runStatic|, respectively)
+show that we have, in only a few lines of code, discovered an actor framework
+within the RTS which makes no explicit use of channels, references, or locks
+and imports just a few names from default modules.
 %
 The support for dynamic types, shown in \Cref{fig:send,fig:runDyn} as separate
 definitions, can be folded into \Cref{fig:sendStatic,fig:runStatic} for only a
 few additional lines.
 %
-While the likelihood of double sends might temper enthusiasm for this
-discovery, despite minor brokenness it is notable that this is possible and
-shocking that it is so easy.
+Despite minor brokenness it is notable that this is possible and shocking that
+it is so easy.
 
 \subsection{Almost a COPL}
 
-Which requirements to be a COPL does this framework display?
+Which requirements to be a COPL (\Cref{sec:actor-model}) does this framework
+display?
 %
 RTS threads behave as independent processes, and although not strongly
 isolated and able to share state, they have a unique hidden \verb|ThreadId|.
@@ -1426,13 +1428,19 @@ At the same time this choice runs afoul of the \emph{name distribution problem}
 \cite{armstrong2003} by indiscriminately informing all recipients of the sender
 process identifier.
 %
-One strategy hide to an actor's name and restore the lost security isolation is
+One strategy to hide to an actor's name and restore the lost security isolation is
 to wrap calls to the send function with \verb|forkIO|.
 %
 Another strategy would be to define two constructors for envelope, and elide
 the ``sender'' field from one.
 
-From this discussion in is clear that this actor framework is almost a COPL.
+By comparing the discussion above with the requirements in
+\Cref{sec:actor-model}, it is clear that this actor framework is \emph{almost}
+a COPL.
+%
+It also meets our informal requirements that actors can send and receive
+messages, update state, and spawn or kill other actors (though we have not
+shown examples of all of these).
 %
 With conscientious attention to the termination and idempotence of intent
 functions, the framework might be considered practical.
