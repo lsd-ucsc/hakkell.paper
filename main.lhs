@@ -131,6 +131,7 @@
     many different ways -- some more advisable than others.
     \plr{I've tweaked the last sentence to hopefully not seem like a
     non-sequitur and better lead into the following paragraph.}
+    \lk{It's the mention of algebraic effects that seems like a non sequitur to me.  Why should ``and forthcoming support for algebraic effects'' need to be in there?  I don't know what it has to do with this paper.}
 
     We present a user-accessible actor framework hidden in plain sight within
     the RTS and demonstrate it on a classic example.
@@ -142,6 +143,8 @@
     feature in terms of another, and make recommendations about how GHC can
     guide best practice by constraining the use of some features.
     \plr{Tried making this last more specific.}
+    \lk{I think that ``we raise questions about the ability to express one language
+    feature in terms of another'' sounds very broad and sweeping, and also pretty vague.  Can we say something more specific?}
 \end{abstract}
 
 %%%% %%
@@ -204,20 +207,26 @@ Compiler (GHC) \cite{fausak2022} together with its runtime system (RTS).
 %
 The RTS is featureful and boasts support for lightweight threads, two kinds of
 profiling, transactional memory, asynchronous exceptions, and a slew of other
-feautures.
+features.
 %
 Combined with the \verb|base| package libraries, a programmer can get a lot
 done without ever reaching into the extensive set of community packages on
 Hackage (and more when you do!).
+\lk{I'm OK with the level of informality here, but I don't care for the ``(and more when you do!)'' parenthetical because it doesn't do anything to advance our narrative.  Sure, it's true that there are a lot of good packages on Hackage, but isn't that immaterial to what this paper is about?}
 
 In that spirit, we noticed that there's nothing really stopping one from
 abusing the tools \verb|throwTo| and \verb|catch| to play a game of pass.
+\lk{I don't know what ``a game of pass'' is}
 %
 Since any user-defined datatype can be used as an asynchronous exception, why
-not implement message passing algorithms on that substrate?
+not implement message-passing algorithms on that substrate?
 %
 We pursued this line of thought and in this paper we present an actor framework
 hidden just under the surface of the RTS.
+
+\lk{I think that the informality is fine, but the next two or three paragraphs are going to be hard for a reader to appreciate until the reader has actually read the paper and seen what we did.  Therefore, I suggest saving this kind of stuff for \Cref{sec:what-hath-we-wrought} or \Cref{sec:conclusion}.  For the introduction, let's aim for a short, ``just the facts'' sort of thing.  It's OK for the intro to be only one page, or even less!}
+
+\lk{While informality is fine and good, we shouldn't make unsupported claims like ``it's almost there'' in the name of being informal.  We can keep the informality but support the claims!  E.g., in what way is it ``almost there''?  What would being fully ``there'' look like?  What stops it from being ``there''?}
 
 The actor framework we present is not an advancement:
 %
@@ -231,7 +240,7 @@ or references, no effort to achieve synchronization, and very little code, but
 is also exceedingly difficult to debug (as are problems with asynchronous
 exceptions).
 
-Should it be possible to implement the actor framework we present here?
+\emph{Should} it have been possible to implement the actor framework we present here?
 %
 It's \emph{almost} practical.
 %
@@ -246,7 +255,7 @@ of the time).
 But in this paper we achieve dynamically typed ``spooky action at a distance''
 with frighteningly little effort.
 %
-Should the user accessible interface to the asynchronous exception system be
+Should the user-accessible interface to the asynchronous exception system be
 constrained?
 
 \paragraph{An extended ``awkward squad''}
@@ -265,8 +274,7 @@ And should their full power be exposed so that we can do so?
 %
 Let's explore one example (actors on exceptions) and have a think about it.
 
-
-
+\lk{So, I know I'm fickle and said something else before, but I now think that these next two subsections should be moved out of the introduction, because the level of detail here seems like too much for an introduction.  They could become a section 2 called "Brief Background" or something, or there could be a background subsection at the start of the existing section 2.}
 
 \subsection{Exceptions in GHC}
 
@@ -277,6 +285,10 @@ exceptions are weird?}
 asynchronous exceptions are weird. The topic sentences of the next three
 paragraphs indicate this by comparing their power/unsafety to mutable
 references and using words like "peculiar" and "surprisingly".}
+
+\lk{I'd just do it this way: ``The Glasgow Haskell Compiler (GHC) is unususal in its support of \emph{asynchronous exceptions}.  Unlike GHC's imprecise exceptions or synchronous exceptions, asynchronous exceptions are thrown by threads \emph{distinct from the current one}, or by the RTS itself, to communicate conditions requiring the current thread to terminate: thread cancellation, user interrupts, or memory limits.''  If you want, you can add pointers to documentation for imprecise exceptions and synchronous exceptions, but I don't think we need to say any more about them.}
+
+\lk{I'm still confused about whether or not these three categories are mutually exclusive.  The names ``asynchronous''/``synchronous'' \emph{sound} like all exceptions should be either one or the other.}
 
 The Glasgow Haskell Compiler (GHC) supports three varieties of exceptions, all
 of which may be caught in the IO monad and otherwise cause the program to
@@ -291,7 +303,7 @@ terminate.
     %
     \item[--] \emph{Asynchronous exceptions} are thrown by threads \emph{distinct from the
     current one}, or by the RTS itself, to communicate conditions requiring the
-    thread to terminate: thread cancellation, user interrupts, or memory limits.
+    current thread to terminate: thread cancellation, user interrupts, or memory limits.
 \end{itemize}
 %
 We focus exclusively on asynchronous exceptions for the rest of the paper.
@@ -412,6 +424,7 @@ instance Exception Greet
 
 
 \section{Actor framework implementation}
+\label{sec:actor-framework}
 
 In our framework, an actor is a Haskell thread running a
 provided main-loop function.
@@ -1360,6 +1373,7 @@ A trace of an extended-election is in \Cref{sec:main2-trace}.
 
 
 \section{What hath we wrought?}
+\label{sec:what-hath-we-wrought}
 
 \Cref{fig:sendStatic,fig:runStatic}
 (\verb|sendStatic| and \verb|runStatic|, respectively)
@@ -1508,6 +1522,7 @@ extended ``awkward squad'' \cite{peytonjones2001tackling}
 
 
 \section{TODO: Conclusion}
+\label{sec:conclusion}
 
 \plr{TODO}
 
