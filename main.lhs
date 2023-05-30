@@ -276,35 +276,17 @@ Let's explore one example (actors on exceptions) and have a think about it.
 
 \lk{So, I know I'm fickle and said something else before, but I now think that these next two subsections should be moved out of the introduction, because the level of detail here seems like too much for an introduction.  They could become a section 2 called "Brief Background" or something, or there could be a background subsection at the start of the existing section 2.}
 
-\subsection{Exceptions in GHC}
+\subsection{Asynchronous exceptions in GHC}
 
-\plr{Should I re-title this to indicate that the point is that asynchronous
-exceptions are weird?}
-
-\plr{I introduce all three kinds of exceptions to draw the contrast that
-asynchronous exceptions are weird. The topic sentences of the next three
-paragraphs indicate this by comparing their power/unsafety to mutable
-references and using words like "peculiar" and "surprisingly".}
-
-\lk{I'd just do it this way: ``The Glasgow Haskell Compiler (GHC) is unususal in its support of \emph{asynchronous exceptions}.  Unlike GHC's imprecise exceptions or synchronous exceptions, asynchronous exceptions are thrown by threads \emph{distinct from the current one}, or by the RTS itself, to communicate conditions requiring the current thread to terminate: thread cancellation, user interrupts, or memory limits.''  If you want, you can add pointers to documentation for imprecise exceptions and synchronous exceptions, but I don't think we need to say any more about them.}
-
-\lk{I'm still confused about whether or not these three categories are mutually exclusive.  The names ``asynchronous''/``synchronous'' \emph{sound} like all exceptions should be either one or the other.}
-
-The Glasgow Haskell Compiler (GHC) supports three varieties of exceptions, all
-of which may be caught in the IO monad and otherwise cause the program to
-terminate.
+The Glasgow Haskell Compiler (GHC) is unusual in its support of
+\emph{asynchronous exceptions}.
 %
-\begin{itemize}[leftmargin=1.5em]
-    \item[--] \emph{Imprecise exceptions} arise in pure code from expressions such as
-    \verb|(div 1 0)| which cannot be reduced further.
-    %
-    \item[--] \emph{Synchronous exceptions} are thrown when side effects in the IO monad
-    cannot proceed, such as \verb|(readFile "\0")|.
-    %
-    \item[--] \emph{Asynchronous exceptions} are thrown by threads \emph{distinct from the
-    current one}, or by the RTS itself, to communicate conditions requiring the
-    current thread to terminate: thread cancellation, user interrupts, or memory limits.
-\end{itemize}
+Unlike synchronous exceptions, which are thrown by code in the current thread,
+asynchronous exceptions are thrown by threads distinct from the current one, or
+by the RTS itself.
+%
+They communicate conditions requiring the current thread to
+terminate: thread cancellation, user interrupts, or memory limits.
 %
 We focus exclusively on asynchronous exceptions for the rest of the paper.
 
