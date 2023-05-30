@@ -4,7 +4,7 @@ set -e -u -o pipefail
 set -x
 
 # turn off passive cooling
-systemctl stop tlp.service
+systemctl stop tlp.service thermald.service
 
 # turn off active and passive scaling
 sudo bash -c 'echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo'

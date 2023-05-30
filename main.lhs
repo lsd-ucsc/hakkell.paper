@@ -1669,11 +1669,11 @@ These alternates are shown in \Cref{sec:alt-impls}.
 benchMain :: IO ()
 benchMain = Cr.defaultMain
     [ Cr.bgroup "fork & kill" $ fmap control counts
-    , Cr.bgroup "actor ring" $ fmap actor counts
     , Cr.bgroup "channel ring" $ fmap channel counts
+    , Cr.bgroup "actor ring" $ fmap actor counts
     ]
   where
-    counts = [2^n | n <- [2..11::Int]]
+    counts = [2^n | n <- [2,4..14::Int]]
     control n =
         Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchControl n
     actor n =

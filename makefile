@@ -27,8 +27,8 @@ $(PAPER).pdf: $(PAPER).tex ring.tex $(PAPER).bib
 	./$< --output $@.html -m glob '*/*2048' --verbosity 2 +RTS -ls
 
 
-# compile threaded, optimized, but w/o let floating
-build = ghc -O -fno-full-laziness -threaded -rtsopts -with-rtsopts=-N4
+# compile for benchmark
+build = ghc -O -threaded -fno-full-laziness -rtsopts -with-rtsopts=-N4
 
 %.bench.elf: %.noprint.lhs
 	$(build) $< -o $@
