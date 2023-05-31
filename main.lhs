@@ -126,12 +126,9 @@
     fully-featured runtime. A language with a less fully-featured runtime uses
     OS threads.}
     %
-    The combination of these features, and forthcoming support for algebraic
-    effects is powerful enough that a programmer may complete the same task in
-    many different ways -- some more advisable than others.
-    \plr{I've tweaked the last sentence to hopefully not seem like a
-    non-sequitur and better lead into the following paragraph.}
-    \lk{It's the mention of algebraic effects that seems like a non sequitur to me.  Why should ``and forthcoming support for algebraic effects'' need to be in there?  I don't know what it has to do with this paper.}
+    The combination of these features is powerful enough that a programmer may
+    complete the same task in many different ways -- some more advisable than
+    others.
 
     We present a user-accessible actor framework hidden in plain sight within
     the RTS and demonstrate it on a classic example.
@@ -139,12 +136,9 @@
     We then extend both the framework and example to the realm of dynamic
     types.
     %
-    Finally, we raise questions about the ability to express one language
-    feature in terms of another, and make recommendations about how GHC can
+    Finally, we raise questions about how RTS features intersect and possibly
+    subsume one another, and make recommendations about how GHC can
     guide best practice by constraining the use of some features.
-    \plr{Tried making this last more specific.}
-    \lk{I think that ``we raise questions about the ability to express one language
-    feature in terms of another'' sounds very broad and sweeping, and also pretty vague.  Can we say something more specific?}
 \end{abstract}
 
 %%%% %%
@@ -217,16 +211,22 @@ Hackage (and more when you do!).
 In that spirit, we noticed that there's nothing really stopping one from
 abusing the tools \verb|throwTo| and \verb|catch| to play a game of pass.
 \lk{I don't know what ``a game of pass'' is}
+\plr{say asynchronous exceptions}
 %
 Since any user-defined datatype can be used as an asynchronous exception, why
 not implement message-passing algorithms on that substrate?
+\plr{break into two sentences? too dense}
 %
+\plr{new paragraph}
 We pursued this line of thought and in this paper we present an actor framework
 hidden just under the surface of the RTS.
+\plr{roadmap the rest of the paper; foreshadow the questions}
+\plr{short}
 
 \lk{I think that the informality is fine, but the next two or three paragraphs are going to be hard for a reader to appreciate until the reader has actually read the paper and seen what we did.  Therefore, I suggest saving this kind of stuff for \Cref{sec:what-hath-we-wrought} or \Cref{sec:conclusion}.  For the introduction, let's aim for a short, ``just the facts'' sort of thing.  It's OK for the intro to be only one page, or even less!}
 
 \lk{While informality is fine and good, we shouldn't make unsupported claims like ``it's almost there'' in the name of being informal.  We can keep the informality but support the claims!  E.g., in what way is it ``almost there''?  What would being fully ``there'' look like?  What stops it from being ``there''?}
+\plr{move last two to conclusion or wrought?}
 
 The actor framework we present is not an advancement:
 %
@@ -275,6 +275,7 @@ And should their full power be exposed so that we can do so?
 Let's explore one example (actors on exceptions) and have a think about it.
 
 \lk{So, I know I'm fickle and said something else before, but I now think that these next two subsections should be moved out of the introduction, because the level of detail here seems like too much for an introduction.  They could become a section 2 called "Brief Background" or something, or there could be a background subsection at the start of the existing section 2.}
+\plr{brief backround}
 
 \subsection{Asynchronous exceptions in GHC}
 
@@ -529,7 +530,7 @@ argument.
 \begin{code}
 type Intent st msg = st -> Envelope msg -> IO st
 \end{code}
-\caption{Actor behavior is encoded as a transition system.}
+\caption{Actor behavior is encoded as a transition system.\plr{no one-line figures!}}
 \label{fig:intent}
 \end{figure}
 
@@ -1094,6 +1095,7 @@ ringElection n actor = do
 \caption{A trace of the ring leader-election solution.}
 \label{fig:main1-trace}
 \end{figure}
+\plr{remove extra trace from the end}
 
 
 
@@ -1367,7 +1369,11 @@ The support for dynamic types, shown in \Cref{fig:send,fig:runDyn} as separate
 definitions, can be folded into \Cref{fig:sendStatic,fig:runStatic} for only a
 few additional lines.
 %
-Despite minor brokenness it is notable that this is possible and shocking that
+Despite minor brokenness
+\plr{be a reader who doesn't remember; what brokenness?}
+it is notable
+\plr{don't tell people what to feel; "we find it"}
+that this is possible and shocking that
 it is so easy.
 
 \subsection{Almost a COPL}
@@ -1430,8 +1436,11 @@ to wrap calls to the send function with \verb|forkIO|.
 Another strategy would be to define two constructors for envelope, and elide
 the ``sender'' field from one.
 
-By comparing the discussion above with the requirements in
-\Cref{sec:actor-model}, it is clear that this actor framework is \emph{almost}
+By comparing the discussion above with
+\citeauthor{armstrong2003}'s
+requirements summarized in
+\Cref{sec:actor-model},
+we claim that this actor framework is \emph{almost}
 a COPL.
 %
 It also meets our informal requirements that actors can send and receive
@@ -1455,6 +1464,13 @@ functions, the framework might be considered practical.
     \item when given 8 capabilities in the threaded RTS, chan based implementation takes up to 0.9 the time of actor based implementation for 4096 to 16384 nodes
 \end{itemize}
 It's hard to interpret
+}
+\plr{
+    lindsey: this is extra; anything isfine;
+    %
+    will it generate a pdf?
+    %
+    put like N next to each other
 }
 
 
