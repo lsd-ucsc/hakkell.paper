@@ -122,16 +122,17 @@
     The Glasgow Haskell Compiler is known for its fully featured runtime
     system (RTS) which includes lightweight threads, asynchronous exceptions, and --
     recently -- delimited continuations.
-    \plr{Leaving "lightweight threads" in because it's part of being a
-    fully-featured runtime. A language with a less fully-featured runtime uses
-    OS threads.}
+    %%\plr{Leaving "lightweight threads" in because it's part of being a
+    %%fully-featured runtime. A language with a less fully-featured runtime uses
+    %%OS threads.}
     %
     The combination of these features is powerful enough that a programmer may
     complete the same task in many different ways -- some more advisable than
     others.
 
     We present a user-accessible actor framework hidden in plain sight within
-    the RTS and demonstrate it on a classic example.
+    the RTS and demonstrate it on a classic example from the distributed
+    systems literature.
     %
     We then extend both the framework and example to the realm of dynamic
     types.
@@ -203,25 +204,20 @@ The RTS is featureful and boasts support for lightweight threads, two kinds of
 profiling, transactional memory, asynchronous exceptions, and a slew of other
 features.
 %
-Combined with the \verb|base| package libraries, a programmer can get a lot
+Combined with the \verb|base| package, a programmer can get a lot
 done without ever reaching into the extensive set of community packages on
-Hackage (and more when you do!).
-\lk{I'm OK with the level of informality here, but I don't care for the ``(and more when you do!)'' parenthetical because it doesn't do anything to advance our narrative.  Sure, it's true that there are a lot of good packages on Hackage, but isn't that immaterial to what this paper is about?}
+Hackage.
 
-In that spirit, we noticed that there's nothing really stopping one from
-abusing the tools \verb|throwTo| and \verb|catch| to play a game of pass.
-\lk{I don't know what ``a game of pass'' is}
-\plr{say asynchronous exceptions}
+In that spirit,
+we noticed that there's nothing really stopping one from
+abusing the tools \verb|throwTo| and \verb|catch|
+to pass data between threads.
+%%\lk{I don't know what ``a game of pass'' is}
+%%\plr{say asynchronous exceptions}
 %
-Since any user-defined datatype can be used as an asynchronous exception, why
-not implement message-passing algorithms on that substrate?
-\plr{break into two sentences? too dense}
+Any user-defined datatype can be made into an asynchronous exception.
 %
-\plr{new paragraph}
-We pursued this line of thought and in this paper we present an actor framework
-hidden just under the surface of the RTS.
-\plr{roadmap the rest of the paper; foreshadow the questions}
-\plr{short}
+Why not implement message-passing algorithms on that substrate?
 
 \lk{I think that the informality is fine, but the next two or three paragraphs are going to be hard for a reader to appreciate until the reader has actually read the paper and seen what we did.  Therefore, I suggest saving this kind of stuff for \Cref{sec:what-hath-we-wrought} or \Cref{sec:conclusion}.  For the introduction, let's aim for a short, ``just the facts'' sort of thing.  It's OK for the intro to be only one page, or even less!}
 
