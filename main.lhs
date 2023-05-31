@@ -219,59 +219,49 @@ Any user-defined datatype can be made into an asynchronous exception.
 %
 Why not implement message-passing algorithms on that substrate?
 
-\lk{I think that the informality is fine, but the next two or three paragraphs are going to be hard for a reader to appreciate until the reader has actually read the paper and seen what we did.  Therefore, I suggest saving this kind of stuff for \Cref{sec:what-hath-we-wrought} or \Cref{sec:conclusion}.  For the introduction, let's aim for a short, ``just the facts'' sort of thing.  It's OK for the intro to be only one page, or even less!}
+We pursued this line of thought, and in this paper we present an actor
+framework hidden just under the surface of the RTS.
+%
+This paper is a literate Haskell program.\footnote{
+    We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
+    %
+    The actor framework imports \verb|Control.Exception| and
+    \verb|Control.Concurrent|, and we use the extensions \verb|NamedFieldPuns|
+    and \verb|DuplicateRecordFields| for convenience of its presentation.
+    %
+    The example section additionally imports the module \verb|System.Random|
+    and uses the extension \verb|ViewPatterns|.
+    %
+    The appendices have other imports which we don't decribe here.
+}
+\begin{itemize}[leftmargin=1.5em]
+    \item[--] \Cref{sec:background} provides a concise summary of asynchronous
+    exceptions in GHC and the actor model of programming.
 
-\lk{While informality is fine and good, we shouldn't make unsupported claims like ``it's almost there'' in the name of being informal.  We can keep the informality but support the claims!  E.g., in what way is it ``almost there''?  What would being fully ``there'' look like?  What stops it from being ``there''?}
-\plr{move last two to conclusion or wrought?}
+    \item[--] \Cref{sec:actor-framework} details the implementation of our
+    actor framework. We first show how actors receive messages of a single
+    type. Next we upgrade the framework to support dynamically typed actors,
+    which receive messages of more than one type.
 
-The actor framework we present is not an advancement:
-%
-It is easy to use, but easy to use wrongly.
-%
-It has acceptable throughput, but is slower than accepted tools (\verb|Chan|
-and \verb|STM|).
-%
-It requires no appreciable dependencies, no explicitly mutable data structures
-or references, no effort to achieve synchronization, and very little code, but
-is also exceedingly difficult to debug (as are problems with asynchronous
-exceptions).
+    \item[--] \Cref{sec:ring-impl} shows an implementation of the ring
+    leader-election algorithm using actors. Then we extend the actors with an
+    additional message type and behavior without changing the original
+    implementation.
 
-\emph{Should} it have been possible to implement the actor framework we present here?
-%
-It's \emph{almost} practical.
-%
-Given that it's \emph{almost} there, and yet emphatically, should not be used
-in practice, we question why it's possible in the first place, much less so
-easy.
-%
-Like many people, we choose Haskell because it is a tool that typically
-prevents ``whole classes of errors,'' and also because it is a joy to use (most
-of the time).
-%
-But in this paper we achieve dynamically typed ``spooky action at a distance''
-with frighteningly little effort.
-%
-Should the user-accessible interface to the asynchronous exception system be
-constrained?
+    \item[--] We reflect on whether this was a good idea in
+    \Cref{sec:what-hath-we-wrought}:
+    Situating the actor framework and reviewing its performance,
+    arguing that asynchronous exceptions might be more constrained,
+    and raising 
+    and raising the question of whether or not users should be able to
+    implement language features in terms of others, wrapping up in
+    \Cref{sec:conclusion}. \plr{foreshadow ``extended "awkward squad"''}
+\end{itemize}
 
-\paragraph{An extended ``awkward squad''}
 
-A user of the RTS may soon enjoy software transactional memory, asynchronous
-exceptions, delimited continuations, extensible algebraic effects, and more,
-all together in the same tub.
-%
-The water is warm, jump in!
-\plr{The list above is better the more powerful the features are; STM doesn't
-fit; what are some other powerful GHC features?}
-%
-Which of these features can be implemented in terms of the other?
-%
-And should their full power be exposed so that we can do so?
-%
-Let's explore one example (actors on exceptions) and have a think about it.
 
-\lk{So, I know I'm fickle and said something else before, but I now think that these next two subsections should be moved out of the introduction, because the level of detail here seems like too much for an introduction.  They could become a section 2 called "Brief Background" or something, or there could be a background subsection at the start of the existing section 2.}
-\plr{brief backround}
+\section{Brief background}
+\label{sec:background}
 
 \subsection{Asynchronous exceptions in GHC}
 
@@ -413,19 +403,6 @@ user-defined intent function.
 %
 Here we describe the minimal abstractions around such threads which realize the
 actor model.
-%
-This paper is a literate Haskell program.\footnote{
-    We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
-    %
-    The actor framework imports \verb|Control.Exception| and
-    \verb|Control.Concurrent|, and we use the extensions \verb|NamedFieldPuns|
-    and \verb|DuplicateRecordFields| for convenience of its presentation.
-    %
-    The example section additionally imports the module \verb|System.Random|
-    and uses the extension \verb|ViewPatterns|.
-    %
-    The appendices have other imports which we don't decribe here.
-}
 
 \ignore{
 \begin{code}
@@ -1518,7 +1495,60 @@ extended ``awkward squad'' \cite{peytonjones2001tackling}
 \section{TODO: Conclusion}
 \label{sec:conclusion}
 
-\plr{TODO}
+
+\lk{I think that the informality is fine, but the next two or three paragraphs are going to be hard for a reader to appreciate until the reader has actually read the paper and seen what we did.  Therefore, I suggest saving this kind of stuff for \Cref{sec:what-hath-we-wrought} or \Cref{sec:conclusion}.  For the introduction, let's aim for a short, ``just the facts'' sort of thing.  It's OK for the intro to be only one page, or even less!}
+
+\lk{While informality is fine and good, we shouldn't make unsupported claims like ``it's almost there'' in the name of being informal.  We can keep the informality but support the claims!  E.g., in what way is it ``almost there''?  What would being fully ``there'' look like?  What stops it from being ``there''?}
+\plr{move last two to conclusion or wrought?}
+
+The actor framework we present is not an advancement:
+%
+It is easy to use, but easy to use wrongly.
+%
+It has acceptable throughput, but is slower than accepted tools (\verb|Chan|
+and \verb|STM|).
+%
+It requires no appreciable dependencies, no explicitly mutable data structures
+or references, no effort to achieve synchronization, and very little code, but
+is also exceedingly difficult to debug (as are \plr{jmc: cannot parse "as are"} problems with asynchronous
+exceptions).
+
+\emph{Should} it have been possible to implement the actor framework we present here?
+%
+It's \emph{almost} practical.
+%
+Given that it's \emph{almost} there, and yet emphatically should not be used
+in practice, we question why it's possible in the first place, much less so
+easy.
+%
+Like many people, we choose Haskell because it is a tool that typically
+prevents ``whole classes of errors,'' and also because it is a joy to use (most
+of the time).
+%
+But in this paper we achieve dynamically typed ``spooky action at a distance''
+with frighteningly little effort.
+%
+Should the user-accessible interface to the asynchronous exception system be
+constrained?
+
+\paragraph{An extended ``awkward squad''}
+
+A user of the RTS may soon enjoy software transactional memory, asynchronous
+exceptions, delimited continuations, extensible algebraic effects, and more,
+all together in the same tub.
+%
+The water is warm, jump in!
+\plr{The list above is better the more powerful the features are; STM doesn't
+fit; what are some other powerful GHC features?}
+%
+Which of these features can be implemented in terms of the other?
+%
+And should their full power be exposed so that we can do so?
+%
+Let's explore one example -- actors on exceptions -- and have a think about it.
+
+\lk{So, I know I'm fickle and said something else before, but I now think that these next two subsections should be moved out of the introduction, because the level of detail here seems like too much for an introduction.  They could become a section 2 called "Brief Background" or something, or there could be a background subsection at the start of the existing section 2.}
+\plr{brief backround}
 
 
 
