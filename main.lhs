@@ -265,12 +265,13 @@ This paper is a literate Haskell program.\footnote{
 
 \subsection{Asynchronous exceptions in GHC}
 
-The Glasgow Haskell Compiler (GHC) is unusual in its support of
+The Glasgow Haskell Compiler (GHC) is unusual in its support for
 \emph{asynchronous exceptions}.
 %
-Unlike synchronous exceptions, which are thrown by code in the current thread,
-asynchronous exceptions are thrown by threads distinct from the current one, or
-by the RTS itself.
+Unlike synchronous exceptions,
+which are thrown as a result of executing code in the current thread,
+asynchronous exceptions are thrown by threads distinct from the current one,
+or by the RTS itself.
 %
 They communicate conditions requiring the current thread to
 terminate: thread cancellation, user interrupts, or memory limits.
@@ -308,7 +309,7 @@ For example, with the declarations in \Cref{fig:greet} it is possible to greet
 in vernacular: \verb|(\x -> throwTo x Hi)|.
 
 Asynchronous exceptions may be caught by the receiving thread for
-either cleanup or surprisingly, recovery.
+either cleanup or, surprisingly, recovery.
 %
 An example of recovery includes ``inform[ing] the program when memory is
 running out [so] it can take remedial action'' \cite{marlow2001async}.
@@ -321,7 +322,7 @@ it leaves asynchronous exceptions open to be repurposed.
 
 The actor model is a computational paradigm characterized by message passing.
 %
-\citet{hewitt1973actors} says, ``an actor can be thought of as a kind of
+\citet{hewitt1973actors} says ``an actor can be thought of as a kind of
 virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
@@ -492,7 +493,7 @@ sendStatic recipient message = do
 \label{sec:receiving-catching}
 
 
-An actor is defined by how it behaves in response messages.
+An actor is defined by how it behaves in response to messages.
 %
 A user-defined intent function, with the type shown in \Cref{fig:intent}, 
 encodes behavior as state transition that takes a self-addressed envelope
@@ -818,7 +819,7 @@ A correct solution will result in exactly one node being designated the leader.
 %
 We choose to demonstrate a solution to this classic problem in distributed
 systems literature because it nicely illustrates concurrent programming,
-despite being unnecessary in the context threads in a process.
+despite being unnecessary in the context of threads in a process.
 
 \citet{chang1979decentralextrema} describe a solution that begins with every
 node sending a message to its successor to nominate itself as the leader.
