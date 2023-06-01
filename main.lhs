@@ -138,8 +138,8 @@
     types.
     %
     Finally, we raise questions about how RTS features intersect and possibly
-    subsume one another, and make recommendations about how GHC can
-    guide good practice by constraining the use of some features.
+    subsume one another, and suggest how GHC can guide good practice by
+    constraining the use of some features.
 \end{abstract}
 
 %%%% %%
@@ -423,7 +423,7 @@ instance Exception Greet
 \caption{
     \verb|Show| and \verb|Exception| instances are all that is required to
     become an asynchronous exception.
-    \plr{ensure not near \Cref{fig:envelope-and-intent}}
+    %%\plr{ensure not near \Cref{fig:envelope-and-intent}}
 }
 \label{fig:greet}
 \end{figure}
@@ -934,8 +934,8 @@ receive messages of type \verb|Msg|, as defined in \Cref{fig:node-types}.
 %
 We show its implementation and describe each case here below.
 %
-\plr{These three cases for the implementation of \verb|node| is the only code
-outside of a figure. I think it reads better in-flow of the prose.}
+%%\plr{These three cases for the implementation of \verb|node| is the only code
+%%outside of a figure. I think it reads better in-flow of the prose.}
 %
 \begin{code}
 node :: Intent Node Msg
@@ -1043,6 +1043,7 @@ main1 count = do
 %
 An election execution trace appears in \Cref{fig:main1-trace}.
 
+%% TRY SETTING THESE TWO FIGURES TO [h] TO FIX THE PAGE THEY APPEAR ON
 
 \begin{figure}
 \raggedright
@@ -1058,7 +1059,7 @@ ringElection n actor = do
     return ring
 \end{code}
 \caption{Ring leader election initialization.
-    \plr{Make sure this doesn't float into the definition of \verb|node|.}
+    %%\plr{Make sure this doesn't float into the definition of \verb|node|.}
 }
 \label{fig:ringElection}
 \end{figure}
@@ -1072,7 +1073,6 @@ ringElection n actor = do
 \caption{An execution trace of the ring leader election solution.}
 \label{fig:main1-trace}
 \end{figure}
-\plr{remove extra trace from the end}
 
 
 
@@ -1210,7 +1210,7 @@ In each of its branches, node state is updated by delegating part of message
 handling to the held node.
 %
 We annotate the rest of \Cref{fig:exnode-case-msg} as follows:
-\plr{I would like to put this list into the caption, but was unable to.}
+%%\plr{I would like to put this list into the caption, but was unable to.}
 %
 \begin{enumerate}[leftmargin=2em]
     \item Delegate to the held node by putting the revealed \verb|Msg| back
@@ -1433,122 +1433,125 @@ functions, the framework might be considered practical.
 
 
 
-\subsection{Pithy statement about performance}
+\subsection{Performance evaluation}
 
-\plr{TODO}
+Despite the avowed impracticality of this actor framework, we felt it was
+necessary to compare to some traditional means of inter-thread communication
+to put away any doubt.
+%
+We implemented ring leader election from \Cref{sec:ring-impl} in
+\Cref{sec:alt-impls} using channels.\footnote{Channels from
+\texttt{base:Control.Concurrent.Chan}.}
+%
+We also implemented a control which forks some number of threads that do
+nothing and immediately kills them.
+%
+We then compared the running time of the actor-based and channel-based
+implementations and control on various ring sizes using the \verb|criterion|
+package from Hackage.
+%
+The details of how this benchmark was made reliable are in
+\Cref{sec:perf-eval-detail}.
 
-\plr{
-\begin{itemize}
-    \item when constrained to 4 capabilities in the threaded RTS, usually chan based implementaton takes 0.3 the time of actor based implementation for up to 2048 nodes
-    \item when given 8 capabilities in the threaded RTS, chan based implementation takes up to 0.9 the time of actor based implementation for 4096 to 16384 nodes
-\end{itemize}
-It's hard to interpret
-}
-\plr{
-    lindsey: this is extra; anything isfine;
-    %
-    will it generate a pdf?
-    %
-    put like N next to each other
-}
+\Cref{fig:perf} shows a comparison of wall-clock running times of the
+actor-based and channel-based ring leader election algorithms and the control
+for different ring sizes.
+\plr{append one of the following paragraphs depending on whether we have time
+to run on the bigger machine}
+
+\plr{PERF EVAL 1}
+%
+The actor-based implementation consistently runs a bit slower than the
+channel-based implementation, but the difference in running time gets less
+significant as either the ring size and number of capabilities increases.
+%
+It is possible that the differences between the two implementations become
+irrelevant as our benchmarking machine (supporting only 8 capabilities) was
+simply overloaded.
+%
+Another possibility is that there is some overhead in the channel based
+implementation which the actor based implementation doesn't accumulate as
+larger rings are tested.
+
+\plr{PERF EVAL 2}
+The actor-based implementation is slower than the channel-based implementation
+for ring sizes less than \plr{what}, and faster than the channel-based
+implementation for ring sizes greater than \plr{what} on our test machine.
+%
+We rented an \verb|192vCPU| Amazon AWS \verb|c6a.48xlarge| instance for our
+benchmark.
+%
+\plr{ETC}
+
+\begin{figure}
+\plr{TODO criterion figure}
+\caption{The performance evaluation result.}
+\label{fig:perf}
+\end{figure}
 
 
 
 
-
-\subsection{Feature subsumption}
-
-\lk{Let's figure out what the point is that we want to make here.}
+\section{Conclusion}
+\label{sec:conclusion}
 
 Can we implement an actor framework with Haskell's threads and asynchronous
 exceptions?
 %
-This is the question that led us to writing this paper.
+This question led us to writing this paper.
 %
-\Cref{fig:static-impl} shows that we very nearly can, and this fact hints
-that perhaps asynchronous exceptions are more general than actors.
-\lk{It's not just \Cref{fig:static-impl} in isolation.  How about ``Our implementation suggests that we very nearly can.''}
-\lk{But, why ``very nearly can'' and not just ``can''?  We should explicit about what's missing if something is missing, instead of using weasel words}
-
-When we discussed this research at an informal gathering, a participant asked
-whether algebraic effects could be used to implement asynchronous exceptions.
-%
-This lead us to a lively discussion:
-%
-Can you implement them in terms of delimited continuations?
-%
-What does this mean for the design of exception systems? 
-%
-What is the relationship to coroutines?
-%
-\lk{I think the above stuff about the ``gathering'' and the ``lively discussion'' is too colloquial.  We could say something like ``Several questions come to mind:'' and then discuss the questions.  We should be sure to put the PLV group in the acks if this paper gets accepted.}
-
-\plr{
-Are Haskell's asynchronous exceptions truly asynchronous, given that a sender
-could block?
-}
-
-\citet[p.~40]{sussman1975interpreter} say, ``we discovered that the "actors"
-and the lambda expressions were identical in implementation.
-
-extended ``awkward squad'' \cite{peytonjones2001tackling}
+Our implementation and results show that we can, and this fact hints that
+perhaps asynchronous exceptions are more general than actors.
 
 
-
-
-
-
-\section{TODO: Conclusion}
-\label{sec:conclusion}
-
-\lk{While informality is fine and good, we shouldn't make unsupported claims like ``it's almost there'' in the name of being informal.  We can keep the informality but support the claims!  E.g., in what way is it ``almost there''?  What would being fully ``there'' look like?  What stops it from being ``there''?}
-\plr{move last two to conclusion or wrought?}
-
-The actor framework we present is not an advancement:
+However the actor framework we present is not an advancement:
 %
 It is easy to use, but easy to use wrongly.
 %
-It has acceptable throughput, but is slower than accepted tools (\verb|Chan|
-and \verb|STM|).
+It has acceptable throughput, but is slower than accepted
+tools.\footnote{\texttt{Chan} and \texttt{TChan}}
 %
 It requires no appreciable dependencies, no explicitly mutable data structures
-or references, no effort to achieve synchronization, and very little code, but
-is also exceedingly difficult to debug (as are \plr{jmc: cannot parse "as are"} problems with asynchronous
-exceptions).
+or references, no effort to achieve synchronization, and very little code only
+because those things already exist, abstracted within the RTS.
 
-\emph{Should} it have been possible to implement the actor framework we present here?
-%
-It's \emph{almost} practical.
-%
-Given that it's \emph{almost} there, and yet emphatically should not be used
-in practice, we question why it's possible in the first place, much less so
-easy.
+
+\emph{Should} it have been possible to implement the actor framework we present
+here?
 %
 Like many people, we choose Haskell because it is a tool that typically
-prevents ``whole classes of errors,'' and also because it is a joy to use (most
-of the time).
+prevents ``whole classes of errors,'' and also because it is a joy to use.
 %
 But in this paper we achieve dynamically typed ``spooky action at a distance''
 with frighteningly little effort.
 %
-Should the user-accessible interface to the asynchronous exception system be
-constrained?
+Perhaps the user-accessible interface to the asynchronous exception system
+should be more constrained.
+\plr{Alternate last sentence:
+It seems a tool meant to send a termination signal (asynchronous exceptions)
+shouldn't be repurposable in the way we have done so, and yet, it's nice we
+could.}
 
-\paragraph{An extended ``awkward squad''}
+
+\paragraph{Subsumption in the new ``awkward squad''}
 
 A user of the RTS may soon enjoy software transactional memory, asynchronous
 exceptions, delimited continuations, extensible algebraic effects, and more,
 all together in the same tub.
 %
 The water is warm -- jump in!
-\plr{The list above is better the more powerful the features are; STM doesn't
-fit; what are some other powerful GHC features?}
 %
 Which of these features can be implemented in terms of the others?
 %
 And should their full power be exposed so that we can do so?
-%
-Let's explore one example -- actors on exceptions -- and have a think about it.
+\plr{Optional last sentence, if not used above:
+We aren't sure -- it seems a tool meant to send a termination signal shouldn't
+be repurposable in the way we have done so, and yet, it's nice we could.}
+
+
+
+
+
 
 
 
