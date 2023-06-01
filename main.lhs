@@ -771,7 +771,7 @@ When creating an actor thread, it is important that no exception arrive before
 the actor main loop (\verb|runStatic| in \Cref{fig:static-impl})
 installs its exception handler.
 %
-If this happened, the execption would cause the newly created thread to die.
+If this happened, the exception would cause the newly created thread to die.
 %
 To avoid this, the fork step prior to entering the actor main loop must be
 masked (this is in addition to the mask within the main loop).
@@ -821,7 +821,8 @@ systems literature because it nicely illustrates concurrent programming,
 despite being unnecessary in the context of threads in a process.
 
 \citet{chang1979decentralextrema} describe a solution that begins with every
-node sending a message to its successor to nominate itself as the leader.
+node sending a message to its successor to nominate itself as the leader
+(\Cref{fig:ring-election-visual}).
 %
 Upon receiving a nomination,
 a node forwards the nomination to its successor
@@ -862,19 +863,19 @@ We implement and extend that solution below.
 Each node begins uninitialized, and later becomes a member of the ring when
 it learns the identity of its successor.
 %
-To represent this we define two contsructors in \Cref{fig:node-types} for node
+To represent this we define two constructors in \Cref{fig:node-types} for node
 state type, \verb|Node|.
 %
 Three messages (also defined in \Cref{fig:node-types} as type, \verb|Msg|) will
 be used to run the election:
-\begin{itemize}[leftmargin=15mm]
-    \item[\verb|Init|] After creating nodes, the main thread initializes
+\begin{itemize}[leftmargin=1.5em]
+    \item[--] \verb|Init|: After creating nodes, the main thread initializes
     the ring by informing each node of its successor.
     %
-    \item[\verb|Start|] The main thread rapidly instructs every node to start
+    \item[--] \verb|Start|: The main thread rapidly instructs every node to start
     the leader election.
     %
-    \item[\verb|Nominate|] The nodes carry out the election by sending and
+    \item[--] \verb|Nominate|: The nodes carry out the election by sending and
     receiving nominations.
 \end{itemize}
 %
@@ -1018,7 +1019,6 @@ and then performs the following steps to start an election:
 To call the election initialization function, we construct an \verb|IO| action
 by passing the node intent function and the initial node state to the actor
 main loop from \Cref{fig:run}:
-%%%%\begin{figure}[b]
 %
 \ignore{
 \begin{code}
@@ -1041,13 +1041,10 @@ main1 count = do
 \end{code}
 }
 %
-%%%%\caption{Calling convention}
-%%%%\label{fig:call-ringElection}
-%%%%\end{figure}
 An election execution trace appears in \Cref{fig:main1-trace}.
 
 
-\begin{figure}[h]
+\begin{figure}
 \raggedright
 \begin{code}
 ringElection :: Int -> IO () -> IO [ThreadId]
@@ -1124,13 +1121,13 @@ paired with the identity of the greatest nominee they have seen.
 This new extended node state is shown in \Cref{fig:exnode-types} as type,
 \verb|Exnode|.
 %
-\plr{I'm trying to give the extended nodes a name that's more distinct from
-Node than Node' (nodeprime). I'm hoping that Node vs Exnode is more easy to
-keep a handle on.}
+%%\plr{I'm trying to give the extended nodes a name that's more distinct from
+%%Node than Node' (nodeprime). I'm hoping that Node vs Exnode is more easy to
+%%keep a handle on.}
 %
 The new message type (\verb|Winner|, also in \Cref{fig:exnode-types}) has only
 one constructor and is used to declare some node the winner.
-%
+
 \begin{figure}
 \raggedright
 \begin{code}
@@ -1200,10 +1197,10 @@ There are two main cases,
 corresponding to the two message types the actor will handle,
 which we explain below.
 %
-\plr{This paragraph was an aside to explain that \texttt{fromException ::
-SomeException -> Maybe a} always succeeds when \texttt{a} is
-\texttt{SomeException}. It's a bit out-of-flow, but there's no other place it
-belongs in.}
+%%\plr{This paragraph was an aside to explain that \texttt{fromException ::
+%%SomeException -> Maybe a} always succeeds when \texttt{a} is
+%%\texttt{SomeException}. It's a bit out-of-flow, but there's no other place it
+%%belongs in.}
 
 
 The first case of \verb|exnode|, shown in \Cref{fig:exnode-case-msg}, applies
@@ -1959,19 +1956,7 @@ endVerb = putStrLn "\\end{verbatim}"
 \end{code}
 }
 
-\subsection{Election trace}
-\label{sec:main1-trace}
-
-In \Cref{sec:main1-init} we defined \verb|main1| to run a ring
-leader election.
-%
-Here's an example trace.
-
-\footnotesize
-\perform{beginVerb >> putStrLn "> main1 8" >> main1 8 >> endVerb }
-\normalsize
-
-\subsection{Dynamic types trace}
+\subsection{Extended election (dynamic types) trace}
 \label{sec:main2-trace}
 
 In \Cref{sec:main2-init} we defined \verb|main2| to run a ring
