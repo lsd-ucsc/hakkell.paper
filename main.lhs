@@ -904,16 +904,23 @@ instance Exception Msg
 
 
 \subsubsection{Election termination}
+\label{sec:election-termination}
 The node with the greatest identity that nominates itself will eventually
 receive its own nomination after it has circulated the entire ring.
 %
 That same node will ignore every other nomination.
 %
 Therefore the algorithm will terminate because node identities being unique
-means that only one nomination will circumnavigate the ring.
-%
-If no nomination makes it all the way around the ring, then the algorithm
-terminates without a winner.
+means that only one nomination will circumnavigate the ring.\footnote{
+    In the context of this paper, termination is guaranteed because we have
+    reliable message passing (See \Cref{sec:almost-copl}).
+    %
+    In the context of a distributed system, with unreliable message passing, it
+    is possible that no nomination makes it all the way around the ring.
+    %
+    We can then say the algorithm terminates (because nodes idle) without a
+    winner.
+}
 
 
 
@@ -1157,10 +1164,9 @@ they have ``learned'' that node is indeed the winner.
 %
 When the winner receives their own declaration,
 \emph{everyone} has learned they are the winner,
-and the algorithm terminates.
-%
-If the winner declaration doesn't make it all the way around the ring,
-then the algorithm terminates without confirming a winner.
+and the algorithm terminates.\footnote{
+    See also termination discussion in footnotes of \Cref{sec:election-termination}.
+}
 
 
 
@@ -1355,6 +1361,7 @@ and endeavor to write an idempotent intent function
 we find it compelling that this is possible and shocking that it is so easy.
 
 \subsection{Almost a COPL}
+\label{sec:almost-copl}
 
 Which requirements to be a COPL (\Cref{sec:actor-model}) does this framework
 display?
