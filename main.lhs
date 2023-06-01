@@ -1951,7 +1951,7 @@ Here's an example trace.
 \perform{beginVerb >> putStrLn "> main2 8" >> main2 8 >> endVerb }
 \normalsize
 
-\subsection{Channel node election trace}
+\subsection{Channel-based election trace}
 \label{sec:channelRing-trace}
 
 In \Cref{sec:alt-impls} we defined \verb|channelRing| to run a ring
@@ -1972,7 +1972,7 @@ main :: IO ()
 main = do
     args <- getArgs
     case args of
-        [n] -> do
+        ["--demo", n] -> do
             let count = read n
             putStrLn ("Count: " ++ n)
             beginVerb
