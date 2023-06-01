@@ -568,7 +568,7 @@ functions.\footnote{
     It is then up to the main loop to carefully send those messages and deal
     with possible interruption.
     %
-    While this might work, we opt for the simpler presentation seen here.
+    While this might avoid double sends, we opt for the simpler presentation seen here.
 }
 
 
@@ -1221,7 +1221,7 @@ We annotate the rest of \Cref{fig:exnode-case-msg} as follows:
     from \Cref{sec:ring-intent-fun}.
     %
     \item If the message is a nomination of the current extended node, start
-    the winner round, because the election is over. \plr{If you want to shorten this, remove "extended-"}
+    the winner round, because the election is over.
     %
     \item Otherwise the election is ongoing so keep track of the greatest
     nominee seen.
