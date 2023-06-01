@@ -327,15 +327,15 @@ virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
 We flesh out this definition by saying, an actor is a green thread\footnote{
-    A \emph{green thread} (also ``lightweight thread,'' ``userspace thread'')
+    A \emph{green thread} (also ``lightweight thread'' or ``userspace thread'')
     is a thread not bound to an OS thread but dynamically mapped to a CPU by a
-    language level scheduler.
+    language-level scheduler.
     %
     A language with only OS threads would likely support actor programming
     poorly, due to the large numbers of actors required.
     %
     The \emph{Akka} framework in Java gets around the lack of green threads in
-    the JVM by scheduling actors onto OS threads itself.
+    the JVM with a framework-level scheduler.
 } with some state and an inbox.
 %
 Upon receipt of a message to its inbox, the actor may perform some actions:
@@ -385,7 +385,11 @@ being COPL with relatively little effort.
 data Greet = Hi | Hello deriving Show
 instance Exception Greet
 \end{spec}
-\caption{\verb|Show| and \verb|Exception| instances are all that is required to become an asynchronous exception.}
+\caption{
+    \verb|Show| and \verb|Exception| instances are all that is required to
+    become an asynchronous exception.
+    \plr{ensure not near \Cref{fig:envelope}}
+}
 \label{fig:greet}
 \end{figure}
 
