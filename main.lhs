@@ -252,10 +252,9 @@ This paper is a literate Haskell program.\footnote{
     \Cref{sec:what-hath-we-wrought}:
     Situating the actor framework and reviewing its performance,
     arguing that asynchronous exceptions might be more constrained,
-    and raising 
-    and raising the question of whether or not users should be able to
-    implement language features in terms of others, wrapping up in
-    \Cref{sec:conclusion}. \plr{foreshadow ``extended "awkward squad"''}
+    \plr{foreshadow ``extended "awkward squad"''; TODO the rest of this sentence
+    and asking when it is appropriate to implement ``language level'' features
+    in terms of others... wrapping up in \Cref{sec:conclusion}.}
 \end{itemize}
 
 
@@ -765,15 +764,14 @@ runDyn intentStatic = runStatic intent
 \subsection{Safe initialization}
 \label{sec:safe-fork}
 
-\plr{This mini section raises an issue that's relevant to the content of
-\Cref{fig:static-impl}, but it doesn't fit into the flow of
-\Cref{sec:receiving-catching}.
-Reasons this probably shouldn't be in \Cref{sec:receiving-catching}:
-\Cref{fig:run} uses \Cref{fig:dyn-impl} which isn't defined until
-\Cref{sec:dynamic-recv-loop}.
-\Cref{sec:receiving-catching} has a very tight narrative and needs to be simple
-or we'll lose readers.
-}
+%%% This mini section raises an issue that's relevant to the content of
+%%% \Cref{fig:static-impl}, but it doesn't fit into the flow of
+%%% \Cref{sec:receiving-catching}. Reasons this probably shouldn't be in
+%%% \Cref{sec:receiving-catching}:
+%%%    * \Cref{fig:run} uses \Cref{fig:dyn-impl} which
+%%%      isn't defined until \Cref{sec:dynamic-recv-loop}.
+%%%    * \Cref{sec:receiving-catching} has a very tight narrative and needs to
+%%%      be simple or we'll lose readers.
 
 When creating an actor thread it is important that no exception arrive before
 the actor main-loop (\verb|runStatic| in \Cref{fig:static-impl})
@@ -788,7 +786,11 @@ masked (this is in addition to the mask within the main-loop).
 \Cref{sec:ring-impl}.
 %
 It performs a best-effort check and issues a helpful reminder to mask the
-creation of actor threads.
+creation of actor threads.\footnote{
+    We don't define a wrapper around \texttt{forkIO} to perform this masking
+    because actors which perform initialization steps can currently do so
+    before calling \texttt{run}. There is an example in \Cref{sec:main2-init}.
+}
 
 \begin{figure}
 \raggedright
@@ -800,7 +802,7 @@ run intent state = do
         MaskedInterruptible -> runDyn intent state
         _ -> error "mask the forking of actor threads"
 \end{code}
-\caption{Prevent initialization errors by masking forks.}
+\caption{Remind users to prevent initialization errors by masking forks.}
 \label{fig:run}
 \end{figure}
 
@@ -1344,8 +1346,8 @@ modules.
 The support for dynamic types, shown in \Cref{fig:dyn-impl} as separate
 definitions, can be folded into \Cref{fig:static-impl} for only a few
 additional lines.\footnote{
-    Instead of wrapping the intent function, the message downcast is performed
-    in the exception handler.
+    Instead of wrapping the intent function, the framework's message downcast
+    is performed in the exception handler.
 }
 %
 While a user must remember to
