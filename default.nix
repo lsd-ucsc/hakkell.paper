@@ -12,7 +12,7 @@ pkgs.stdenv.mkDerivation {
   '';
   installPhase = ''
     mkdir -pv $out/bin
-    mv -v main.pdf $out/hakkell-paper.pdf
-    mv -v main.bench.elf $out/bin/hakkell-bench.elf
+    mv -v main.pdf $out/
+    mv -v main.bench.elf $out/bin/
   '';
 }
