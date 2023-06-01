@@ -15,7 +15,7 @@
 %% When submitting camera ready or to TAPS, please change the command
 %% to \documentclass[sigconf]{acmart} or whichever template is required
 %% for your publication.
-\documentclass[sigplan,screen,review,anonymous]{acmart}
+\documentclass[sigplan,screen,review,anonymous,nonacm]{acmart}
 
 \usepackage{cleveref}
 \usepackage{enumitem} % style lists
