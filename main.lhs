@@ -315,7 +315,7 @@ An example of recovery includes ``inform[ing] the program when memory is
 running out [so] it can take remedial action'' \cite{marlow2001async}.
 %
 The ability to recover from a termination signal seems innocuous, but
-it leaves asynchronous exceptions open to be repurposed.
+it leaves asynchronous exceptions open to being repurposed.
 
 \subsection{The actor model}
 \label{sec:actor-model}
@@ -388,7 +388,7 @@ instance Exception Greet
 \caption{
     \verb|Show| and \verb|Exception| instances are all that is required to
     become an asynchronous exception.
-    \plr{ensure not near \Cref{fig:envelope}}
+    \plr{ensure not near \Cref{fig:envelope-and-intent}}
 }
 \label{fig:greet}
 \end{figure}
@@ -453,7 +453,7 @@ To send a message we will throw an exception to the recipient's thread
 identifier.
 %
 So that the recipient may respond, we define a self-addressed envelope data
-type in \Cref{fig:envelope} and declare the required instances.
+type in \Cref{fig:envelope-and-intent} and declare the required instances.
 %
 \begin{figure}
 \raggedright
@@ -462,9 +462,15 @@ data Envelope a = Envelope { sender :: ThreadId, message :: a }
     deriving Show
 
 instance Exception a => Exception (Envelope a)
+
+type Intent st msg = st -> Envelope msg -> IO st
 \end{code}
-\caption{A self-addressed envelope contains a message.}
-\label{fig:envelope}
+\caption{
+    A self-addressed envelope contains a message.
+    %
+    Actor behavior is encoded as a transition system.\plr{no one-line figures!}
+}
+\label{fig:envelope-and-intent}
 \end{figure}
 
 
@@ -499,18 +505,10 @@ sendStatic recipient message = do
 
 An actor is defined by how it behaves in response to messages.
 %
-A user-defined intent function, with the type shown in \Cref{fig:intent}, 
-encodes behavior as state transition that takes a self-addressed envelope
+A user-defined intent function, with the type \verb|Intent| shown in
+\Cref{fig:envelope-and-intent},
+encodes behavior as a state transition that takes a self-addressed envelope
 argument.
-%
-\begin{figure}
-\raggedright
-\begin{code}
-type Intent st msg = st -> Envelope msg -> IO st
-\end{code}
-\caption{Actor behavior is encoded as a transition system.\plr{no one-line figures!}}
-\label{fig:intent}
-\end{figure}
 
 
 
