@@ -259,6 +259,48 @@ This paper is a literate Haskell program.\footnote{
 \end{itemize}
 
 
+% Imports for the haskell program:
+% Trying to keep them near the footnote that discusses them.
+\ignore{
+\begin{code}
+{-# LANGUAGE NamedFieldPuns #-}        -- Section 2
+{-# LANGUAGE DuplicateRecordFields #-} -- Section 3.2
+{-# LANGUAGE ViewPatterns #-}          -- Section 3.3
+
+-- Section 2.1, 2.2
+import Control.Exception (Exception(..), throwTo, catch, mask_)
+import Control.Concurrent (ThreadId, myThreadId, threadDelay)
+
+import Control.Exception (getMaskingState, MaskingState(..))
+
+-- Section 2.3
+import Control.Exception (TypeError(..))
+
+-- Section 3.2
+import Control.Exception (SomeException)
+import Control.Concurrent (forkIO, killThread)
+import System.Random (RandomGen, randomR, getStdRandom)
+
+-- Trace appendix
+import System.IO (hSetBuffering, stdout, BufferMode(..))
+
+-- Perf eval appendix
+import Control.Exception (assert)
+import System.Environment (getArgs)
+import qualified Control.Concurrent.Chan as Ch
+import qualified Control.Concurrent.MVar as Mv
+import qualified Criterion.Main as Cr
+\end{code}
+} % end ignore
+
+
+
+
+
+
+
+
+
 
 \section{Brief background}
 \label{sec:background}
@@ -409,37 +451,6 @@ user-defined intent function.
 Here we describe the minimal abstractions around such threads which realize the
 actor model.
 
-\ignore{
-\begin{code}
-{-# LANGUAGE NamedFieldPuns #-}        -- Section 2
-{-# LANGUAGE DuplicateRecordFields #-} -- Section 3.2
-{-# LANGUAGE ViewPatterns #-}          -- Section 3.3
-
--- Section 2.1, 2.2
-import Control.Exception (Exception(..), throwTo, catch, mask_)
-import Control.Concurrent (ThreadId, myThreadId, threadDelay)
-
-import Control.Exception (getMaskingState, MaskingState(..))
-
--- Section 2.3
-import Control.Exception (TypeError(..))
-
--- Section 3.2
-import Control.Exception (SomeException)
-import Control.Concurrent (forkIO, killThread)
-import System.Random (RandomGen, randomR, getStdRandom)
-
--- Trace appendix
-import System.IO (hSetBuffering, stdout, BufferMode(..))
-
--- Perf eval appendix
-import Control.Exception (assert)
-import System.Environment (getArgs)
-import qualified Control.Concurrent.Chan as Ch
-import qualified Control.Concurrent.MVar as Mv
-import qualified Criterion.Main as Cr
-\end{code}
-} % end ignore
 
 
 
