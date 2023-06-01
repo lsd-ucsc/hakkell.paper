@@ -119,9 +119,9 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-    The Glasgow Haskell Compiler is known for its fully featured runtime
-    system (RTS) which includes lightweight threads, asynchronous exceptions, and --
-    recently -- delimited continuations.
+    The Glasgow Haskell Compiler is known for its feature-laden runtime
+    system (RTS), which includes, among a slew of other features,
+    lightweight threads and asynchronous exceptions.
     %%\plr{Leaving "lightweight threads" in because it's part of being a
     %%fully-featured runtime. A language with a less fully-featured runtime uses
     %%OS threads.}
@@ -139,7 +139,9 @@
     %
     Finally, we raise questions about how RTS features intersect and possibly
     subsume one another, and make recommendations about how GHC can
-    guide best practice by constraining the use of some features.
+    guide good practice by constraining the use of some features.
+
+      
 \end{abstract}
 
 %%%% %%
@@ -197,7 +199,7 @@
 
 \section{Introduction}
 
-The most commonly used implementation of Haskell today is the Glasow Haskell
+The most commonly used implementation of Haskell today is the Glasgow Haskell
 Compiler (GHC) \cite{fausak2022} together with its runtime system (RTS).
 %
 The RTS is featureful and boasts support for lightweight threads, two kinds of
@@ -222,6 +224,29 @@ Why not implement message-passing algorithms on that substrate?
 We pursued this line of thought, and in this paper we present an actor
 framework hidden just under the surface of the RTS.
 %
+The paper is organized as follows:
+\begin{itemize}[leftmargin=1.5em]
+    \item[--] \Cref{sec:background} provides a concise summary of asynchronous
+    exceptions in GHC and the actor model of programming.
+
+    \item[--] \Cref{sec:actor-framework} details the implementation of our
+    actor framework. We first show how actors receive messages of a single
+    type, and then extend the framework to support dynamically typed actors,
+    which receive messages of more than one type.
+
+    \item[--] \Cref{sec:ring-impl} shows an implementation of a classic
+    protocol for leader election using our actor framework. We then extend the actors with an
+    additional message type and behavior without changing the original
+    implementation.
+
+    \item[--] We reflect on whether this was a good idea in
+    \Cref{sec:what-hath-we-wrought}:
+    we consider the practicality and performance of our framework,
+    argue that asynchronous exceptions might be more constrained,
+    \plr{foreshadow ``extended "awkward squad"''; TODO the rest of this sentence
+    and asking when it is appropriate to implement ``language level'' features
+    in terms of others... wrapping up in \Cref{sec:conclusion}.}
+\end{itemize}
 This paper is a literate Haskell program.\footnote{
     We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
     %
@@ -229,34 +254,11 @@ This paper is a literate Haskell program.\footnote{
     \verb|Control.Concurrent|, and we use the extensions \verb|NamedFieldPuns|
     and \verb|DuplicateRecordFields| for convenience of its presentation.
     %
-    The example section additionally imports the module \verb|System.Random|
+    The leader election example of \Cref{sec:what-hath-we-wrought} additionally imports the module \verb|System.Random|
     and uses the extension \verb|ViewPatterns|.
     %
-    The appendices have other imports which we don't decribe here.
+    The appendices have other imports, which we don't describe here.
 }
-\begin{itemize}[leftmargin=1.5em]
-    \item[--] \Cref{sec:background} provides a concise summary of asynchronous
-    exceptions in GHC and the actor model of programming.
-
-    \item[--] \Cref{sec:actor-framework} details the implementation of our
-    actor framework. We first show how actors receive messages of a single
-    type. Next we upgrade the framework to support dynamically typed actors,
-    which receive messages of more than one type.
-
-    \item[--] \Cref{sec:ring-impl} shows an implementation of the ring
-    leader-election algorithm using actors. Then we extend the actors with an
-    additional message type and behavior without changing the original
-    implementation.
-
-    \item[--] We reflect on whether this was a good idea in
-    \Cref{sec:what-hath-we-wrought}:
-    Situating the actor framework and reviewing its performance,
-    arguing that asynchronous exceptions might be more constrained,
-    \plr{foreshadow ``extended "awkward squad"''; TODO the rest of this sentence
-    and asking when it is appropriate to implement ``language level'' features
-    in terms of others... wrapping up in \Cref{sec:conclusion}.}
-\end{itemize}
-
 
 % Imports for the haskell program:
 % Trying to keep them near the footnote that discusses them.
@@ -292,19 +294,13 @@ import qualified Criterion.Main as Cr
 \end{code}
 } % end ignore
 
-
-
-
-
-
-
-
-
-
 \section{Brief background}
 \label{sec:background}
 
+In this section, we briefly review asynchronous exceptions in GHC  (\Cref{subsec:async-exceptions}) and the actor model of programming (\Cref{sec:actor-model}); readers already familiar with these topics may wish to skip ahead.
+
 \subsection{Asynchronous exceptions in GHC}
+\label{subsec:async-exceptions}
 
 The Glasgow Haskell Compiler (GHC) is unusual in its support for
 \emph{asynchronous exceptions}.
@@ -363,19 +359,19 @@ it leaves asynchronous exceptions open to being repurposed.
 
 The actor model is a computational paradigm characterized by message passing.
 %
-\citet{hewitt1973actors} says ``an actor can be thought of as a kind of
+\citet{hewitt1973actors} writes that ``an actor can be thought of as a kind of
 virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
-We flesh out this definition by saying, an actor is a green thread\footnote{
+For our purposes, we define an actor to be a green thread\footnote{
     A \emph{green thread} (also ``lightweight thread'' or ``userspace thread'')
-    is a thread not bound to an OS thread but dynamically mapped to a CPU by a
+    is a thread not bound to an OS thread, but dynamically mapped to a CPU by a
     language-level scheduler.
     %
     A language with only OS threads would likely support actor programming
     poorly, due to the large numbers of actors required.
     %
-    The \emph{Akka} framework in Java gets around the lack of green threads in
+    The \emph{Akka} framework for Java and Scala gets around the lack of green threads in
     the JVM with a framework-level scheduler.
 } with some state and an inbox.
 %
@@ -390,13 +386,14 @@ We will approximate this model with Haskell's asynchronous exceptions as the
 primary metaphor for message passing.
 
 More concretely, we think of an actor framework as
-having the characteristics that \citet{armstrong2003} lists for a
+having the characteristics that \citet{armstrong2003}
+describes as characteristics of a
 \emph{concurrency-oriented programming language} (COPL).
 %
 After describing our framework, we will make the case that it has many of the
 characteristics of a COPL.
 %
-Summarized, a COPL
+To summarize \citet{armstrong2003}, a COPL
 (1) has processes,
 (2) which are strongly isolated,
 (3) with a unique hidden identifier,
@@ -405,7 +402,7 @@ Summarized, a COPL
 and
 (6) can detect when another process halts.
 %
-Additionally
+Additionally, 
 (5a) message passing is asynchronous so that no stuck recipient may cause a sender to become stuck,
 (5b) receiving a response is the only way to know that a prior message was delivered,
 and
@@ -413,8 +410,8 @@ and
 %
 While an actor system within an instance of the RTS cannot satisfy all of these
 requirements (e.g., termination of the main thread is not strongly isolated
-from the child threads), we will show that ours satisfies many requirements of
-being COPL with relatively little effort.
+from the child threads), we will show that our framework satisfies many requirements of
+being a COPL with relatively little effort.
 
 
 
@@ -443,9 +440,9 @@ instance Exception Greet
 
 
 In our framework, an actor is a Haskell thread running a
-provided main-loop function.
+provided main loop function.
 %
-The main-loop function mediates message receipt and makes calls to a
+The main loop function mediates message receipt and makes calls to a
 user-defined intent function.
 %
 Here we describe the minimal abstractions around such threads which realize the
@@ -456,7 +453,7 @@ actor model.
 \label{sec:sending-throwing}
 
 
-To send a message we will throw an exception to the recipient's thread
+To send a message, we will throw an exception to the recipient's thread
 identifier.
 %
 So that the recipient may respond, we define a self-addressed envelope data
@@ -467,7 +464,7 @@ type in \Cref{fig:envelope-and-intent} and declare the required instances.
 which reads the current thread identifier, constructs a self-addressed
 envelope, and throws it to the specified recipient.
 %
-For the purpose of explication in this paper, it also prints a trace.
+For the purpose of explication in this paper, it also prints an execution trace.
 
 
 \subsection{Receiving (catching) messages}
@@ -476,19 +473,19 @@ For the purpose of explication in this paper, it also prints a trace.
 
 An actor is defined by how it behaves in response to messages.
 %
-A user-defined intent function, with the type \verb|Intent| shown in
+A user-defined \emph{intent function}, with the type \verb|Intent| shown in
 \Cref{fig:envelope-and-intent},
 encodes behavior as a state transition that takes a self-addressed envelope
 argument.
 
 
-Every actor thread will run a provided main-loop function to manage message
+Every actor thread will run a provided main loop function to manage message
 receipt and processing.
 %
-The main-loop function installs an exception handler to accumulate messages in
+The main loop function installs an exception handler to accumulate messages in
 an inbox and calls a user-defined intent function on each.
 %
-\Cref{fig:static-impl} defines a main-loop, \verb|runStatic|, that
+\Cref{fig:static-impl} defines a main loop, \verb|runStatic|, that
 takes an \verb|Intent| function and its initial state and does not return.
 %
 It masks asynchronous exceptions so they will only be raised at well-defined
@@ -499,7 +496,7 @@ The loop in \Cref{fig:static-impl} has two pieces of state: that of the intent
 function, and an inbox of messages to be processed.
 %
 The loop body is divided roughly into three cases by an exception
-handler and a case-split on the inbox list.
+handler and a case-split on the inbox list:
 %
 \begin{enumerate}[leftmargin=2em]
     \item If the inbox is empty, sleep for an arbitrary length of time and then
@@ -509,7 +506,7 @@ handler and a case-split on the inbox list.
     the updated actor state and remainder of the inbox.
     \plr{Ensure this list isn't broken across pages}
 
-    \item If during cases (1) or (2) an \verb|Envelope| exception is received,
+    \item If, during cases (1) or (2), an \verb|Envelope| exception is received,
     recurse on the unchanged actor state and an inbox with the new envelope
     appended to the end.
 \end{enumerate}
@@ -536,11 +533,11 @@ Before moving forward, let us acknowledge that this is \emph{not safe}.
 An exception may arrive while executing the intent function.
 %
 Despite the exception mask which we have intentionally left in place,\footnote{
-    It is best practice to use \texttt{mask} instead of \texttt{mask\_}, and
+    It is good practice to use \texttt{mask} instead of \texttt{mask\_}, and
     ``restore'' the masking state of the context before calling the intent
     function.
     %
-    However for our purpose here, using \texttt{mask\_} doesn't change much.
+    However, for our purpose here, using \texttt{mask\_} doesn't change much.
 
 } if the intent function executes an interruptible action, then
 it will be preempted.
@@ -560,7 +557,7 @@ asynchronous exceptions:
 use software transactional memory (STM),
 avoid interruptible actions,
 or apply \verb|uninterruptibleMask|.
-However recall that message sending is implemented with \verb|throwTo| which is
+However, recall that message sending is implemented with \verb|throwTo| which is
 ``\emph{always} interruptible, even if does not actually block''
 \cite{controlDotException}.
 %
@@ -571,7 +568,7 @@ functions.\footnote{
     We have also considered a design in which the intent function returns an
     outbox of messages.
     %
-    It is then up to the main-loop to carefully send those messages and deal
+    It is then up to the main loop to carefully send those messages and deal
     with possible interruption.
     %
     While this might work, we opt for the simpler presentation seen here.
@@ -622,9 +619,9 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
         >>= loop
 \end{code}
 \caption{
-    Messages sends are implemented by throwing an exception.
+    Message sends are implemented by throwing an exception.
     %
-    Actor threads enter a main-loop to receive messages.
+    Actor threads enter a main loop to receive messages.
 }
 \label{fig:static-impl}
 \end{figure}
@@ -636,7 +633,7 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
 \label{sec:dynamic-types}
 
 
-The actor main-loop in \Cref{fig:static-impl} constrains an actor
+The actor main loop in \Cref{fig:static-impl} constrains an actor
 thread to handle messages of a single type.
 %
 An envelope containing the wrong message type will not be caught by the
@@ -646,26 +643,26 @@ We think the recipient should not crash when another actor sends an incorrect
 message.
 
 
-In this section we correct this issue by extending the framework to support
+In this section, we correct this issue by extending the framework to support
 actors that may receive messages of different types.
 %
-With this extension our framework could be thought of as dynamically typed in
+With this extension, our framework could be thought of as dynamically typed in
 the sense that a single actor can process multiple message types.
 %
-This is very similar to the dynamic types support in Haskell's
+This is similar to the dynamic types support in Haskell's
 \verb|Data.Dynamic| module.
 
 
 Furthermore, any actor may be extended by wrapping it (has-a style) with an
 actor that uses a distinct message type and branches on the type of a received
 message, delegating to the wrapped actor where desired.\footnote{
-    It is not sufficient to wrap a message type in a sum-type and write an
-    actor that takes the sum-type as its message.
+    It is not sufficient to wrap a message type in a sum type and write an
+    actor that takes the sum type as its message.
     %
     Such a wrapper will fail to receive messages sent as the un-wrapped type.
     %
     To correct for this one would need to modify other actors to wrap their
-    outgoing messages in the sum-type.
+    outgoing messages in the sum type.
     %
     The dynamic types pattern described in \Cref{sec:dynamic-types}
     generalizes this for all types.
@@ -702,18 +699,18 @@ function's message type.
 %
 This is an opportunity to treat messages of the wrong type specially.
 %
-In \Cref{fig:dyn-impl} we define a new main-loop, \verb|runDyn|,
+In \Cref{fig:dyn-impl} we define a new main loop, \verb|runDyn|,
 that lifts any intent function to one that can
 receive envelopes containing \verb|SomeException|.
 %
 If the message downcast fails, instead of the recipient crashing, it performs a
 ``return to sender.''
 %
-Specifically, it throws an exception (not an envelope) with a run time
-type-error.\footnote{
+Specifically, it throws an exception (not an envelope) with a run-time
+type error.\footnote{
     The extensions \texttt{ScopedTypeVariables}, \texttt{TypeApplications}, and
-    the function \texttt{Data.Typeable.typeOf} can be used to construct a very
-    helpful type-error message for debugging actor programs.
+    the function \texttt{Data.Typeable.typeOf} can be used to construct a
+    helpful type error message for debugging actor programs.
 }
 
 
@@ -773,16 +770,16 @@ runDyn intentStatic = runStatic intent
 %%%    * \Cref{sec:receiving-catching} has a very tight narrative and needs to
 %%%      be simple or we'll lose readers.
 
-When creating an actor thread it is important that no exception arrive before
-the actor main-loop (\verb|runStatic| in \Cref{fig:static-impl})
+When creating an actor thread, it is important that no exception arrive before
+the actor main loop (\verb|runStatic| in \Cref{fig:static-impl})
 installs its exception handler.
 %
 If this happened, the execption would cause the newly created thread to die.
 %
-To avoid this, the fork step prior to entering the actor main-loop must be
-masked (this is in addition to the mask within the main-loop).
+To avoid this, the fork step prior to entering the actor main loop must be
+masked (this is in addition to the mask within the main loop).
 
-\Cref{fig:run} defines the main-loop wrapper we will use for examples in
+\Cref{fig:run} defines the main loop wrapper we will use for examples in
 \Cref{sec:ring-impl}.
 %
 It performs a best-effort check and issues a helpful reminder to mask the
@@ -809,10 +806,10 @@ run intent state = do
 
 
 
-\section{Example: Ring leader-election}
+\section{Example: Ring leader election}
 \label{sec:ring-impl}
 
-The problem of \emph{ring leader-election} is to designate one node
+The problem of \emph{ring leader election} is to designate one node
 among a network of communicating nodes organized in a ring topology.
 %
 Each node has a unique identity, and identities are totally ordered.
@@ -841,7 +838,7 @@ We implement and extend that solution below.
 \begin{figure}
 \include{ring.tex}
 \caption{
-    In-progress ring leader-election with seven nodes
+    In-progress ring leader election with seven nodes
     (\citeauthor{chang1979decentralextrema}'
     \citeyear{chang1979decentralextrema} solution).
     %
@@ -860,7 +857,7 @@ We implement and extend that solution below.
 \label{fig:ring-election-visual}
 \end{figure}
 
-\subsection{Implementing a leader-election}
+\subsection{Implementing a leader election}
 
 
 
@@ -1016,7 +1013,7 @@ and then performs the following steps to start an election:
 %
 To call the election initialization function, we construct an \verb|IO| action
 by passing the node intent function and the initial node state to the actor
-main-loop from \Cref{fig:run}:
+main loop from \Cref{fig:run}:
 %%%%\begin{figure}[b]
 %
 \ignore{
@@ -1043,7 +1040,7 @@ main1 count = do
 %%%%\caption{Calling convention}
 %%%%\label{fig:call-ringElection}
 %%%%\end{figure}
-An election trace appears in \Cref{fig:main1-trace}.
+An election execution trace appears in \Cref{fig:main1-trace}.
 
 
 \begin{figure}[h]
@@ -1059,7 +1056,7 @@ ringElection n actor = do
     mapM_ (\t -> send t Start) ring {-"\quad\quad\hfill (4)"-}
     return ring
 \end{code}
-\caption{Ring leader-election initialization.
+\caption{Ring leader election initialization.
     \plr{Make sure this doesn't float into the definition of \verb|node|.}
 }
 \label{fig:ringElection}
@@ -1071,7 +1068,7 @@ ringElection n actor = do
 \footnotesize
 \perform{beginVerb >> main1 5 >> endVerb}
 \normalsize
-\caption{A trace of the ring leader-election solution.}
+\caption{An execution trace of the ring leader election solution.}
 \label{fig:main1-trace}
 \end{figure}
 \plr{remove extra trace from the end}
@@ -1083,14 +1080,14 @@ ringElection n actor = do
 \subsection{Extending the leader election}
 \label{sec:dyn-ring}
 
-The solution we have shown solves the ring leader-election problem
+The solution we have shown solves the ring leader election problem
 insofar as a single node concludes that it has won.
 %
 However, it is also desirable for the other nodes to learn the outcome of the
 election.
 %
 Since it is sometimes necessary to extend a system without modifying the
-original, we will show how to extend the original ring leader-election to add a
+original, we will show how to extend the original ring leader election to add a
 winner-declaration round.
 
 Since there is no message constructor to inform nodes of the election outcome,
@@ -1117,10 +1114,10 @@ The new behaviors are:
     successor.
 \end{itemize}
 
-Extended-nodes will store the original node state (\Cref{fig:node-types})
+Extended nodes will store the original node state (\Cref{fig:node-types})
 paired with the identity of the greatest nominee they have seen.
 %
-This new extended-node state is shown in \Cref{fig:exnode-types} as type,
+This new extended node state is shown in \Cref{fig:exnode-types} as type,
 \verb|Exnode|.
 %
 \plr{I'm trying to give the extended nodes a name that's more distinct from
@@ -1140,7 +1137,7 @@ data Winner = Winner ThreadId deriving Show
 instance Exception Winner
 \end{code}
 \caption{
-    Extended-nodes store node state alongside the greatest nominee
+    Extended nodes store node state alongside the greatest nominee
     seen.
     %
     They accept one message in addition to those in \Cref{fig:node-types}.
@@ -1154,7 +1151,7 @@ instance Exception Winner
 
 \subsubsection{Declaration-round termination}
 %
-When an extended-node receives a declaration of the winner
+When an extended node receives a declaration of the winner
 that matches their greatest nominee seen,
 they have ``learned'' that node is indeed the winner.
 %
@@ -1185,7 +1182,7 @@ exnode :: Intent Exnode SomeException
 \end{code}
 
 
-Recall the implementation of the actor main-loop function,
+Recall the implementation of the actor main loop function,
 \verb|runDyn| from \Cref{fig:dyn-impl}.
 %
 When we apply \verb|exnode| to \verb|runDyn|,
@@ -1207,21 +1204,21 @@ belongs in.}
 
 
 The first case of \verb|exnode|, shown in \Cref{fig:exnode-case-msg}, applies
-when an extended-node downcasts the envelope contents to \verb|Msg|.
+when an extended node downcasts the envelope contents to \verb|Msg|.
 %
 In each of its branches, node state is updated by delegating part of message
-handling to the held-node.
+handling to the held node.
 %
 We annotate the rest of \Cref{fig:exnode-case-msg} as follows:
 \plr{I would like to put this list into the caption, but was unable to.}
 %
 \begin{enumerate}[leftmargin=2em]
-    \item Delegate to the held-node by putting the revealed \verb|Msg| back
+    \item Delegate to the held node by putting the revealed \verb|Msg| back
     into its envelope and passing it through the intent function, \verb|node|,
-    from from \Cref{sec:ring-intent-fun}.
+    from \Cref{sec:ring-intent-fun}.
     %
-    \item If the message is a nomination of the current extended-node, start
-    the winner round because the election is over. \plr{If you want to shorten this, remove "extended-"}
+    \item If the message is a nomination of the current extended node, start
+    the winner round, because the election is over. \plr{If you want to shorten this, remove "extended-"}
     %
     \item Otherwise the election is ongoing so keep track of the greatest
     nominee seen.
@@ -1293,11 +1290,11 @@ exnode _ _ = error "exnode: unhandled"
 
 
 
-\subsubsection{Extended-election initialization}
+\subsubsection{Extended election initialization}
 \label{sec:main2-init}
 
 
-The extended ring leader-election reuses the
+The extended ring leader election reuses the
 initialization scaffolding from before
 (\Cref{fig:ringElection}).
 %
@@ -1330,7 +1327,7 @@ main2 count = do
 \end{code}
 }
 %
-A trace of an extended-election is in \Cref{sec:main2-trace}.
+An execution trace of an extended election is in \Cref{sec:main2-trace}.
 
 
 
@@ -1404,7 +1401,7 @@ An actor can reliably inform others of its termination with use of
 }
 
 Our choice to wrap a user-defined message type in a known envelope type has the
-benefit of allowing the actor main-loop to distinguish between messages and
+benefit of allowing the actor main loop to distinguish between messages and
 exceptions, allowing the latter to terminate the thread as intended.
 %
 At the same time this choice runs afoul of the \emph{name distribution problem}
@@ -1503,9 +1500,6 @@ extended ``awkward squad'' \cite{peytonjones2001tackling}
 \section{TODO: Conclusion}
 \label{sec:conclusion}
 
-
-\lk{I think that the informality is fine, but the next two or three paragraphs are going to be hard for a reader to appreciate until the reader has actually read the paper and seen what we did.  Therefore, I suggest saving this kind of stuff for \Cref{sec:what-hath-we-wrought} or \Cref{sec:conclusion}.  For the introduction, let's aim for a short, ``just the facts'' sort of thing.  It's OK for the intro to be only one page, or even less!}
-
 \lk{While informality is fine and good, we shouldn't make unsupported claims like ``it's almost there'' in the name of being informal.  We can keep the informality but support the claims!  E.g., in what way is it ``almost there''?  What would being fully ``there'' look like?  What stops it from being ``there''?}
 \plr{move last two to conclusion or wrought?}
 
@@ -1545,18 +1539,16 @@ A user of the RTS may soon enjoy software transactional memory, asynchronous
 exceptions, delimited continuations, extensible algebraic effects, and more,
 all together in the same tub.
 %
-The water is warm, jump in!
+The water is warm -- jump in!
 \plr{The list above is better the more powerful the features are; STM doesn't
 fit; what are some other powerful GHC features?}
 %
-Which of these features can be implemented in terms of the other?
+Which of these features can be implemented in terms of the others?
 %
 And should their full power be exposed so that we can do so?
 %
 Let's explore one example -- actors on exceptions -- and have a think about it.
 
-\lk{So, I know I'm fickle and said something else before, but I now think that these next two subsections should be moved out of the introduction, because the level of detail here seems like too much for an introduction.  They could become a section 2 called "Brief Background" or something, or there could be a background subsection at the start of the existing section 2.}
-\plr{brief backround}
 
 
 
@@ -1600,7 +1592,7 @@ Ack the PLV people
 \subsection{Permute}
 
 In \Cref{sec:ring-impl} we provided the implementation of a ring
-leader-election in our actor framework.
+leader election in our actor framework.
 %
 The implementation used \verb|permute| to randomize the list of
 \verb|ThreadId|.
@@ -1634,7 +1626,7 @@ permute pool0 gen0
 \label{sec:perf-eval-detail}
 
 
-For the (extended) ring leader-election solution we have shown, the time to
+For the (extended) ring leader election solution we have shown, the time to
 termination is:
 %
 The time necessary for the winner's self-nomination to pass around the ring
@@ -1723,7 +1715,7 @@ several ring sizes.
 As a control, it also runs a function that starts up some number of threads
 that immediately terminate.
 %
-Finally, it also compares to an implementation of ring leader-election using
+Finally, it also compares to an implementation of ring leader election using
 \verb|Control.Concurrent.Chan| (one of the more normal ways to do things in
 Haskell).
 %
@@ -1782,7 +1774,7 @@ benchControl n = do
 
 
 \subsubsection{Channel-based}
-In the channel-based ring leader-election, each node has references to a
+In the channel-based ring leader election, each node has references to a
 send-channel and a receive-channel.
 %
 We reuse the message types from before via an \verb|Either|.
@@ -1803,7 +1795,7 @@ differences.
 %
 \begin{itemize}
     \item
-    In \Cref{fig:chanNode} we implement the main-loop, \texttt{chanNode}.
+    In \Cref{fig:chanNode} we implement the main loop, \texttt{chanNode}.
     %
     The only state maintained is the greatest nominee seen.
     %
@@ -1844,7 +1836,7 @@ chanNode done chans st = do
     sendMsg = Ch.writeChan (snd chans) . Left
     sendWinner = Ch.writeChan (snd chans) . Right
 \end{code}
-\caption{Main-loop for channel-based implementation of ring leader-election.
+\caption{Main loop for channel-based implementation of ring leader election.
 Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
 \label{fig:chanNode}
 \end{figure}
@@ -1934,7 +1926,7 @@ channelRing n = do
 \end{code}
 \caption{
     Initialization routine for channel-based reimplementation of ring
-    leader-election.
+    leader election.
     %
     First define a function to run a channel-node on the ``done'' \texttt{MVar}
     and two provided channels.
@@ -1967,7 +1959,7 @@ endVerb = putStrLn "\\end{verbatim}"
 \label{sec:main1-trace}
 
 In \Cref{sec:main1-init} we defined \verb|main1| to run a ring
-leader-election.
+leader election.
 %
 Here's an example trace.
 
@@ -1979,7 +1971,7 @@ Here's an example trace.
 \label{sec:main2-trace}
 
 In \Cref{sec:main2-init} we defined \verb|main2| to run a ring
-leader-election with a winner declaration round.
+leader election with a winner declaration round.
 %
 Here's an example trace.
 
@@ -1991,7 +1983,7 @@ Here's an example trace.
 \label{sec:channelRing-trace}
 
 In \Cref{sec:alt-impls} we defined \verb|channelRing| to run a ring
-leader-election with a winner declaration round using channels for
+leader election with a winner declaration round using channels for
 communication.
 %
 Here's an example trace.
