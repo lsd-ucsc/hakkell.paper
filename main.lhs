@@ -1349,7 +1349,7 @@ additional lines.\footnote{
 %
 While a user must remember to
 mask asynchronous exceptions when creating an actor thread
-(\Cref{fig:run}/\Cref{sec:safe-fork}\plr{which to reference?}),
+(\Cref{sec:safe-fork}\plr{which to reference?}),
 and endeavor to write an idempotent intent function
 (\Cref{sec:receiving-catching}),
 we find it compelling that this is possible and shocking that it is so easy.
@@ -1357,7 +1357,7 @@ we find it compelling that this is possible and shocking that it is so easy.
 \subsection{Almost a COPL}
 \label{sec:almost-copl}
 
-Which requirements to be a COPL (\Cref{sec:actor-model}) does this framework
+Which of the COPL characteristics (\Cref{sec:actor-model}) does our actor framework
 display?
 %
 RTS threads behave as independent processes, and although not strongly
@@ -1393,7 +1393,7 @@ functions.\footnote{
 }
 %
 FIFO can be recovered by message sequence numbers or by (albeit, jumping the
-shark) use of an outbox-thread per actor.
+shark) use of an outbox thread per actor.
 %
 An actor can reliably inform others of its termination with use of
 \verb|forkFinally|.\footnote{
@@ -1419,7 +1419,7 @@ By comparing the discussion above with
 \citeauthor{armstrong2003}'s
 requirements summarized in
 \Cref{sec:actor-model},
-we claim that this actor framework is \emph{almost}
+we claim that our actor framework is \emph{almost}
 a COPL.
 %
 It also meets our informal requirements that actors can send and receive
@@ -1463,14 +1463,14 @@ to run on the bigger machine}
 %
 The actor-based implementation consistently runs a bit slower than the
 channel-based implementation, but the difference in running time gets less
-significant as either the ring size and number of capabilities increases.
+significant as either the ring size or the number of capabilities increases.
 %
 It is possible that the differences between the two implementations become
-irrelevant as our benchmarking machine (supporting only 8 capabilities) was
+irrelevant, as our benchmarking machine (supporting only 8 capabilities) was
 simply overloaded.
 %
-Another possibility is that there is some overhead in the channel based
-implementation which the actor based implementation doesn't accumulate as
+Another possibility is that there is some overhead in the channel-based
+implementation which the actor-based implementation doesn't accumulate as
 larger rings are tested.
 
 \plr{PERF EVAL 2}
@@ -1498,13 +1498,11 @@ benchmark.
 Can we implement an actor framework with Haskell's threads and asynchronous
 exceptions?
 %
-This question led us to writing this paper.
-%
 Our implementation and results show that we can, and this fact hints that
-perhaps asynchronous exceptions are more general than actors.
+perhaps asynchronous exceptions are at least as general as actors.
 
 
-However the actor framework we present is not an advancement:
+However, the actor framework we present is not an advancement:
 %
 It is easy to use, but easy to use wrongly.
 %
@@ -1533,17 +1531,19 @@ shouldn't be repurposable in the way we have done so, and yet, it's nice we
 could.}
 
 
-\paragraph{Subsumption in the new ``awkward squad''}
+%\paragraph{Feature subsumption in the new ``awkward squad''}
 
-A user of the RTS may soon enjoy software transactional memory, asynchronous
+More broadly,
+a user of GHC's RTS may soon enjoy software transactional memory, asynchronous
 exceptions, delimited continuations, extensible algebraic effects, and more,
 all together in the same tub.
 %
 The water is warm -- jump in!
 %
-Which of these features can be implemented in terms of the others?
+Which of these ``awkward squad'' features can be implemented in terms of the others?
 %
 And should their full power be exposed so that we can do so?
+
 \plr{Optional last sentence, if not used above:
 We aren't sure -- it seems a tool meant to send a termination signal shouldn't
 be repurposable in the way we have done so, and yet, it's nice we could.}
