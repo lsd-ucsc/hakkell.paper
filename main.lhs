@@ -1593,7 +1593,7 @@ Ack the PLV people
 
 \section{Appendix}
 
-\subsection{Permute}
+\subsection{Permute function implementation}
 
 In \Cref{sec:ring-impl} we provided the implementation of a ring
 leader election in our actor framework.
@@ -1605,7 +1605,6 @@ Its implementation is as follows:
 %
 Repeatedly pop a random element from the input and add it to the output.
 %
-
 \begin{code}
 permute :: RandomGen g => [a] -> g -> ([a], g)
 permute pool0 gen0
@@ -1630,7 +1629,7 @@ permute pool0 gen0
 \label{sec:perf-eval-detail}
 
 
-For the (extended) ring leader election solution we have shown, the time to
+In the extended ring leader election solution we have shown, the time to
 termination is:
 %
 The time necessary for the winner's self-nomination to pass around the ring
@@ -1641,37 +1640,11 @@ Termination is detected when a node receives a winner declaration with its own
 identity.
 
 
-We will benchmark time to termination using the \verb|criterion| package.
-%
-For this, we will need an \verb|IO| action which executes the algorithm, cleans
-up its resources, and then returns.
-%
-We will make an initialiazation actor to launch the algorithm, clean up, and
-kill itself when termination is detected.
-%
-We employ \verb|withAsync| and \verb|waitAsync| to detect when the
-initialization actor has died and return from the benchmark.
-
-\paragraph{Difficult}
-\plr{
-\begin{itemize}
-    \item Difficult to communicate between actor-world and functional-world
-    because actors do not return values. (Actors do not return!)
-    %
-    \item Difficult to use message passing for this purpose: A non-actor thread
-    (a thread not running an actor mainloop) cannot easily fork a child actor
-    and receive a message from that child. Race conditions, I think.
-    %
-    \item Instead we use a mutable cell for communication.
-\end{itemize}
-}
-
-
-First we define a benchmarking-node, which extends \verb|exnode|
+We define a benchmark-node as an extension of \verb|exnode|
 (\Cref{sec:ring2-intent-fun}) with additional behavior.
 %
-When a benchmarking-node detects that it is confirmed as winner, it sends the
-winner-declaration message to a designated subscriber.
+When a benchmark-node detects that it is confirmed as winner it puts its own
+\verb|ThreadId| into an \verb|MVar| to signal termination.
 %
 \begin{code}
 benchNode :: Mv.MVar ThreadId -> Intent Exnode SomeException
@@ -1685,24 +1658,38 @@ benchNode done state e@Envelope{message} = do
 \end{code}
 
 
+It should be acknowledged that the reason we aren't using message passing to
+notify about termination is because it is difficult to communicate between the
+``actor world'' and the ``functional world.''
+%
+The functional world expects \verb|IO| actions to terminate with return values,
+but we didn't bother to implement clean termination in our actor framework.
+%
+So in the absence of that we could try spawning an actor and then setting up an
+exception handler to receive messages from it, but there are some confusing
+race conditions there, so we didn't do that.
 
 
-
-
-\noindent
+We will benchmark time to termination using the \verb|criterion| package.
+%
+For this, we will need an \verb|IO| action which executes the algorithm, cleans
+up its resources, and then returns.
+%
 We define \verb|benchRing| to be the function which \verb|criterion| will
-measure. It will run a single \verb|benchLaunch| actor, send a \verb|Start|
-message to it, wait for apoptosis, and output any result.
+measure.
+%
+It will run an election with benchmark-nodes, wait for termination, kill the
+nodes, and assert a correct result.
 %
 \begin{code}
 benchRing :: Int -> IO ()
 benchRing n = do
-
+    -- Start the ring-leader election
     done <- Mv.newEmptyMVar
     ring <- ringElection n $ do
         great <- myThreadId
         run (benchNode done) (Uninitialized, great)
-
+    -- Wait for termination, kill the ring, assert correctness
     w <- Mv.takeMVar done
     mapM_ killThread ring
     assert (w == maximum ring) $
@@ -1712,7 +1699,6 @@ benchRing n = do
 
 
 
-\noindent
 Finally, we define a benchmark-main which runs \verb|benchRing| for each of
 several ring sizes.
 %
@@ -1727,27 +1713,40 @@ These alternates are shown in \Cref{sec:alt-impls}.
 %
 \begin{code}
 benchMain :: IO ()
-benchMain = Cr.defaultMain
-    [ Cr.bgroup "fork & kill" $ fmap control counts
-    , Cr.bgroup "channel ring" $ fmap channel counts
-    , Cr.bgroup "actor ring" $ fmap actor counts
-    ]
+benchMain = Cr.defaultMain $ map heat counts
   where
     counts = [2^n | n <- [2,4..14::Int]]
-    control n =
-        Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchControl n
-    actor n =
-        Cr.bench ("n=" ++ show n) . Cr.nfIO $ benchRing n
-    channel n =
-        Cr.bench ("n=" ++ show n) . Cr.nfIO $ channelRing n
+    heat n = Cr.bgroup ("n=" ++ show n)
+        [ Cr.bench "fork & kill"  . Cr.nfIO $ benchControl n
+        , Cr.bench "channel ring" . Cr.nfIO $ benchRing n
+        , Cr.bench "actor ring"   . Cr.nfIO $ channelRing n
+        ]
 \end{code}
 
-%
+
+\subsubsection{Experimental setup}
+
 When producing benchmarks for this paper, we ran an extra step (available in
 our repo) to replace all printlines with \verb|pure ()|.
 %
 This is necessary because the printlines introduce latency and dramatically
 inflate the algorithm runtime.
+\begin{enumerate}[leftmargin=2em]
+    \item We ran the \verb|criterion| benchmark on MacBookAir4,1 and
+    MacBookPro11,5 computers running NixOS, with four capabilities, clocked to
+    1.6GHz, without frequency scaling, and with no other programs running
+    (kernel vtty).  These results showed that the actor-based implementation
+    runtime was about three times the channel-based runtime.
+
+    \item We ran the same benchmark with eight capabilities on just the
+    MacBookPro11,5. This allowed us to explore larger ring sizes. These results
+    showed that as the ring size increased exponentially, the difference in
+    performance between the two implementation decreased exponentially, but the
+    actor framework was still slower.
+
+    \item We planned to run the same benchmark on a beefy AWS machine with many
+    capabilities. \plr{Did we complete this?}
+\end{enumerate}
 
 
 
@@ -1789,6 +1788,7 @@ type Ch = Ch.Chan ChMsg
 \end{code}
 
 
+\noindent
 It is unnecessary to split the channel-based implementation into a simple node
 and an extended node, but we do so it is easier to reference against the
 actor-based implementation.
@@ -1796,40 +1796,14 @@ actor-based implementation.
 This structural similarity hopefully has the added benefit of focusing
 benchmark differences onto the communication mechanisms instead of anecdotal
 differences.
+    
+
+In \verb|chanNode| we implement the main loop.
 %
-\begin{itemize}
-    \item
-    In \Cref{fig:chanNode} we implement the main loop, \texttt{chanNode}.
-    %
-    The only state maintained is the greatest nominee seen.
-    %
-    It leaves off with definitions of send-functions in its where-clause.
-
-    \item
-    \Cref{fig:chanNodePart} shows \texttt{nodePart}, within the where-clause of
-    \texttt{chanNode}, which reimplements the behavior of a ring node from
-    \Cref{sec:ring-intent-fun}.
-    %
-    This part has no state because its successor-channel is given on
-    construction; it requires no \verb|Init| message for the same reason.
-
-    \item
-    In \Cref{fig:chanNodePrimePart}, still within the where-clause of
-    \texttt{chanNode}, \texttt{exnodePart} reimplements the behavior of the
-    winner-round node (\Cref{sec:ring2-intent-fun}) and the benchmark-node
-    (\Cref{sec:perf-eval-detail}).
-    %
-    We signal termination by placing the confirmed winner's \texttt{ThreadId}
-    into the ``done'' \texttt{MVar}.
-
-    \item
-    Finally \Cref{fig:channelRing} initializes the algorithm with a function
-    similar to \texttt{ringElection}, but using channels instead of passing in
-    \texttt{ThreadId}s.
-\end{itemize}
-
-\begin{figure}
-\raggedright
+The only state maintained is the greatest nominee seen.
+%
+It leaves off with definitions of send-functions in its where-clause.
+%
 \begin{code}
 chanNode ::
     Mv.MVar ThreadId -> (Ch, Ch) -> ThreadId -> IO ()
@@ -1840,13 +1814,15 @@ chanNode done chans st = do
     sendMsg = Ch.writeChan (snd chans) . Left
     sendWinner = Ch.writeChan (snd chans) . Right
 \end{code}
-\caption{Main loop for channel-based implementation of ring leader election.
-Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
-\label{fig:chanNode}
-\end{figure}
 
-\begin{figure}
-\raggedright
+
+\noindent
+Next we define \texttt{nodePart}, within the where-clause of \texttt{chanNode},
+to implement the behavior of a ring node from \Cref{sec:ring-intent-fun}.
+%
+This part has no state because its successor-channel is given on
+construction; it requires no \verb|Init| message for the same reason.
+%
 \begin{code}
     nodePart :: Msg -> IO ()
     nodePart Start = do
@@ -1863,18 +1839,22 @@ Includes \Cref{fig:chanNodePart,fig:chanNodePrimePart} it its where-clause.}
                 >> sendMsg (Nominate nominee)
             | otherwise       -> putStrLn "Ignored nominee"
 \end{code}
-\caption{Channel-based reimplementation of \verb|node| defined in the
-where-clause of \Cref{fig:chanNode}.}
-\label{fig:chanNodePart}
-\end{figure}
 \ignore{
 \begin{code}
     nodePart _ = error "nodePart: unhandled"
 \end{code}
 }
 
-\begin{figure}
-\raggedright
+
+\noindent
+Still within the where-clause of \texttt{chanNode}, we implment
+\texttt{exnodePart} with the behavior of the winner-round node
+(\Cref{sec:ring2-intent-fun}) and the benchmark-node
+(\Cref{sec:perf-eval-detail}).
+%
+We signal termination by placing the confirmed winner's \texttt{ThreadId}
+into the ``done'' \texttt{MVar}.
+%
 \begin{code}
     exnodePart :: ThreadId -> Either Msg Winner -> IO ThreadId
     exnodePart great (Left m) = do
@@ -1898,13 +1878,22 @@ where-clause of \Cref{fig:chanNode}.}
                 | otherwise -> putStrLn "Unexpected winner"
         return great
 \end{code}
-\caption{Channel-based reimplementation of \verb|exnode| defined in the
-where-clause of \Cref{fig:chanNode}}
-\label{fig:chanNodePrimePart}
-\end{figure}
 
-\begin{figure}
-\raggedright
+
+\noindent
+Finally we initialize the algorithm with a function similar to
+\texttt{ringElection}, but using channels instead of passing in
+\texttt{ThreadId}s.
+%
+First define a function to run a channel-node on the ``done'' \texttt{MVar}
+and two provided channels.
+%
+Next construct channels and a ring of un-evaluated nodes \emph{in order}.
+%
+Finally permute the nodes and fork them out of order.
+%
+At this point the nodes are assigned random thread identifiers.
+%
 \begin{code}
 channelRing :: Int -> IO ()
 channelRing n = do
@@ -1928,21 +1917,12 @@ channelRing n = do
     assert (w == maximum ring) $
         return ()
 \end{code}
-\caption{
-    Initialization routine for channel-based reimplementation of ring
-    leader election.
-    %
-    First define a function to run a channel-node on the ``done'' \texttt{MVar}
-    and two provided channels.
-    %
-    Next construct channels and a ring of un-evaluated nodes \emph{in order}.
-    %
-    Finally permute the nodes and fork them out of order.
-    %
-    At this point the nodes are assigned random thread identifiers.
-}
-\label{fig:channelRing}
-\end{figure}
+
+
+
+
+
+
 
 
 
