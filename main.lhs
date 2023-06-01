@@ -119,14 +119,14 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-    The Glasgow Haskell Compiler is known for its feature-laden runtime
-    system (RTS), which includes, among a slew of other features,
-    lightweight threads and asynchronous exceptions.
+    The Glasgow Haskell Compiler is known for its feature-laden runtime system
+    (RTS) which includes lightweight threads, asynchronous exceptions, and a
+    slew of other features.
     %%\plr{Leaving "lightweight threads" in because it's part of being a
     %%fully-featured runtime. A language with a less fully-featured runtime uses
     %%OS threads.}
     %
-    The combination of these features is powerful enough that a programmer may
+    Their combination is powerful enough that a programmer may
     complete the same task in many different ways -- some more advisable than
     others.
 
@@ -140,8 +140,6 @@
     Finally, we raise questions about how RTS features intersect and possibly
     subsume one another, and make recommendations about how GHC can
     guide good practice by constraining the use of some features.
-
-      
 \end{abstract}
 
 %%%% %%
@@ -203,8 +201,7 @@ The most commonly used implementation of Haskell today is the Glasgow Haskell
 Compiler (GHC) \cite{fausak2022} together with its runtime system (RTS).
 %
 The RTS is featureful and boasts support for lightweight threads, two kinds of
-profiling, transactional memory, asynchronous exceptions, and a slew of other
-features.
+profiling, transactional memory, asynchronous exceptions, and more.
 %
 Combined with the \verb|base| package, a programmer can get a lot
 done without ever reaching into the extensive set of community packages on
