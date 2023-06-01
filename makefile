@@ -28,7 +28,8 @@ $(PAPER).pdf: $(PAPER).tex ring.tex $(PAPER).bib
 
 
 # compile for benchmark
-build = ghc -O -threaded -fno-full-laziness -rtsopts -with-rtsopts=-N4
+CAPABILITIES ?= 4
+build = ghc -O -threaded -fno-full-laziness -rtsopts -with-rtsopts=-N$(CAPABILITIES)
 
 %.bench.elf: %.noprint.lhs
 	$(build) $< -o $@
