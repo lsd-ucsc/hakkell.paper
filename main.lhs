@@ -1942,8 +1942,8 @@ endVerb = putStrLn "\\end{verbatim}"
 \subsection{Extended election (dynamic types) trace}
 \label{sec:main2-trace}
 
-In \Cref{sec:main2-init} we defined \verb|main2| to run a ring
-leader election with a winner declaration round.
+In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
+\verb|exnode| to run a ring leader election with a winner declaration round.
 %
 Here's an example trace.
 
