@@ -464,7 +464,7 @@ So that the recipient may respond, we define a self-addressed envelope data
 type in \Cref{fig:envelope-and-intent} and declare the required instances.
 
 
-\Cref{fig:sendStatic-runStatic} defines a send function, \verb|sendStatic|,
+\Cref{fig:static-impl} defines a send function, \verb|sendStatic|,
 which reads the current thread identifier, constructs a self-addressed
 envelope, and throws it to the specified recipient.
 %
@@ -489,14 +489,14 @@ receipt and processing.
 The main-loop function installs an exception handler to accumulate messages in
 an inbox and calls a user-defined intent function on each.
 %
-\Cref{fig:sendStatic-runStatic} defines a main-loop, \verb|runStatic|, that
+\Cref{fig:static-impl} defines a main-loop, \verb|runStatic|, that
 takes an \verb|Intent| function and its initial state and does not return.
 %
 It masks asynchronous exceptions so they will only be raised at well-defined
 points and runs its loop under that mask.
 
 
-The loop in \Cref{fig:sendStatic-runStatic} has two pieces of state: that of the intent
+The loop in \Cref{fig:static-impl} has two pieces of state: that of the intent
 function, and an inbox of messages to be processed.
 %
 The loop body is divided roughly into three cases by an exception
@@ -625,7 +625,7 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
     %
     Actor threads enter a main-loop to receive messages.
 }
-\label{fig:sendStatic-runStatic}
+\label{fig:static-impl}
 \end{figure}
 
 
@@ -634,7 +634,7 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
 \subsection{Dynamic types}
 \label{sec:dynamic-types}
 
-The actor main-loop in \Cref{fig:sendStatic-runStatic} constrains an actor
+The actor main-loop in \Cref{fig:static-impl} constrains an actor
 thread to handle messages of a single type.
 %
 An envelope containing the wrong message type will not be caught by the
@@ -762,7 +762,7 @@ messages of different types, by extending an actor that doesn't.
 \subsection{Safe initialization}
 
 \plr{This mini section raises an issue that's relevant to the content of
-\Cref{fig:sendStatic-runStatic}, but it doesn't fit into the flow of
+\Cref{fig:static-impl}, but it doesn't fit into the flow of
 \Cref{sec:receiving-catching}.
 Reasons this probably shouldn't be in \Cref{sec:receiving-catching}:
 \Cref{fig:run} uses \Cref{fig:runDyn} which isn't defined until
@@ -772,7 +772,7 @@ or we'll lose readers.
 }
 
 When creating an actor thread it is important that no exception arrive before
-the actor main-loop (\verb|runStatic| in \Cref{fig:sendStatic-runStatic})
+the actor main-loop (\verb|runStatic| in \Cref{fig:static-impl})
 installs its exception handler.
 %
 If this happened, the execption would cause the newly created thread to die.
@@ -1332,13 +1332,13 @@ A trace of an extended-election is in \Cref{sec:main2-trace}.
 \section{What hath we wrought?}
 \label{sec:what-hath-we-wrought}
 
-\Cref{fig:sendStatic-runStatic} shows that we have, in only a few lines of
+\Cref{fig:static-impl} shows that we have, in only a few lines of
 code, discovered an actor framework within the RTS which makes no explicit use
 of channels, references, or locks and imports just a few names from default
 modules.
 %
 The support for dynamic types, shown in \Cref{fig:send,fig:runDyn} as separate
-definitions, can be folded into \Cref{fig:sendStatic-runStatic} for only a few
+definitions, can be folded into \Cref{fig:static-impl} for only a few
 additional lines.
 %
 Despite minor brokenness
@@ -1458,9 +1458,9 @@ exceptions?
 %
 This is the question that led us to writing this paper.
 %
-\Cref{fig:sendStatic-runStatic} shows that we very nearly can, and this fact hints
+\Cref{fig:static-impl} shows that we very nearly can, and this fact hints
 that perhaps asynchronous exceptions are more general than actors.
-\lk{It's not just \Cref{fig:sendStatic-runStatic} in isolation.  How about ``Our implementation suggests that we very nearly can.''}
+\lk{It's not just \Cref{fig:static-impl} in isolation.  How about ``Our implementation suggests that we very nearly can.''}
 \lk{But, why ``very nearly can'' and not just ``can''?  We should explicit about what's missing if something is missing, instead of using weasel words}
 
 When we discussed this research at an informal gathering, a participant asked
