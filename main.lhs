@@ -508,6 +508,7 @@ handler and a case-split on the inbox list.
     
     \item If the inbox has a message, call the intent function and recurse on
     the updated actor state and remainder of the inbox.
+    \plr{Ensure this list isn't broken across pages}
 
     \item If during cases (1) or (2) an \verb|Envelope| exception is received,
     recurse on the unchanged actor state and an inbox with the new envelope
@@ -529,6 +530,7 @@ of recursing with updated state through the loop is not disrupted.
 
 
 \paragraph{Unsafety}
+
 
 Before moving forward, let us acknowledge that this is \emph{not safe}.
 %
@@ -634,6 +636,7 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
 \subsection{Dynamic types}
 \label{sec:dynamic-types}
 
+
 The actor main-loop in \Cref{fig:static-impl} constrains an actor
 thread to handle messages of a single type.
 %
@@ -680,20 +683,19 @@ obtain one from the RTS.
 \subsubsection{Sending dynamic messages}
 
 
-
-Instead of sending an \verb|Envelope| of some application-specific message
-type we convert messages to the ``any type'' in Haskell's
-exception hierarchy, \verb|SomeException|.
+Instead of sending an \verb|Envelope|
+of some application-specific message type
+we convert messages to the ``any type''
+in Haskell's exception hierarchy,
+\verb|SomeException|.
 %
-\Cref{fig:send} defines a new send function which converts messages before
+\Cref{fig:dyn-impl} defines a new send function which converts messages before
 sending, so that all inflight messages will have the type \verb|Envelope
 SomeException|.
 
 
-
 \subsubsection{Receiving dynamic messages}
 \label{sec:dynamic-recv-loop}
-
 
 
 On the receiving side, messages must now be downcast to the \verb|Intent|
@@ -701,7 +703,8 @@ function's message type.
 %
 This is an opportunity to treat messages of the wrong type specially.
 %
-We define a new main-loop which lifts any \verb|Intent| function to one that can
+In \Cref{fig:dyn-impl} we define a new main-loop, \verb|runDyn|,
+that lifts any intent function to one that can
 receive envelopes containing \verb|SomeException|.
 %
 If the message downcast fails, instead of the recipient crashing, it performs a
@@ -714,37 +717,11 @@ type-error.\footnote{
     helpful type-error message for debugging actor programs.
 }
 
-\begin{figure}
-\raggedright
-\begin{code}
-send :: Exception a => ThreadId -> a -> IO ()
-send recipient = sendStatic recipient . toException
-\end{code}
-\caption{Upcast before sending.}
-\label{fig:send}
-\end{figure}
 
-\begin{figure}
-\raggedright
-\begin{code}
-runDyn :: Exception a => Intent s a -> s -> IO ()
-runDyn intentStatic = runStatic intent
-  where
-    intent state e@Envelope{sender, message} =
-        case fromException message of
-            Just m -> intentStatic state e{message=m}
-            Nothing
-                -> throwTo sender (TypeError "...")
-                >> return state
-\end{code}
-\caption{Downcast before processing.}
-\label{fig:runDyn}
-\end{figure}
-
-
-
-The changes shown so far haven't directly empowered actor intent functions to
-deal with messages of different types, only lifted our infrastructure to remove
+These changes do not directly empower actor intent functions to
+deal with messages of different types.
+%
+We have only lifted our infrastructure to remove
 application-specific type parameters from envelopes.
 %
 Actors intending to receive messages of different types will do so by
@@ -758,14 +735,41 @@ Such actors will use an intent function handling messages of type
 messages of different types, by extending an actor that doesn't.
 
 
+\begin{figure}
+\raggedright
+\begin{code}
+send :: Exception a => ThreadId -> a -> IO ()
+send recipient = sendStatic recipient . toException
+
+runDyn :: Exception a => Intent s a -> s -> IO ()
+runDyn intentStatic = runStatic intent
+  where
+    intent state e@Envelope{sender, message} =
+        case fromException message of
+            Just m -> intentStatic state e{message=m}
+            Nothing
+                -> throwTo sender (TypeError "...")
+                >> return state
+\end{code}
+\caption{
+    The dynamically typed framework
+    upcasts before sending
+    and downcasts before processing.
+}
+\label{fig:dyn-impl}
+\end{figure}
+
+
+
 
 \subsection{Safe initialization}
+\label{sec:safe-fork}
 
 \plr{This mini section raises an issue that's relevant to the content of
 \Cref{fig:static-impl}, but it doesn't fit into the flow of
 \Cref{sec:receiving-catching}.
 Reasons this probably shouldn't be in \Cref{sec:receiving-catching}:
-\Cref{fig:run} uses \Cref{fig:runDyn} which isn't defined until
+\Cref{fig:run} uses \Cref{fig:dyn-impl} which isn't defined until
 \Cref{sec:dynamic-recv-loop}.
 \Cref{sec:receiving-catching} has a very tight narrative and needs to be simple
 or we'll lose readers.
@@ -849,7 +853,7 @@ We implement and extend that solution below.
     Concurrently, node 6 nominated itself and was accepted by node 2 but
     rejected by node 7.
     %
-    For this election to achieve termination, node 7 must nominate itself.
+    For this election to obtain a leader, node 7 must nominate itself.
 }
 \label{fig:ring-election-visual}
 \end{figure}
@@ -1180,11 +1184,11 @@ exnode :: Intent Exnode SomeException
 
 
 Recall the implementation of the actor main-loop function,
-\verb|runDyn| from \Cref{fig:runDyn}.
+\verb|runDyn| from \Cref{fig:dyn-impl}.
 %
 When we apply \verb|exnode| to \verb|runDyn|,
 the call to \verb|fromException| in \verb|runDyn|
-is inferred to return \verb|Maybe SomeException|
+is inferred to return \verb|Maybe SomeException|,
 which succeeds unconditionally.
 %
 The \verb|exnode| intent function must then perform its own downcasts,
@@ -1337,16 +1341,19 @@ code, discovered an actor framework within the RTS which makes no explicit use
 of channels, references, or locks and imports just a few names from default
 modules.
 %
-The support for dynamic types, shown in \Cref{fig:send,fig:runDyn} as separate
+The support for dynamic types, shown in \Cref{fig:dyn-impl} as separate
 definitions, can be folded into \Cref{fig:static-impl} for only a few
-additional lines.
+additional lines.\footnote{
+    Instead of wrapping the intent function, the message downcast is performed
+    in the exception handler.
+}
 %
-Despite minor brokenness
-\plr{be a reader who doesn't remember; what brokenness?}
-it is notable
-\plr{don't tell people what to feel; "we find it"}
-that this is possible and shocking that
-it is so easy.
+While a user must remember to
+mask asynchronous exceptions when creating an actor thread
+(\Cref{fig:run}/\Cref{sec:safe-fork}\plr{which to reference?}),
+and endeavor to write an idempotent intent function
+(\Cref{sec:receiving-catching}),
+we find it compelling that this is possible and shocking that it is so easy.
 
 \subsection{Almost a COPL}
 
