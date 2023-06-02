@@ -33,7 +33,7 @@ It does an extended ring leader election with both the
 actor-based (benchRing) and channel-based (channelRing) implementations.
 The criterion benchmark can be configured to
 run (up to) different ring sizes by setting
-the environment variable `BENCH` to a number.
+the environment variable `BENCH` to power of 2.
 
 
 
