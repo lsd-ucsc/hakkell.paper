@@ -138,7 +138,7 @@
     types.
     %
     Finally, we raise questions about how RTS features intersect and possibly
-    subsume one another, and suggest how GHC can guide good practice by
+    subsume one another, and suggest that GHC can guide good practice by
     constraining the use of some features.
 \end{abstract}
 
@@ -239,10 +239,9 @@ The paper is organized as follows:
     \item[--] We reflect on whether this was a good idea in
     \Cref{sec:what-hath-we-wrought}:
     we consider the practicality and performance of our framework,
-    argue that asynchronous exceptions might be more constrained,
-    \plr{foreshadow ``extended "awkward squad"''; TODO the rest of this sentence
-    and asking when it is appropriate to implement ``language level'' features
-    in terms of others... wrapping up in \Cref{sec:conclusion}.}
+    suggest that asynchronous exceptions might be more constrained,
+    and ask whether it is appropriate to implement ``language level'' features
+    in terms of others.
 \end{itemize}
 This paper is a literate Haskell program.\footnote{
     We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
@@ -1349,7 +1348,7 @@ additional lines.\footnote{
 %
 While a user must remember to
 mask asynchronous exceptions when creating an actor thread
-(\Cref{sec:safe-fork}\plr{which to reference?}),
+(\Cref{sec:safe-fork}),
 and endeavor to write an idempotent intent function
 (\Cref{sec:receiving-catching}),
 we find it compelling that this is possible and shocking that it is so easy.
@@ -1443,7 +1442,7 @@ necessary to compare to some traditional means of inter-thread communication
 to put away any doubt.
 %
 We implemented ring leader election from \Cref{sec:ring-impl} in
-\Cref{sec:alt-impls} using channels.\footnote{Channels from
+ using channels (See \Cref{sec:alt-impls}).\footnote{Channels from
 \texttt{base:Control.Concurrent.Chan}.}
 %
 We also implemented a control which forks some number of threads that do
@@ -1456,41 +1455,17 @@ package from Hackage.
 The details of how this benchmark was made reliable are in
 \Cref{sec:perf-eval-detail}.
 
-\Cref{fig:perf} shows a comparison of wall-clock running times of the
-actor-based and channel-based ring leader election algorithms and the control
-for different ring sizes.
-\plr{append one of the following paragraphs depending on whether we have time
-to run on the bigger machine}
-
-\plr{PERF EVAL 1}
-%
 The actor-based implementation consistently runs a bit slower than the
-channel-based implementation, but the difference in running time gets less
-significant as either the ring size or the number of capabilities increases.
+channel-based implementation, but the difference in running time were less
+significant as the ring size and number of capabilities increased.
 %
-It is possible that the differences between the two implementations become
-irrelevant, as our benchmarking machine (supporting only 8 capabilities) was
-simply overloaded.
+It is possible that the difference between the two implementations became
+irrelevant because our benchmarking machine (supporting only 8 capabilities)
+was simply overloaded.
 %
 Another possibility is that there is some overhead in the channel-based
 implementation which the actor-based implementation doesn't accumulate as
-larger rings are tested.
-
-\plr{PERF EVAL 2}
-The actor-based implementation is slower than the channel-based implementation
-for ring sizes less than \plr{what}, and faster than the channel-based
-implementation for ring sizes greater than \plr{what} on our test machine.
-%
-We rented an \verb|192vCPU| Amazon AWS \verb|c6a.48xlarge| instance for our
-benchmark.
-%
-\plr{ETC}
-
-\begin{figure}
-\plr{TODO criterion figure}
-\caption{The performance evaluation result.}
-\label{fig:perf}
-\end{figure}
+larger rings tested.
 
 
 
@@ -1743,8 +1718,7 @@ inflate the algorithm runtime.
     performance between the two implementation decreased exponentially, but the
     actor framework was still slower.
 
-    \item We planned to run the same benchmark on a beefy AWS machine with many
-    capabilities. \plr{Did we complete this?}
+    \item We plan to repeat the benchmark on a machine with many capabilities.
 \end{enumerate}
 
 
