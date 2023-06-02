@@ -184,7 +184,7 @@ import qualified Criterion.Main as Cr
 In this section, we briefly review asynchronous exceptions in GHC
 (\Cref{subsec:async-exceptions}) and the actor model of programming
 (\Cref{sec:actor-model}); readers already familiar with these topics may wish
-to skip ahead.
+to skip this section.
 
 \subsection{Asynchronous exceptions in GHC}
 \label{subsec:async-exceptions}
