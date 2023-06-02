@@ -383,9 +383,9 @@ We will approximate this model with Haskell's asynchronous exceptions as the
 primary metaphor for message passing.
 
 More concretely, we think of an actor framework as
-having the characteristics that \citet{armstrong2003}
-describes as characteristics of a
-\emph{concurrency-oriented programming language} (COPL).
+having the characteristics of a
+\emph{concurrency-oriented programming language} (COPL),
+a notion due to \citet{armstrong2003}.
 %
 After describing our framework, we will make the case that it has many of the
 characteristics of a COPL.
@@ -1357,8 +1357,11 @@ we find it compelling that this is possible and shocking that it is so easy.
 \subsection{Almost a COPL}
 \label{sec:almost-copl}
 
-Which of the COPL characteristics (\Cref{sec:actor-model}) does our actor framework
-display?
+In \Cref{sec:actor-model} we described an actor framework as having the
+characteristics of a \emph{concurrency-oriented programming language}
+(COPL) \cite{armstrong2003}.
+%
+Which requirements to be a COPL does this framework display?
 %
 RTS threads behave as independent processes, and although not strongly
 isolated and able to share state, they have a unique hidden \verb|ThreadId|.
@@ -1525,10 +1528,6 @@ with frighteningly little effort.
 %
 Perhaps the user-accessible interface to the asynchronous exception system
 should be more constrained.
-\plr{Alternate last sentence:
-It seems a tool meant to send a termination signal (asynchronous exceptions)
-shouldn't be repurposable in the way we have done so, and yet, it's nice we
-could.}
 
 
 %\paragraph{Feature subsumption in the new ``awkward squad''}
@@ -1543,10 +1542,11 @@ The water is warm -- jump in!
 Which of these ``awkward squad'' features can be implemented in terms of the others?
 %
 And should their full power be exposed so that we can do so?
+%
+We aren't sure -- we invite the reader to draw their own conclusions.
 
-\plr{Optional last sentence, if not used above:
-We aren't sure -- it seems a tool meant to send a termination signal shouldn't
-be repurposable in the way we have done so, and yet, it's nice we could.}
+%% Jose: There's a tendency to ADD, maybe we should we think about whether some
+%% of the points can be subtracted.
 
 
 
