@@ -99,7 +99,7 @@ done without ever reaching into the extensive set of community packages on
 Hackage.
 
 In that spirit,
-we noticed that there's nothing really stopping one from
+we noticed that there is nothing really stopping one from
 abusing the tools \verb|throwTo| and \verb|catch|
 to pass data between threads.
 %
@@ -142,7 +142,7 @@ This paper is a literate Haskell program.\footnote{
     The leader election example of \Cref{sec:what-hath-we-wrought} additionally imports the module \verb|System.Random|
     and uses the extension \verb|ViewPatterns|.
     %
-    The appendices have other imports, which we don't describe here.
+    The appendices have other imports, which we do not describe here.
 }
 
 % Imports for the haskell program:
@@ -660,7 +660,7 @@ masked (this is in addition to the mask within the main loop).
 %
 It performs a best-effort check and issues a helpful reminder to mask the
 creation of actor threads.\footnote{
-    We don't define a wrapper around \texttt{forkIO} to perform this masking
+    We do not define a wrapper around \texttt{forkIO} to perform this masking
     because actors which perform initialization steps can currently do so
     before calling \texttt{run}. There is an example in \Cref{sec:main2-init}.
 }
@@ -873,7 +873,7 @@ The election initialization function\footnote{
     The implementation shown doesn't handle rings of size 0 or 1,
     but we consider that out of scope of the demonstration.
     %
-    Also, we don't show thread cleanup here.
+    Also, we do not show thread cleanup here.
 }
 is implemented in \Cref{fig:ringElection}.
 %
