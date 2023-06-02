@@ -1726,8 +1726,8 @@ benchMain = Cr.defaultMain $ map heat counts
 
 \subsubsection{Experimental setup}
 
-When producing benchmarks for this paper, we ran an extra step (available in
-our repo) to replace all printlines with \verb|pure ()|.
+When producing benchmarks for this paper, we ran an extra step to replace all
+printlines with \verb|pure ()|.
 %
 This is necessary because the printlines introduce latency and dramatically
 inflate the algorithm runtime.
