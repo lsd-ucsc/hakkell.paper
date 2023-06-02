@@ -284,7 +284,7 @@ import System.IO (hSetBuffering, stdout, BufferMode(..))
 
 -- Perf eval appendix
 import Control.Exception (assert)
-import System.Environment (getArgs)
+import System.Environment (lookupEnv)
 import qualified Control.Concurrent.Chan as Ch
 import qualified Control.Concurrent.MVar as Mv
 import qualified Criterion.Main as Cr
@@ -1712,10 +1712,9 @@ Haskell).
 These alternates are shown in \Cref{sec:alt-impls}.
 %
 \begin{code}
-benchMain :: IO ()
-benchMain = Cr.defaultMain $ map heat counts
+benchMain :: [Int] -> IO ()
+benchMain counts = Cr.defaultMain $ map heat counts
   where
-    counts = [2^n | n <- [2,4..14::Int]]
     heat n = Cr.bgroup ("n=" ++ show n)
         [ Cr.bench "fork & kill"  . Cr.nfIO $ benchControl n
         , Cr.bench "channel ring" . Cr.nfIO $ benchRing n
@@ -1970,31 +1969,40 @@ Here's an example trace.
 \begin{code}
 main :: IO ()
 main = do
-    args <- getArgs
-    case args of
-        ["--demo", n] -> do
+    demoRaw <- lookupEnv "DEMO"
+    powRaw <- lookupEnv "BENCH"
+    print ("DEMO", demoRaw)
+    print ("BENCH", powRaw)
+    case demoRaw of
+        Just n -> do
             let count = read n
             putStrLn ("Count: " ++ n)
             beginVerb
 
-            putStrLn "main1"
+            putStrLn "ring leader election"
             main1 count
             putStrLn ""
 
-            putStrLn "main2"
+            putStrLn "extended ring leader election"
             main2 count
             putStrLn ""
 
-            putStrLn "benchRing"
+            putStrLn "benchRing function"
             benchRing count
             putStrLn ""
 
-            putStrLn "channelRing"
+            putStrLn "channelRing function"
             channelRing count
             putStrLn ""
 
             endVerb
-        _ -> benchMain
+        Nothing -> do
+            let lb = 2
+                ub = maybe 10 read powRaw
+                counts = [2^n | n <- [lb,lb+2..ub::Int]]
+            putStrLn ("Powers of two: " ++ show lb ++ "," ++ show (lb+2) ++ ".." ++ show ub)
+            putStrLn ("Ring sizes: " ++ show counts)
+            benchMain counts
 \end{code}
 }
 
