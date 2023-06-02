@@ -1524,8 +1524,8 @@ benchMain counts = Cr.defaultMain $ map heat counts
   where
     heat n = Cr.bgroup ("n=" ++ show n)
         [ Cr.bench "fork & kill"  . Cr.nfIO $ benchControl n
-        , Cr.bench "channel ring" . Cr.nfIO $ benchRing n
-        , Cr.bench "actor ring"   . Cr.nfIO $ channelRing n
+        , Cr.bench "actor ring"   . Cr.nfIO $ benchRing n
+        , Cr.bench "channel ring" . Cr.nfIO $ channelRing n
         ]
 \end{code}
 
