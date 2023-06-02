@@ -53,6 +53,7 @@ clean-all: $(TEXSRC)
 	rm -fv main.noprint.*
 	rm -fv main.bench.*
 	rm -fv main.prof.*
+	rm -fv comment.cut
 	diff -y <(git ls-files | sort) <(ls -a | sort)
 
 preview: $(TEXSRC)
