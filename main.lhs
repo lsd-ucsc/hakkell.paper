@@ -1804,10 +1804,9 @@ main = do
             endVerb
         Nothing -> do
             let lb = 2
-                next = lb + 2
                 ub = maybe 10 read powRaw
-                counts = [2^n | n <- [lb,next..ub::Int]]
-            putStrLn ("Powers of two: " ++ show lb ++ "," ++ show next ++ ".." ++ show ub)
+                counts = [2^n | n <- [lb..ub::Int]]
+            putStrLn ("Powers of two: " ++ show lb ++ ".." ++ show ub)
             putStrLn ("Ring sizes: " ++ show counts)
             benchMain counts
 \end{code}
