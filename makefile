@@ -47,14 +47,14 @@ clean: $(TEXSRC)
 	latexmk -c
 	rm -fv *.{o,hi}
 
-clean-all: $(TEXSRC)
+clean-all: $(TEXSRC) clean
 	latexmk -C
 	rm -fv main.{bbl,ptb,tex,xcp}
 	rm -fv main.noprint.*
 	rm -fv main.bench.*
 	rm -fv main.prof.*
 	rm -fv comment.cut
-	diff -y <(git ls-files | sort) <(ls -a | sort)
+	-diff -y <(git ls-files | sort) <(ls -a | sort)
 
 preview: $(TEXSRC)
 	latexmk -pvc
