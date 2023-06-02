@@ -1305,8 +1305,8 @@ Despite the avowed impracticality of this actor framework, we felt it was
 necessary to compare to some traditional means of inter-thread communication
 to put away any doubt.
 %
-We implemented ring leader election from \Cref{sec:ring-impl} in
- using channels (See \Cref{sec:alt-impls}).\footnote{Channels from
+We implemented ring leader election from \Cref{sec:ring-impl}
+using channels (See \Cref{sec:alt-impls}).\footnote{Channels from
 \texttt{base:Control.Concurrent.Chan}.}
 %
 We also implemented a control which forks some number of threads that do
@@ -1316,20 +1316,11 @@ We then compared the running time of the actor-based and channel-based
 implementations and control on various ring sizes using the \verb|criterion|
 package from Hackage.
 %
-The details of how this benchmark was made reliable are in
-\Cref{sec:perf-eval-detail}.
-
+The details of this benchmark are in \Cref{sec:perf-eval-detail}.
+%
 The actor-based implementation consistently runs a bit slower than the
-channel-based implementation, but the difference in running time were less
-significant as the ring size and number of capabilities increased.
-%
-It is possible that the difference between the two implementations became
-irrelevant because our benchmarking machine (supporting only 8 capabilities)
-was simply overloaded.
-%
-Another possibility is that there is some overhead in the channel-based
-implementation which the actor-based implementation doesn't accumulate as
-larger rings tested.
+channel-based implementation, but otherwise the result of the benchmark was
+inconclusive.
 
 
 
