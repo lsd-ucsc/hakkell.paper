@@ -1547,8 +1547,8 @@ inflate the algorithm runtime.
     These results showed that the actor-based implementation runtime was about
     three times the channel-based runtime.
 
-    \item We ran the same benchmark with eight capabilities (\verb|+RTS -N|) on
-    just the MacBookPro11,5.
+    \item We ran the same benchmark with eight capabilities on just the
+    MacBookPro11,5.
     %
     This allowed us to explore larger ring sizes (up to $2^{14}$).
     %
@@ -1557,13 +1557,13 @@ inflate the algorithm runtime.
     the actor framework was still slower.
 
     \item We ran the benchmark on an Amazon AWS \verb|c3.8xlarge| instance with
-    32 capabilities (\verb|+RTS -N|) for ring sizes up to $2^{16}$.
+    32 capabilities for ring sizes up to $2^{16}$.
     %
     This result confirmed that the actors outperform channels at high ring
     sizes, and we include this result in our runtime measurement graphs.
 
     \item We ran the benchmark on an Amazon AWS \verb|c6a.48xlarge| instance
-    with 192 capabilities (\verb|+RTS -N|) for ring sizes up to $2^{16}$.
+    with 192 capabilities for ring sizes up to $2^{16}$.
     %
     The benchmark segfaulted unpredictably.
     %
@@ -1574,7 +1574,7 @@ inflate the algorithm runtime.
     sizes, and we include this result in our runtime measurement graphs.
 
     \item We ran the benchmark once more on the MacBookPro11,5 with eight
-    capabilities (\verb|+RTS -N|) for ring sizes up to $2^{16}$.
+    capabilities for ring sizes up to $2^{16}$.
     %
     We include this result in our runtime measurement and memory-usage graphs.
 \end{enumerate}
