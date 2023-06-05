@@ -1482,21 +1482,21 @@ We will benchmark time to termination using the \verb|criterion| package.
 For this, we will need an \verb|IO| action which executes the algorithm, cleans
 up its resources, and then returns.
 %
-We define \verb|benchRing| to be the function which \verb|criterion| will
+We define \verb|benchActors| to be the function which \verb|criterion| will
 measure.
 %
 It will run an election with benchmark-nodes, wait for termination, kill the
 nodes, and assert a correct result.
 %
 \begin{code}
-benchRing :: Int -> IO ()
-benchRing n = do
+benchActors :: Int -> IO ()
+benchActors n = do
     -- Start the ring-leader election
     done <- Mv.newEmptyMVar
     ring <- ringElection n $ do
         great <- myThreadId
         run (benchNode done) (Uninitialized, great)
-    -- Wait for termination, kill the ring, assert correctness
+    -- Wait for termination, kill the ring, assert correct result
     w <- Mv.takeMVar done
     mapM_ killThread ring
     assert (w == maximum ring) $
@@ -1506,7 +1506,7 @@ benchRing n = do
 
 
 
-Finally, we define a benchmark-main which runs \verb|benchRing| for each of
+Finally, we define a benchmark-main which runs \verb|benchActors| for each of
 several ring sizes.
 %
 As a control, it also runs a function that starts up some number of threads
@@ -1519,13 +1519,12 @@ Haskell).
 These alternates are shown in \Cref{sec:alt-impls}.
 %
 \begin{code}
-benchMain :: [Int] -> IO ()
-benchMain counts = Cr.defaultMain $ map heat counts
-  where
-    heat n = Cr.bgroup ("n=" ++ show n)
-        [ Cr.bench "fork & kill"  . Cr.nfIO $ benchControl n
-        , Cr.bench "actor ring"   . Cr.nfIO $ benchRing n
-        , Cr.bench "channel ring" . Cr.nfIO $ channelRing n
+benchHeat :: Int -> Cr.Benchmark
+benchHeat n =
+    Cr.bgroup ("n=" ++ show n)
+        [ Cr.bench "control"      . Cr.nfIO $ benchControl n
+        , Cr.bench "actor ring"   . Cr.nfIO $ benchActors n
+        , Cr.bench "channel ring" . Cr.nfIO $ benchChannels n
         ]
 \end{code}
 
@@ -1700,8 +1699,8 @@ Finally permute the nodes and fork them out of order.
 At this point the nodes are assigned random thread identifiers.
 %
 \begin{code}
-channelRing :: Int -> IO ()
-channelRing n = do
+benchChannels :: Int -> IO ()
+benchChannels n = do
     -- (1) Define a channel-node main function.
     done <- Mv.newEmptyMVar
     let mkNode chans = do
@@ -1757,16 +1756,16 @@ Here's an example trace.
 \normalsize
 
 \subsection{Channel-based election trace}
-\label{sec:channelRing-trace}
+\label{sec:benchChannels-trace}
 
-In \Cref{sec:alt-impls} we defined \verb|channelRing| to run a ring
+In \Cref{sec:alt-impls} we defined \verb|benchChannels| to run a ring
 leader election with a winner declaration round using channels for
 communication.
 %
 Here's an example trace.
 
 \footnotesize
-\perform{beginVerb >> putStrLn "> channelRing 8" >> channelRing 8 >> endVerb }
+\perform{beginVerb >> putStrLn "> benchChannels 8" >> benchChannels 8 >> endVerb }
 \normalsize
 
 % It's necessary to have a main function, but I'm excluding it from appearing
@@ -1775,40 +1774,30 @@ Here's an example trace.
 \begin{code}
 main :: IO ()
 main = do
-    demoRaw <- lookupEnv "DEMO"
-    powRaw <- lookupEnv "BENCH"
-    print ("DEMO", demoRaw)
-    print ("BENCH", powRaw)
-    case demoRaw of
-        Just n -> do
-            let count = read n
-            putStrLn ("Count: " ++ n)
-            beginVerb
-
-            putStrLn "ring leader election"
-            main1 count
-            putStrLn ""
-
-            putStrLn "extended ring leader election"
-            main2 count
-            putStrLn ""
-
-            putStrLn "benchRing function"
-            benchRing count
-            putStrLn ""
-
-            putStrLn "channelRing function"
-            channelRing count
-            putStrLn ""
-
-            endVerb
+    ringSize <- maybe 8 read `fmap` lookupEnv "RING_SIZE"
+    modeRaw <- lookupEnv "MODE"
+    print ("RING_SIZE", ringSize, "a natural number")
+    print ("MODE", modeRaw, "actors | channels | control | <UNSET:criterion>")
+    case modeRaw of
+        Just "actors" -> do
+            putStrLn "benchActors function"
+            benchActors ringSize
+        Just "channels" -> do
+            putStrLn "benchChannels function"
+            benchChannels ringSize
+        Just "control" -> do
+            putStrLn "benchControl function"
+            benchControl ringSize
         Nothing -> do
-            let lb = 2
-                ub = maybe 10 read powRaw
-                counts = [2^n | n <- [lb..ub::Int]]
-            putStrLn ("Powers of two: " ++ show lb ++ ".." ++ show ub)
-            putStrLn ("Ring sizes: " ++ show counts)
-            benchMain counts
+            putStrLn "criterion defaultMain"
+            Cr.defaultMain [benchHeat ringSize]
+        Just _ -> error "unexpected mode"
+  where
+    -- Used for trace figures
+    _ = beginVerb
+    _ = endVerb
+    _ = main1
+    _ = main2
 \end{code}
 }
 

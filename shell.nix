@@ -24,7 +24,7 @@ mkShell {
       threadscope
     ]))
     ghcid
-    python # for the noprint.py script
+    python3 # for the noprint.py script
   ];
   passthru = {
     inherit pkgs;
