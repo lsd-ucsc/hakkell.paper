@@ -1472,9 +1472,9 @@ notify about termination is because it is difficult to communicate between the
 The functional world expects \verb|IO| actions to terminate with return values,
 but we didn't bother to implement clean termination in our actor framework.
 %
-So in the absence of that we could try spawning an actor and then setting up an
-exception handler to receive messages from it, but there are some confusing
-race conditions there, so we didn't do that.
+In the absence of that, we could try spawning an actor and then setting up an
+exception handler to receive messages from it, but we choose not to do this
+because of the potential for race conditions.
 
 
 We will benchmark time to termination using the \verb|criterion| package.
@@ -1506,13 +1506,13 @@ benchActors n = do
 
 
 
-Finally, we define a benchmark-main which runs \verb|benchActors| for each of
-several ring sizes.
+Finally, we define a benchmark-heat to run \verb|benchActors| for a given ring
+size.
 %
 As a control, it also runs a function that starts up some number of threads
 that immediately terminate.
 %
-Finally, it also compares to an implementation of ring leader election using
+It also compares to an implementation of ring leader election using
 \verb|Control.Concurrent.Chan| (one of the more normal ways to do things in
 Haskell).
 %
@@ -1537,19 +1537,46 @@ printlines with \verb|pure ()|.
 This is necessary because the printlines introduce latency and dramatically
 inflate the algorithm runtime.
 \begin{enumerate}[leftmargin=2em]
-    \item We ran the \verb|criterion| benchmark on MacBookAir4,1 and
-    MacBookPro11,5 computers running NixOS, with four capabilities, clocked to
+    \item We ran the \verb|criterion| benchmark for ring sizes up to $2^{11}$
+    on a MacBookAir4,1 and a MacBookPro11,5.
+    %
+    Both ran NixOS, with four capabilities (\verb|+RTS -N4|), clocked to
     1.6GHz, without frequency scaling, and with no other programs running
-    (kernel vtty).  These results showed that the actor-based implementation
-    runtime was about three times the channel-based runtime.
+    (kernel vtty).
+    %
+    These results showed that the actor-based implementation runtime was about
+    three times the channel-based runtime.
 
-    \item We ran the same benchmark with eight capabilities on just the
-    MacBookPro11,5. This allowed us to explore larger ring sizes. These results
-    showed that as the ring size increased exponentially, the difference in
-    performance between the two implementation decreased exponentially, but the
-    actor framework was still slower.
+    \item We ran the same benchmark with eight capabilities (\verb|+RTS -N|) on
+    just the MacBookPro11,5.
+    %
+    This allowed us to explore larger ring sizes (up to $2^{14}$).
+    %
+    These results showed that as the ring size increased exponentially, the
+    difference in performance between the two implementations decreased, but
+    the actor framework was still slower.
 
-    \item We plan to repeat the benchmark on a machine with many capabilities.
+    \item We ran the benchmark on an Amazon AWS \verb|c3.8xlarge| instance with
+    32 capabilities (\verb|+RTS -N|) for ring sizes up to $2^{16}$.
+    %
+    This result confirmed that the actors outperform channels at high ring
+    sizes, and we include this result in our runtime measurement graphs.
+
+    \item We ran the benchmark on an Amazon AWS \verb|c6a.48xlarge| instance
+    with 192 capabilities (\verb|+RTS -N|) for ring sizes up to $2^{16}$.
+    %
+    The benchmark segfaulted unpredictably.
+    %
+    We used a shell script to call the benchmark executable once per set of
+    parameters, and this resolved the issue.
+    %
+    This result also confirmed that the actors outperform channels at high ring
+    sizes, and we include this result in our runtime measurement graphs.
+
+    \item We ran the benchmark once more on the MacBookPro11,5 with eight
+    capabilities (\verb|+RTS -N|) for ring sizes up to $2^{16}$.
+    %
+    We include this result in our runtime measurement and memory-usage graphs.
 \end{enumerate}
 
 
