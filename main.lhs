@@ -1576,7 +1576,19 @@ inflate the algorithm runtime.
     \item We ran the benchmark once more on the MacBookPro11,5 with eight
     capabilities for ring sizes up to $2^{16}$.
     %
-    We include this result in our runtime measurement and memory-usage graphs.
+    We include this result in our runtime measurement graphs.
+
+    \item We ran a different benchmark on the MacBookPro11,5 with eight
+    capabilities for ring sizes up to $2^{16}$.
+    %
+    This benchmark was focused on measuring memory usage
+    (\verb|+RTS -t --machine-readable|).
+    %
+    For this benchmark, the main function only ran a single algorithm at a
+    specified ring size, and then terminated.
+    %
+    We ran ten trials for each combination of algorithm and ring size, averaged
+    across the trials, and include the result in our memory usage graphs.
 \end{enumerate}
 
 
