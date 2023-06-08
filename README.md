@@ -1,6 +1,6 @@
 # Exceptional Actors (Hakkell)
 
-The paper (`main.lhs`) is a literate haskell file.
+The paper (`main.lhs`) is a literate haskell program.
 
 
 
@@ -14,26 +14,26 @@ Make sure to use `send` and `run` in your programs. The other functions
 ## Run the program
 
 The main method supports two modes of operation.
+For either mode, set the environment variable `RING_SIZE`
+to determine how many nodes will participate in the election.
 
 ### Run demo mode
 
-If the environment variable `DEMO` is set to a number,
-the following routines are run with the given number of nodes:
+Set the environment variable `MODE` to `actors`,`channels`, or `control`
+to run either the `benchActors`, `benchChannels` or `benchControl` functions
+respectivly, on the specified `RING_SIZE` nodes.
 
-1. actor-based: Ring leader election
-2. actor-based: Extended ring leader election
-3. actor-based: benchRing election (extended ring leader election that reports termination)
-4. channel-based: channelRing election (extended ring leader election that reports termination)
+This is the mode we used for measuring memory use.
 
 ### Run benchmark mode
 
-If the environment variable `DEMO` is not set,
+If the environment variable `MODE` is not set,
 then the criterion benchmark will run.
-It does an extended ring leader election with both the
-actor-based (benchRing) and channel-based (channelRing) implementations.
-The criterion benchmark can be configured to
-run (up to) different ring sizes by setting
-the environment variable `BENCH` to power of 2.
+It sets up a benchmark group for the specified `RING_SIZE`
+containing a becnhmark of `benchControl`, `benchActors`, and `benchChannels`.
+
+This is the mode we used for measuring run time.
+We used a shell script to select and run only one of those functions at a time.
 
 
 
@@ -46,7 +46,7 @@ It uses python to remove printlines from `main.lhs`,
 it builds an executable that defaults to `+RTS -N4`,
 and
 it executes `benchprep.sh` to set your CPU (if on linux) to 1.6GHz
-and turn of frequency scaling.
+and turn off frequency scaling.
 After that, it runs benchmark mode.
 
 If you run `make bench`, feel free to zero out `benchprep.sh` first.
