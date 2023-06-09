@@ -1344,11 +1344,11 @@ implementation at large ring sizes.
 
 \begin{figure}
 \raggedright
-\small{
+\begin{small}
     % try columnwidth?
     (a) \includesvg[width=\linewidth]{bench-time/machine_macbookpro11,5-mean.svg}
     (b) \includesvg[width=\linewidth]{bench-mem/total-allocated.svg}
-}
+\end{small}
 \caption{
     (a) The channel based implementation is significantly fasterthan the actor
     based implementation, except at very large numbers of threads.
@@ -1649,7 +1649,7 @@ There is a missing datapoint for the actor-based implementation at ring size
 This run consistently crashes with a segmentation fault which we have not
 investigated.
 
-\small{
+{\small
     \includesvg[width=\linewidth]{bench-time/machine_c3.8xlarge-mean.svg}
     \includesvg[width=\linewidth]{bench-time/machine_c6a.48xlarge-mean.svg}
 }
@@ -1660,7 +1660,7 @@ over all three machines, its inflection point becomes very clear.
 The linear rate of running time growth for larger ring sizes inflects at
 $2^{11}$ to grow at a higher rate.
 
-\small{
+{\small
     \includesvg[width=\linewidth]{bench-time/group_channels-mean.svg}
 }
 
