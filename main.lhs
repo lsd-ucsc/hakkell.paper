@@ -1191,7 +1191,7 @@ main2 count = do
 \end{code}
 }
 %
-An execution trace of an extended election is in \Cref{sec:main2-trace}.
+An execution trace of an extended election is in \Cref{apx:main2-trace}.
 
 
 
@@ -1308,7 +1308,7 @@ to put away any doubt.
 %
 We implemented ring leader election from \Cref{sec:ring-impl} using
 channels\footnote{Channels from \texttt{base:Control.Concurrent.Chan}.} (See
-\Cref{sec:alt-impls}).
+\Cref{apx:alt-impls}).
 %
 We also implemented a control which forks some number of threads that do
 nothing and immediately kills them.
@@ -1319,7 +1319,7 @@ package from Hackage.
 %
 We also compared them for memory usage (total allocations over program run).
 %
-The details of this benchmark are in \Cref{sec:perf-eval-detail}.
+The details of this benchmark are in \Cref{apx:perf-eval-detail}.
 %
 We include a selection of the graphs in \Cref{fig:perf-eval}.
 
@@ -1330,7 +1330,7 @@ It is invariant to the number of capabilities used by the RTS because after an
 initial flood of nominations the algorithm degenerates quickly to a single
 message passing around the ring twice.
 %
-Our results (\Cref{fig:perf-eval,sec:exp-result}) show that the actor-based implementation is significantly slower
+Our results (\Cref{fig:perf-eval,apx:exp-result}) show that the actor-based implementation is significantly slower
 than the channel-based implementation for ring sizes less than $2^{13}$, but
 surprisingly it is marginally faster for ring sizes larger than $2^{15}$.
 %
@@ -1353,7 +1353,7 @@ implementation at large ring sizes.
     (a) The channel based implementation is significantly fasterthan the actor
     based implementation, except at very large numbers of threads.
     %
-    This result was reproduced on machines with 8, 32, and 192 cores (\Cref{sec:exp-result}).
+    This result was reproduced on machines with 8, 32, and 192 cores (\Cref{apx:exp-result}).
     %
     \\ (b) The growth of allocations by the channel based implementation
     eventually catches up to that of the actor based implementation.
@@ -1472,7 +1472,7 @@ permute pool0 gen0
 
 
 \subsection{Performance evaluation detail}
-\label{sec:perf-eval-detail}
+\label{apx:perf-eval-detail}
 
 
 In the extended ring leader election solution we have shown, the time to
@@ -1555,7 +1555,7 @@ It also compares to an implementation of ring leader election using
 \verb|Control.Concurrent.Chan| (one of the more normal ways to do things in
 Haskell).
 %
-These alternates are shown in \Cref{sec:alt-impls}.
+These alternates are shown in \Cref{apx:alt-impls}.
 %
 \begin{code}
 benchHeat :: Int -> Cr.Benchmark
@@ -1569,7 +1569,7 @@ benchHeat n =
 
 
 \subsubsection{Experimental setup}
-\label{sec:exp-result}
+\label{apx:exp-result}
 
 When producing benchmarks for this paper, we ran an extra step to replace all
 printlines with \verb|pure ()|.
@@ -1634,7 +1634,7 @@ inflate the algorithm runtime.
 
 
 \subsubsection{Experiment results}
-\label{sec:results}
+\label{apx:results}
 
 Here we show running time results obtained from Amazon AWS \verb|c3.8xlarge|
 (+RTS -N32) and \verb|c6a.48xlarge| (+RTS -N192) machines.
@@ -1667,7 +1667,7 @@ $2^{11}$ to grow at a higher rate.
 
 
 \subsection{Alternate implementations}
-\label{sec:alt-impls}
+\label{apx:alt-impls}
 
 This section has the source code for alternate implementations compared to the
 actor implementation by the benchmark.
@@ -1763,7 +1763,7 @@ construction; it requires no \verb|Init| message for the same reason.
 Still within the where-clause of \texttt{chanNode}, we implment
 \texttt{exnodePart} with the behavior of the winner-round node
 (\Cref{sec:ring2-intent-fun}) and the benchmark-node
-(\Cref{sec:perf-eval-detail}).
+(\Cref{apx:perf-eval-detail}).
 %
 We signal termination by placing the confirmed winner's \texttt{ThreadId}
 into the ``done'' \texttt{MVar}.
@@ -1853,7 +1853,7 @@ endVerb = putStrLn "\\end{verbatim}"
 }
 
 \subsection{Extended election (dynamic types) trace}
-\label{sec:main2-trace}
+\label{apx:main2-trace}
 
 In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
 \verb|exnode| to run a ring leader election with a winner declaration round.
@@ -1865,9 +1865,9 @@ Here's an example trace.
 \normalsize
 
 \subsection{Channel-based election trace}
-\label{sec:benchChannels-trace}
+\label{apx:benchChannels-trace}
 
-In \Cref{sec:alt-impls} we defined \verb|benchChannels| to run a ring
+In \Cref{apx:alt-impls} we defined \verb|benchChannels| to run a ring
 leader election with a winner declaration round using channels for
 communication.
 %
