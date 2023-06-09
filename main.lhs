@@ -1302,6 +1302,8 @@ functions, the framework might be considered practical.
 
 \subsection{Performance evaluation}
 
+%% What/why did we eval?
+
 Despite the avowed impracticality of this actor framework, we felt it was
 necessary to compare to some traditional means of inter-thread communication
 to put away any doubt.
@@ -1314,6 +1316,7 @@ immediately kills them.
 See \Cref{apx:alt-impls} for the source code of the channel-based
 implementation and the control.
 
+%% Experimental setup
 
 We compared the running time\footnote{
     Measured by the \verb|criterion| package, from Hackage.
@@ -1331,6 +1334,7 @@ various ring sizes.
 A detailed description of the experimental setup is in
 \Cref{apx:perf-eval-detail}.
 
+%% Experimental results
 
 Our results show that the actor-based implementation is significantly slower
 than the channel-based implementation for ring sizes less than $2^{13}$, but
@@ -1342,6 +1346,7 @@ to the number of capabilities used by the RTS.
 We include a representative selection of the experimental results in
 \Cref{fig:perf-eval}, and the rest in \Cref{apx:exp-result}.
 
+%% Discussion of results
 
 Since the running time of the extended ring leader election is $O(2n)$ in the
 number of nodes, hypothesize that it is invariant to the number of capabilities
