@@ -43,11 +43,11 @@ build = ghc -O -threaded -fno-full-laziness -rtsopts -with-rtsopts=-N$(CAPABILIT
 	# verify no printlines remain
 	if grep --color=always -i '\<\(putstr\|putstrln\|print\)\>' $@; then false; fi
 
-clean: $(TEXSRC)
+clean:
 	latexmk -c
 	rm -fv *.{o,hi}
 
-clean-all: $(TEXSRC) clean
+clean-all: clean
 	latexmk -C
 	rm -fv main.{bbl,ptb,tex,xcp}
 	rm -fv main.noprint.*
