@@ -1568,27 +1568,6 @@ benchActors n = do
 
 
 
-Finally, we define a benchmark-heat to run \verb|benchActors| for a given ring
-size.
-%
-As a control, it also runs a function that starts up some number of threads
-that immediately terminate.
-%
-It also compares to an implementation of ring leader election using
-\verb|Control.Concurrent.Chan| (one of the more normal ways to do things in
-Haskell).
-%
-These alternates are shown in \Cref{apx:alt-impls}.
-%
-\begin{code}
-benchHeat :: Int -> Cr.Benchmark
-benchHeat n =
-    Cr.bgroup ("n=" ++ show n)
-        [ Cr.bench "control"      . Cr.nfIO $ benchControl n
-        , Cr.bench "actor ring"   . Cr.nfIO $ benchActors n
-        , Cr.bench "channel ring" . Cr.nfIO $ benchChannels n
-        ]
-\end{code}
 
 
 \subsubsection{Experimental setup}
@@ -1852,6 +1831,30 @@ benchChannels n = do
     mapM_ killThread ring
     assert (w == maximum ring) $
         return ()
+\end{code}
+
+
+
+
+
+
+\subsection{Criterion benchmark implementation}
+\label{apx:criterion-bench-impl}
+
+Finally, we define a benchmark-heat to run each of the benchmark functions
+defined above for a given ring size.
+%
+The main function (not shown) calls \verb|benchHeat| and passes it to
+Criterion's \verb|defaultMain|.
+%
+\begin{code}
+benchHeat :: Int -> Cr.Benchmark
+benchHeat n =
+    Cr.bgroup ("n=" ++ show n)
+        [ Cr.bench "control"      . Cr.nfIO $ benchControl n
+        , Cr.bench "actor ring"   . Cr.nfIO $ benchActors n
+        , Cr.bench "channel ring" . Cr.nfIO $ benchChannels n
+        ]
 \end{code}
 
 
