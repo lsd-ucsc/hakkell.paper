@@ -1570,39 +1570,6 @@ benchActors n = do
 
 
 
-\subsubsection{Experiment results}
-\label{apx:results}
-
-Here we show running time results obtained from Amazon AWS \verb|c3.8xlarge|
-(+RTS -N32) and \verb|c6a.48xlarge| (+RTS -N192) machines.
-%
-These graphs replicate \Cref{fig:perf-eval} in both the absolute running times
-in seconds, and the tendency of the actor-based implementation to win out at
-the highest ring sizes tested.
-
-There is a missing datapoint for the actor-based implementation at ring size
-65536 on the \verb|c6a.48xlarge| (+RTS -N192) machine.
-%
-This run consistently crashes with a segmentation fault which we have not
-investigated.
-
-{\small
-    \includesvg[width=\linewidth]{bench-time/machine_macbookpro11,5-mean.svg}
-    \includesvg[width=\linewidth]{bench-time/machine_c6a.48xlarge-mean.svg}
-}
-
-Finally, if you group the running time of the channel-based implementation
-over all three machines, its inflection point becomes very clear.
-%
-The linear rate of running time growth for larger ring sizes inflects at
-$2^{11}$ to grow at a higher rate.
-
-{\small
-    \includesvg[width=\linewidth]{bench-time/group_channels-mean.svg}
-}
-
-
-
 \subsection{Alternate implementations}
 \label{apx:alt-impls}
 
@@ -1857,6 +1824,45 @@ inflate the algorithm runtime.
     We ran ten trials for each combination of algorithm and ring size, averaged
     across the trials, and include the result in our memory usage graphs.
 \end{enumerate}
+
+
+
+
+
+\subsection{Experiment result}
+\label{apx:exp-result}
+
+Here we show the remaining running time results not shown in
+\Cref{fig:perf-eval}.
+%
+These graphs replicate \Cref{fig:perf-eval} in both the absolute running time
+(seconds), and in the tendency of the actor-based implementation to win out at
+the highest ring sizes that we tested.
+
+There is a missing datapoint for the actor-based implementation at ring size
+65536 on the \verb|c6a.48xlarge| (+RTS -N192) machine.
+%
+This run consistently crashes with a segmentation fault which we have not
+investigated.
+
+{\small
+    \includesvg[width=\linewidth]{bench-time/machine_macbookpro11,5-mean.svg}
+    \includesvg[width=\linewidth]{bench-time/machine_c6a.48xlarge-mean.svg}
+}
+
+Finally, if you group the running time of the channel-based implementation
+over all three machines, its inflection point becomes very clear.
+%
+The linear rate of running time growth for larger ring sizes inflects at
+$2^{11}$ to grow at a higher rate.
+
+{\small
+    \includesvg[width=\linewidth]{bench-time/group_channels-mean.svg}
+}
+
+
+
+
 
 
 
