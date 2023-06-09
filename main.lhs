@@ -885,7 +885,7 @@ and then performs the following steps to start an election:
 \begin{enumerate}[leftmargin=2em]
     \item Create actors (with asynchronous exceptions masked).
 
-    \item Randomize the order of actor \verb|ThreadId|s.
+    \item Randomize the order of actor \verb|ThreadId|s.\footnote{The implementation of \verb|permute| is in \Cref{apx:permute-impl}.}
 
     \item Inform each actor of the \verb|ThreadId| that follows it in the
     random order (its successor) with an \verb|Init| message.
@@ -1313,8 +1313,9 @@ using channels,\footnote{Channels from \texttt{base:Control.Concurrent.Chan}.}
 and also a control which forks some number of threads that do nothing and
 immediately kills them.
 %
-See \Cref{apx:alt-impls} for the source code of the channel-based
-implementation and the control.
+See
+\Cref{apx:actor-bench-impl,apx:control-bench-impl,apx:channel-bench-impl,apx:criterion-bench-impl}
+for the source code of the benchmarks.
 
 %% Experimental setup
 
@@ -1332,7 +1333,7 @@ We also compared their memory usage (total allocations over program run) at
 various ring sizes.
 %
 A detailed description of the experimental setup is in
-\Cref{apx:perf-eval-detail}.
+\Cref{apx:exp-setup}.
 
 %% Experimental results
 
@@ -1463,6 +1464,7 @@ We aren't sure -- we invite the reader to draw their own conclusions.
 \section{Appendix}
 
 \subsection{Permute function implementation}
+\label{apx:permute-impl}
 
 In \Cref{sec:ring-impl} we provided the implementation of a ring
 leader election in our actor framework.
@@ -1494,8 +1496,9 @@ permute pool0 gen0
 
 
 
-\subsection{Performance evaluation detail}
-\label{apx:perf-eval-detail}
+
+\subsection{Actor benchmark implementation}
+\label{apx:actor-bench-impl}
 
 
 In the extended ring leader election solution we have shown, the time to
@@ -1569,17 +1572,12 @@ benchActors n = do
 
 
 
+\subsection{Control benchmark implementation}
+\label{apx:control-bench-impl}
 
-\subsection{Alternate implementations}
-\label{apx:alt-impls}
-
-This section has the source code for alternate implementations compared to the
-actor implementation by the benchmark.
-
-\subsubsection{Control}
 The experimental control only forks threads and then kills them.
 %
-It's useful for establishing whether or not, for example, laziness has caused
+It is useful for establishing whether or not, for example, laziness has caused
 our non-control implementations to perform no work.
 %
 The other implementations should take longer than the control because they are
@@ -1593,9 +1591,14 @@ benchControl n = do
 \end{code}
 
 
-\subsubsection{Channel-based}
-In the channel-based ring leader election, each node has references to a
-send-channel and a receive-channel.
+
+
+
+\subsection{Channel benchmark implementation}
+\label{apx:channel-bench-impl}
+
+Each node has references to a send-channel and a receive-channel in the
+channel-based implementation.
 %
 We reuse the message types from before via an \verb|Either|.
 %
@@ -1667,7 +1670,7 @@ construction; it requires no \verb|Init| message for the same reason.
 Still within the where-clause of \texttt{chanNode}, we implment
 \texttt{exnodePart} with the behavior of the winner-round node
 (\Cref{sec:ring2-intent-fun}) and the benchmark-node
-(\Cref{apx:perf-eval-detail}).
+(\Cref{apx:actor-bench-impl}).
 %
 We signal termination by placing the confirmed winner's \texttt{ThreadId}
 into the ``done'' \texttt{MVar}.
@@ -1884,22 +1887,22 @@ endVerb = putStrLn "\\end{verbatim}"
 \end{code}
 }
 
-\subsection{Extended election (dynamic types) trace}
+\subsection{Actor-based extended election (dynamic types) trace}
 \label{apx:main2-trace}
 
 In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
 \verb|exnode| to run a ring leader election with a winner declaration round.
 %
-Here's an example trace.
+Here is an example trace.
 
 \footnotesize
 \perform{beginVerb >> putStrLn "> main2 8" >> main2 8 >> endVerb }
 \normalsize
 
-\subsection{Channel-based election trace}
+\subsection{Channel-based extended election trace}
 \label{apx:benchChannels-trace}
 
-In \Cref{apx:alt-impls} we defined \verb|benchChannels| to run a ring
+In \Cref{apx:control-bench-impl} we defined \verb|benchChannels| to run a ring
 leader election with a winner declaration round using channels for
 communication.
 %
