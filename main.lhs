@@ -1191,7 +1191,7 @@ main2 count = do
 \end{code}
 }
 %
-An execution trace of an extended election is in \Cref{apx:main2-trace}.
+For execution trace of an extended election see \Cref{apx:main2-trace}.
 
 
 
@@ -1306,57 +1306,75 @@ Despite the avowed impracticality of this actor framework, we felt it was
 necessary to compare to some traditional means of inter-thread communication
 to put away any doubt.
 %
-We implemented ring leader election from \Cref{sec:ring-impl} using
-channels\footnote{Channels from \texttt{base:Control.Concurrent.Chan}.} (See
-\Cref{apx:alt-impls}).
+We implemented the extended ring leader election from \Cref{sec:ring-impl}
+using channels,\footnote{Channels from \texttt{base:Control.Concurrent.Chan}.}
+and also a control which forks some number of threads that do nothing and
+immediately kills them.
 %
-We also implemented a control which forks some number of threads that do
-nothing and immediately kills them.
-%
-We compared the running time of the actor-based and channel-based
-implementations and control on various ring sizes using the \verb|criterion|
-package from Hackage.
-%
-We also compared them for memory usage (total allocations over program run).
-%
-The details of this benchmark are in \Cref{apx:perf-eval-detail}.
-%
-We include a selection of the graphs in \Cref{fig:perf-eval}.
+See \Cref{apx:alt-impls} for the source code of the channel-based
+implementation and the control.
 
 
-The running time of the ring leader election is $O(2n)$ in the number of nodes.
+We compared the running time\footnote{
+    Measured by the \verb|criterion| package, from Hackage.
+} of the actor-based implementation, channel-based implementation, and control
+at ring sizes up to $2^{16}$ on machines with 8, 32, and 192
+capabilities.\footnote{
+    A MacBookPro11,5 with 8 capabilities,
+    an Amazon AWS \verb|c3.8xlarge| instance with 32 capabilities,
+    and an Amazon AWS \verb|c6a.48xlarge| instance with 192 capabilities.
+}
 %
-It is invariant to the number of capabilities used by the RTS because after an
-initial flood of nominations the algorithm degenerates quickly to a single
-message passing around the ring twice.
+We also compared their memory usage (total allocations over program run) at
+various ring sizes.
 %
-Our results (\Cref{fig:perf-eval,apx:exp-result}) show that the actor-based implementation is significantly slower
+A detailed description of the experimental setup is in
+\Cref{apx:perf-eval-detail}.
+
+
+Our results show that the actor-based implementation is significantly slower
 than the channel-based implementation for ring sizes less than $2^{13}$, but
 surprisingly it is marginally faster for ring sizes larger than $2^{15}$.
 %
-This arises because the channel-based implementation has an inflection point in
+Additionally the running time of the extended ring leader election is invariant
+to the number of capabilities used by the RTS.
+%
+We include a representative selection of the experimental results in
+\Cref{fig:perf-eval}, and the rest in \Cref{apx:exp-result}.
+
+
+Since the running time of the extended ring leader election is $O(2n)$ in the
+number of nodes, hypothesize that it is invariant to the number of capabilities
+because after an initial flood of nominations the algorithm degenerates quickly
+to a single message passing around the ring twice.
+%
+We do not have a hypothesis supported that explains why the actor-based
+implementation is faster than the channel-based implementation for large ring
+sizes.
+%
+It arises because the channel-based implementation has an inflection point in
 its running time around ring size $2^{11}$, after which it grows at a higher
 rate and surpasses the running time of the actor-based implementation.
 %
-This inflection point may be explained by our memory-use results that show the
-channel-based implementation's allocations catch up to the actor-based
-implementation at large ring sizes.
+Similarly, our memory-use results that show the channel-based implementation's
+allocations catch up to the actor-based implementation at large ring sizes.
+
 
 \begin{figure}
 \raggedright
 \begin{small}
     % try columnwidth?
-    (a) \includesvg[width=\linewidth]{bench-time/machine_macbookpro11,5-mean.svg}
+    (a) \includesvg[width=\linewidth]{bench-time/machine_c3.8xlarge-mean.svg}
     (b) \includesvg[width=\linewidth]{bench-mem/total-allocated.svg}
 \end{small}
 \caption{
-    (a) The channel based implementation is significantly fasterthan the actor
-    based implementation, except at very large numbers of threads.
+    (a) The channel-based implementation is significantly faster than the
+    actor-based implementation, except at very large numbers of threads.
     %
-    This result was reproduced on machines with 8, 32, and 192 cores (\Cref{apx:exp-result}).
+    This result was reproduced on machines with 8, 32, and 192 capabilities.
     %
-    \\ (b) The growth of allocations by the channel based implementation
-    eventually catches up to that of the actor based implementation.
+    \\ (b) The growth of allocations by the channel-based implementation
+    eventually catches up to that of the actor-based implementation.
 }
 \label{fig:perf-eval}
 \end{figure}
@@ -1650,7 +1668,7 @@ This run consistently crashes with a segmentation fault which we have not
 investigated.
 
 {\small
-    \includesvg[width=\linewidth]{bench-time/machine_c3.8xlarge-mean.svg}
+    \includesvg[width=\linewidth]{bench-time/machine_macbookpro11,5-mean.svg}
     \includesvg[width=\linewidth]{bench-time/machine_c6a.48xlarge-mean.svg}
 }
 
