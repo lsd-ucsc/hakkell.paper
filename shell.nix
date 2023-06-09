@@ -25,6 +25,8 @@ mkShell {
     ]))
     ghcid
     python3 # for the noprint.py script
+    gnuplot
+    inkscape
   ];
   passthru = {
     inherit pkgs;

@@ -16,6 +16,7 @@
 \usepackage{caption} % align captions globally
 \usepackage{tikz}
 \usepackage{pifont}
+\usepackage{svg}
 
 % make numbered lists use parenthesized numerals
 \renewcommand{\labelenumi}{(\arabic{enumi})}
@@ -1305,22 +1306,60 @@ Despite the avowed impracticality of this actor framework, we felt it was
 necessary to compare to some traditional means of inter-thread communication
 to put away any doubt.
 %
-We implemented ring leader election from \Cref{sec:ring-impl}
-using channels (See \Cref{sec:alt-impls}).\footnote{Channels from
-\texttt{base:Control.Concurrent.Chan}.}
+We implemented ring leader election from \Cref{sec:ring-impl} using
+channels\footnote{Channels from \texttt{base:Control.Concurrent.Chan}.} (See
+\Cref{sec:alt-impls}).
 %
 We also implemented a control which forks some number of threads that do
 nothing and immediately kills them.
 %
-We then compared the running time of the actor-based and channel-based
+We compared the running time of the actor-based and channel-based
 implementations and control on various ring sizes using the \verb|criterion|
 package from Hackage.
 %
+We also compared them for memory usage (total allocations over program run).
+%
 The details of this benchmark are in \Cref{sec:perf-eval-detail}.
 %
-The actor-based implementation consistently runs a bit slower than the
-channel-based implementation, but otherwise the result of the benchmark was
-inconclusive.
+We include a selection of the graphs in \Cref{fig:perf-eval}.
+
+
+The running time of the ring leader election is $O(2n)$ in the number of nodes.
+%
+It is invariant to the number of capabilities used by the RTS because after an
+initial flood of nominations the algorithm degenerates quickly to a single
+message passing around the ring twice.
+%
+Our results (\Cref{fig:perf-eval,sec:exp-result}) show that the actor-based implementation is significantly slower
+than the channel-based implementation for ring sizes less than $2^{13}$, but
+surprisingly it is marginally faster for ring sizes larger than $2^{15}$.
+%
+This arises because the channel-based implementation has an inflection point in
+its running time around ring size $2^{11}$, after which it grows at a higher
+rate and surpasses the running time of the actor-based implementation.
+%
+This inflection point may be explained by our memory-use results that show the
+channel-based implementation's allocations catch up to the actor-based
+implementation at large ring sizes.
+
+\begin{figure}
+\raggedright
+\small{
+    % try columnwidth?
+    (a) \includesvg[width=\linewidth]{bench-time/machine_macbookpro11,5-mean.svg}
+    (b) \includesvg[width=\linewidth]{bench-mem/total-allocated.svg}
+}
+\caption{
+    (a) The channel based implementation is significantly fasterthan the actor
+    based implementation, except at very large numbers of threads.
+    %
+    This result was reproduced on machines with 8, 32, and 192 cores (\Cref{sec:exp-result}).
+    %
+    \\ (b) The growth of allocations by the channel based implementation
+    eventually catches up to that of the actor based implementation.
+}
+\label{fig:perf-eval}
+\end{figure}
 
 
 
@@ -1530,6 +1569,7 @@ benchHeat n =
 
 
 \subsubsection{Experimental setup}
+\label{sec:exp-result}
 
 When producing benchmarks for this paper, we ran an extra step to replace all
 printlines with \verb|pure ()|.
@@ -1578,11 +1618,9 @@ inflate the algorithm runtime.
     %
     We include this result in our runtime measurement graphs.
 
-    \item We ran a different benchmark on the MacBookPro11,5 with eight
+    \item We ran a different benchmark focused on measuring memory usage
+    (\verb|+RTS -t --machine-readable|) on the MacBookPro11,5 with eight
     capabilities for ring sizes up to $2^{16}$.
-    %
-    This benchmark was focused on measuring memory usage
-    (\verb|+RTS -t --machine-readable|).
     %
     For this benchmark, the main function only ran a single algorithm at a
     specified ring size, and then terminated.
@@ -1593,6 +1631,38 @@ inflate the algorithm runtime.
 
 
 
+
+
+\subsubsection{Experiment results}
+\label{sec:results}
+
+Here we show running time results obtained from Amazon AWS \verb|c3.8xlarge|
+(+RTS -N32) and \verb|c6a.48xlarge| (+RTS -N192) machines.
+%
+These graphs replicate \Cref{fig:perf-eval} in both the absolute running times
+in seconds, and the tendency of the actor-based implementation to win out at
+the highest ring sizes tested.
+
+There is a missing datapoint for the actor-based implementation at ring size
+65536 on the \verb|c6a.48xlarge| (+RTS -N192) machine.
+%
+This run consistently crashes with a segmentation fault which we have not
+investigated.
+
+\small{
+    \includesvg[width=\linewidth]{bench-time/machine_c3.8xlarge-mean.svg}
+    \includesvg[width=\linewidth]{bench-time/machine_c6a.48xlarge-mean.svg}
+}
+
+Finally, if you group the running time of the channel-based implementation
+over all three machines, its inflection point becomes very clear.
+%
+The linear rate of running time growth for larger ring sizes inflects at
+$2^{11}$ to grow at a higher rate.
+
+\small{
+    \includesvg[width=\linewidth]{bench-time/group_channels-mean.svg}
+}
 
 
 

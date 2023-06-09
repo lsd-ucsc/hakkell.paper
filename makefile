@@ -12,7 +12,7 @@ bench: $(PAPER).bench.csv
 prof:  $(PAPER).prof.elf.eventlog
 
 $(PAPER).pdf: $(PAPER).tex ring.tex $(PAPER).bib
-	latexmk -pdf $<
+	latexmk -shell-escape -pdf $<
 
 %.tex: %.lhs
 	ghc -fno-code $^ # just typecheck

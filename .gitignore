@@ -22,3 +22,6 @@ comment.cut
 main.tex
 
 result/
+svg-inkscape/
+
+bench-*/*svg
