@@ -61,7 +61,7 @@ an environment where the `makefile` does the rest.
 
 * `nix-shell --run 'make'` -- Build the paper
 * `nix-shell --run 'make bench'` -- Run the benchmark
-* `nix-shell --run 'make perf'` -- Obtain an eventlog
+* `nix-shell --run 'make prof'` -- Obtain an eventlog
 
 For users not on NixOS, a cabal-file and a cabal-freeze-file are included.
 The `makefile` isn't aware of the cabal setup.

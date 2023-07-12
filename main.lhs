@@ -268,7 +268,7 @@ Upon receipt of a message to its inbox, the actor may perform some actions:
 send a message, update state, create a new actor, destroy an actor, or
 terminate itself.
 %
-Having completed that, the actor waits to process the next message in its
+Having completed an action, the actor waits to process the next message in its
 inbox.
 %
 We will approximate this model with Haskell's asynchronous exceptions as the
@@ -593,8 +593,8 @@ receive envelopes containing \verb|SomeException|.
 If the message downcast fails, instead of the recipient crashing, it performs a
 ``return to sender.''
 %
-Specifically, it throws an exception (not an envelope) with a run-time
-type error.\footnote{
+Specifically, it throws an exception (not an envelope) with using the built-in
+\verb|TypeError| exception.\footnote{
     The extensions \texttt{ScopedTypeVariables}, \texttt{TypeApplications}, and
     the function \texttt{Data.Typeable.typeOf} can be used to construct a
     helpful type error message for debugging actor programs.
@@ -663,7 +663,7 @@ masked (this is in addition to the mask within the main loop).
 It performs a best-effort check and issues a helpful reminder to mask the
 creation of actor threads.\footnote{
     We do not define a wrapper around \texttt{forkIO} to perform this masking
-    because actors which perform initialization steps can currently do so
+    because actors that perform initialization steps can currently do so
     before calling \texttt{run}. There is an example in \Cref{sec:main2-init}.
 }
 
@@ -1062,7 +1062,7 @@ is inferred to return \verb|Maybe SomeException|,
 which succeeds unconditionally.
 %
 The \verb|exnode| intent function must then perform its own downcasts,
-and we enable \verb|ViewPatterns| ease our presentation.
+and we enable \verb|ViewPatterns| to ease our presentation.
 %
 There are two main cases,
 corresponding to the two message types the actor will handle,
@@ -1305,14 +1305,17 @@ functions, the framework might be considered practical.
 
 %% What/why did we eval?
 
-Despite the avowed impracticality of this actor framework, we felt it was
-necessary to compare to some traditional means of inter-thread communication
-to put away any doubt.
+Even though we make no claims of the practicality of our actor framework, we
+felt it would be prudent to compare to some traditional means of inter-thread
+communication.
 %
 We implemented the extended ring leader election from \Cref{sec:ring-impl}
 using channels,\footnote{Channels from \texttt{base:Control.Concurrent.Chan}.}
 and also a control which forks some number of threads that do nothing and
 immediately kills them.
+%
+The control establishes a lower bound on the expected running time of the
+actor-based and channel-based implementations.
 %
 See
 \Cref{apx:actor-bench-impl,apx:control-bench-impl,apx:channel-bench-impl,apx:criterion-bench-impl}
@@ -1507,6 +1510,27 @@ permute pool0 gen0
     pop (x:xs) n = (x:) <$> pop xs (n - 1)
     pop [] _ = error "pop empty list"
 \end{code}
+
+
+
+
+
+
+
+
+
+\subsection{Actor-based (dynamic types) trace}
+\label{apx:main2-trace}
+
+In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
+\verb|exnode| to run a ring leader election with a winner declaration round.
+%
+Here is an example trace.
+
+\footnotesize
+\perform{beginVerb >> putStrLn "> main2 5" >> main2 5 >> endVerb }
+\normalsize
+
 
 
 
@@ -1863,7 +1887,7 @@ shown here in \Cref{fig:perf-eval-time-rest,fig:perf-group-chan}.
         Running time with 192 capabilities:
         %
         There is a missing datapoint for the actor-based implementation because
-        it run consistently crashed with a segmentation fault that we have not
+        that run consistently crashed with a segmentation fault that we have not
         investigated.
     }
     \label{fig:perf-eval-time-n192}
@@ -1915,18 +1939,6 @@ endVerb :: IO ()
 endVerb = putStrLn "\\end{verbatim}"
 \end{code}
 }
-
-\subsection{Actor-based (dynamic types) trace}
-\label{apx:main2-trace}
-
-In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
-\verb|exnode| to run a ring leader election with a winner declaration round.
-%
-Here is an example trace.
-
-\footnotesize
-\perform{beginVerb >> putStrLn "> main2 5" >> main2 5 >> endVerb }
-\normalsize
 
 \subsection{Channel-based extended election trace}
 \label{apx:benchChannels-trace}
