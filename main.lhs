@@ -532,7 +532,12 @@ An envelope containing the wrong message type will not be caught by the
 exception handler, causing the receiving actor to crash.
 %
 We think the recipient should not crash when another actor sends an incorrect
-message.
+message.\footnote{
+    Sending a message not handled by the recipient is like calling a function
+    with wrong argument types, which would cause the thread to crash in a
+    dynamically typed language. However here both caller and callee are
+    persistent, and so we locate the mistake in the caller.
+}
 
 
 In this section, we correct this issue by extending the framework to support
