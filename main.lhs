@@ -252,7 +252,7 @@ The actor model is a computational paradigm characterized by message passing.
 virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
-For our purposes, we define an actor to be a green thread\footnote{
+We interpret this to be a green thread\footnote{
     A \emph{green thread} (also ``lightweight thread'' or ``userspace thread'')
     is a thread not bound to an OS thread, but dynamically mapped to a CPU by a
     language-level scheduler.
@@ -264,7 +264,9 @@ For our purposes, we define an actor to be a green thread\footnote{
     the JVM with a framework-level scheduler.
 } with some state and an inbox.
 %
-Upon receipt of a message to its inbox, the actor may perform some actions:
+When a message is received, it is handled by the actor \emph{intent function}.
+%
+An intent function may perform some actions:
 send a message, update state, create a new actor, destroy an actor, or
 terminate itself.
 %
