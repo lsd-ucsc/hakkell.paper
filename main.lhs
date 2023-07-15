@@ -419,13 +419,16 @@ Before moving forward, let us acknowledge that this is \emph{not safe}.
 %
 An exception may arrive while executing the intent function.
 %
-Despite the exception mask which we have intentionally left in place,\footnote{
+Despite the exception mask which we left in place,\footnote{
     It is good practice to use \texttt{mask} instead of \texttt{mask\_}, and
-    ``restore'' the masking state of the context before calling the intent
-    function.
+    ``restore'' the prior masking state of the context before calling a user
+    provided callback function.
     %
-    However, for our purpose here, using \texttt{mask\_} doesn't change much.
-
+    Such functions may be written with the expectation to catch asynchronous
+    exception for reasons mentioned in \Cref{subsec:async-exceptions} or
+    \citet{marlow2001async}.
+    %
+    For our purpose here \texttt{mask\_} is acceptable.
 } if the intent function executes an interruptible action, then
 it will be preempted.
 %
@@ -452,13 +455,15 @@ Here be dragons.
 %
 The best recommendation we can make is for the idempotence of intent
 functions.\footnote{
-    We have also considered a design in which the intent function returns an
-    outbox of messages.
+    We considered alternate designs to eliminate the possibility of double
+    sends.
     %
-    It is then up to the main loop to carefully send those messages and deal
-    with possible interruption.
+    Intent functions could return an outbox of messages for the main loop to
+    send,
+    or intent functions could be run in a new anonymous (therefore not
+    interruptible) thread.
     %
-    While this might avoid double sends, we opt for the simpler presentation seen here.
+    We opt for the simple presentation seen here.
 }
 
 
