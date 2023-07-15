@@ -334,7 +334,9 @@ The main loop function mediates message receipt and makes calls to a
 user-defined intent function.
 %
 Here we describe the minimal abstractions around such threads which realize the
-actor model.
+actor model.\footnote{
+    These abstractions are so minimal as to seem unnecessary. We have sought to keep them minimal to underscore our point.
+}
 
 
 \subsection{Sending (throwing) messages}
