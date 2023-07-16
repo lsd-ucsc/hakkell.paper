@@ -561,13 +561,13 @@ message, delegating to the wrapped actor where desired.\footnote{
     It is not sufficient to wrap a message type in a sum type and write an
     actor that takes the sum type as its message.
     %
-    Such a wrapper will fail to receive messages sent as the un-wrapped type.
+    Such an actor will fail to receive messages sent as the un-wrapped type.
     %
-    To correct for this one would need to modify other actors to wrap their
+    To correct for this one would need to change existing actors to wrap their
     outgoing messages in the sum type.
     %
-    The dynamic types pattern described in \Cref{sec:dynamic-types}
-    generalizes this for all types.
+    The pattern described in \Cref{sec:dynamic-types} generalizes this
+    correction without requiring changes to existing actors.
 }
 %
 It is desirable to encapsulate such actor-wrapping in combinators that
