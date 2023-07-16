@@ -608,7 +608,7 @@ receive envelopes containing \verb|SomeException|.
 If the message downcast fails, instead of the recipient crashing, it performs a
 ``return to sender.''
 %
-Specifically, it throws an exception (not an envelope) with using the built-in
+Specifically, it throws an exception (not an envelope) using the built-in
 \verb|TypeError| exception.\footnote{
     The extensions \texttt{ScopedTypeVariables}, \texttt{TypeApplications}, and
     the function \texttt{Data.Typeable.typeOf} can be used to construct a
