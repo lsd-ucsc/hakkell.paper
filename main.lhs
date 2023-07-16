@@ -1336,7 +1336,7 @@ for the source code of the benchmarks.
 %% Experimental setup
 
 We compared the running time of the actor-based implementation, channel-based implementation, and control
-at ring sizes up to $2^{16}$ nodes on machines with 8, 32, and 192
+at ring sizes up to $65536$ nodes on machines with 8, 32, and 192
 capabilities.\footnote{
     A MacBookPro11,5 (NixOS) with 8 capabilities,
     an Amazon AWS \verb|c3.8xlarge| (amazon linux AMI) instance with 32 capabilities,
@@ -1353,8 +1353,8 @@ A detailed description of the experimental setup is in
 %% Experimental results
 
 Our results show that the actor-based implementation is significantly slower
-than the channel-based implementation for less than $2^{13}$ nodes, but
-surprisingly it is marginally faster for more than $2^{15}$ nodes.
+than the channel-based implementation for less than $8192$ nodes, but
+surprisingly it is marginally faster for more than $32768$ nodes.
 %
 Additionally the running time of the extended ring leader election is invariant
 to the number of capabilities used by the RTS.
@@ -1375,7 +1375,7 @@ We do not have a hypothesis that explains why the actor-based implementation is
 faster than the channel-based implementation for large ring sizes.
 %
 It arises because the channel-based implementation has an inflection point in
-its running time around $2^{11}$ nodes, after which it grows at a higher
+its running time around $2048$ nodes, after which it grows at a higher
 rate and surpasses the running time of the actor-based implementation.
 %
 The memory-use result shows that allocations made by the channel-based
@@ -1827,7 +1827,7 @@ We proceeded as follows:
 %
 \begin{itemize}[leftmargin=1.5em]
     \item[--] We ran the \verb|criterion| benchmark for ring sizes up to
-    $2^{11}$ on a MacBookAir4,1 and a MacBookPro11,5.
+    $2048$ on a MacBookAir4,1 and a MacBookPro11,5.
     %
     Both ran NixOS, with 4 capabilities (\verb|+RTS -N4|), clocked to
     1.6GHz, without frequency scaling, and with no other programs running
@@ -1838,20 +1838,20 @@ We proceeded as follows:
     \item[--] We ran the same benchmark with 8 capabilities (\verb|+RTS -N|) on
     just the MacBookPro11,5.
     %
-    This allowed us to explore larger ring sizes (up to $2^{14}$).
+    This allowed us to explore larger ring sizes (up to $16384$).
     %
     These results showed that as we increased the ring size exponentially, the
     difference in performance narrowed.
 
     \item[--] \Cref{fig:perf-eval-time-n32}: We ran the benchmark on an Amazon
     AWS \verb|c3.8xlarge| instance with 32 capabilities for ring sizes up to
-    $2^{16}$.
+    $65536$.
     %
     This result showed that the actors outperform
     channels at high ring sizes.
 
     \item[--] \Cref{fig:perf-eval-time-n192}: We ran the benchmark on an Amazon AWS \verb|c6a.48xlarge| instance
-    with 192 capabilities for ring sizes up to $2^{16}$.
+    with 192 capabilities for ring sizes up to $65536$.
     %
     The benchmark segfaulted unpredictably.
     %
@@ -1862,11 +1862,11 @@ We proceeded as follows:
     actors outperform channels at high ring sizes.
 
     \item[--] \Cref{fig:perf-eval-time-n8}: We repeated the benchmark on the
-    MacBookPro11,5 with 8 capabilities for ring sizes up to $2^{16}$.
+    MacBookPro11,5 with 8 capabilities for ring sizes up to $65536$.
 
     \item[--] \Cref{fig:perf-eval-mem}: We ran a different benchmark focused on
     measuring memory usage (\verb|+RTS -t --machine-readable|) on the
-    MacBookPro11,5 with 8 capabilities for ring sizes up to $2^{16}$.
+    MacBookPro11,5 with 8 capabilities for ring sizes up to $65536$.
     %
     For this benchmark, the main function only ran a single algorithm at a
     specified ring size, and then terminated.
@@ -1921,7 +1921,7 @@ shown here in \Cref{fig:perf-eval-time-rest,fig:perf-group-chan}.
         We group the running time of the channel-based implementation over all
         three machines to make its inflection point clearer.
         %
-        The linear rate of growth for larger ring sizes inflects near $2^{11}$ to
+        The linear rate of growth for larger ring sizes inflects near $2048$ to
         a higher rate.
     }
     \label{fig:perf-group-chan}
