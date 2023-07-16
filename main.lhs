@@ -847,11 +847,11 @@ When a member of the ring receives a \verb|Start| message,
 it nominates itself to its successor in the ring.
 %
 \begin{code}
-node Member{next}
+node state@Member{next}
   Envelope{message=Start} = do
     self <- myThreadId
     send next $ Nominate self
-    return Member{next}
+    return state
 \end{code}
 %
 When a member of the ring receives a \verb|Nominate| message, it compares the
