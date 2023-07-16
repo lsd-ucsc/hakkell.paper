@@ -1279,10 +1279,7 @@ FIFO can be recovered by message sequence numbers or by (albeit, jumping the
 shark) use of an outbox thread per actor.
 %
 An actor can reliably inform others of its termination with use of
-\verb|forkFinally|.\footnote{
-	\verb|forkIO| and \verb|forkFinally| are defined in
-	\texttt{Control.Concurrent} in \texttt{base-4.15.1.0}.
-}
+\verb|forkFinally|.
 
 Our choice to wrap a user-defined message type in a known envelope type has the
 benefit of allowing the actor main loop to distinguish between messages and
@@ -1325,7 +1322,7 @@ felt it would be prudent to compare to some traditional means of inter-thread
 communication.
 %
 We implemented the extended ring leader election from \Cref{sec:ring-impl}
-using channels,\footnote{Channels from \texttt{base:Control.Concurrent.Chan}.}
+using channels,
 and also a control which forks some number of threads that do nothing and
 immediately kills them.
 %
@@ -1338,14 +1335,13 @@ for the source code of the benchmarks.
 
 %% Experimental setup
 
-We compared the running time\footnote{
-    Measured by the \verb|criterion| package, from Hackage.
-} of the actor-based implementation, channel-based implementation, and control
+We compared the running time of the actor-based implementation, channel-based implementation, and control
 at ring sizes up to $2^{16}$ nodes on machines with 8, 32, and 192
 capabilities.\footnote{
-    A MacBookPro11,5 with 8 capabilities,
-    an Amazon AWS \verb|c3.8xlarge| instance with 32 capabilities,
-    and an Amazon AWS \verb|c6a.48xlarge| instance with 192 capabilities.
+    A MacBookPro11,5 (NixOS) with 8 capabilities,
+    an Amazon AWS \verb|c3.8xlarge| (amazon linux AMI) instance with 32 capabilities,
+    and an Amazon AWS \verb|c6a.48xlarge| (amazon linux AMI) instance with 192 capabilities.
+    Running time measured with \verb|criterion|.
 }
 %
 We also compared their memory usage (total allocations over program run) at
