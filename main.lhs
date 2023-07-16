@@ -270,7 +270,7 @@ An intent function may perform some actions:
 send a message, update state, create a new actor, destroy an actor, or
 terminate itself.
 %
-Having completed an action, the actor waits to process the next message in its
+Unless terminated, the actor then waits to process the next message in its
 inbox.
 %
 We will approximate this model with Haskell's asynchronous exceptions as the
