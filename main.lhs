@@ -707,8 +707,8 @@ among a network of communicating nodes organized in a ring topology.
 %
 Each node has a unique identity, and identities are totally ordered.
 %
-Nodes do not know the number or identities of the other nodes, except for their
-immediate successor, or ``next'' node.
+Nodes know their immediate successor, or ``next'' node, but do not know the
+number or identities of others.
 %
 A correct solution will result in exactly one node being designated the leader.
 %
