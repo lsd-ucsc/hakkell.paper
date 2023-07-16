@@ -541,7 +541,7 @@ message.\footnote{
     Sending a message not handled by the recipient is like calling a function
     with wrong argument types, which would cause the thread to crash in a
     dynamically typed language. However here both caller and callee are
-    persistent, and so we locate the mistake in the caller.
+    persistent, and we choose to locate the mistake in the caller.
 }
 
 
