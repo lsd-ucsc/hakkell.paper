@@ -1259,10 +1259,11 @@ exception is received by the target thread''
 This means that a sender may block if the recipient never reaches an
 interruptible point (e.g. its intent function enters an infinite loop in pure
 computation).
-%
-Assuming intent functions terminate, instead the framework will tend to
-exhibit the behavior of \emph{reliable asynchronous message passing with FIFO
-order} and occasional double-sends.
+
+However, assuming intent functions reach interruptible
+points or terminate, the framework will tend to exhibit the behavior of
+\emph{reliable asynchronous message passing with FIFO order} and occasional
+double-sends.
 %
 By wrapping calls to the send function with \verb|forkIO|
 \cite{marlow2001async}, we obtain \emph{reliable asynchronous message passing
