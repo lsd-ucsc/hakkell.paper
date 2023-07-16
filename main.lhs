@@ -381,7 +381,8 @@ an inbox and calls a user-defined intent function on each.
 takes an \verb|Intent| function and its initial state and does not return.
 %
 It masks asynchronous exceptions so they will only be raised at well-defined
-points and runs its loop under that mask.
+points within the loop: during \verb|threadDelay| or possibly during the
+\verb|Intent| function.
 
 
 The loop in \Cref{fig:static-impl} has two pieces of state: that of the intent
