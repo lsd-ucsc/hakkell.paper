@@ -679,7 +679,7 @@ It performs a best-effort check and issues a helpful reminder to mask the
 creation of actor threads.\footnote{
     We do not define a wrapper around \texttt{forkIO} to perform this masking
     because actors that perform initialization steps can currently do so
-    before calling \texttt{run}. There is an example in \Cref{sec:main2-init}.
+    before calling \texttt{run}. \Cref{sec:main2-init} is an example of this.
 }
 
 \begin{figure}
@@ -1173,14 +1173,13 @@ exnode _ _ = error "exnode: unhandled"
 \subsubsection{Extended election initialization}
 \label{sec:main2-init}
 
-
 The extended ring leader election reuses the
 initialization scaffolding from before
 (\Cref{fig:ringElection}).
 %
 The only change is that the \verb|IO| action passed to
 \verb|ringElection| initializes the greatest nominee seen
-to itself.
+to itself, prior to calling \verb|run|.
 %
 It is called like this:
 %
