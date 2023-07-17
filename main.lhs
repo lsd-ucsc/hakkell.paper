@@ -957,7 +957,7 @@ ringElection n actor = do
 
 \begin{figure}
 \raggedright
-\footnotesize
+\scriptsize
 \perform{beginVerb >> main1 5 >> endVerb}
 \normalsize
 \caption{An execution trace of the ring leader election solution.}
@@ -1538,7 +1538,7 @@ In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
 %
 Here is an example trace.
 
-\footnotesize
+\scriptsize
 \perform{beginVerb >> putStrLn "> main2 5" >> main2 5 >> endVerb }
 \normalsize
 
@@ -1960,7 +1960,7 @@ communication.
 %
 Here's an example trace.
 
-\footnotesize
+\scriptsize
 \perform{beginVerb >> putStrLn "> benchChannels 5" >> benchChannels 5 >> endVerb }
 \normalsize
 
