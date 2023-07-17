@@ -1542,18 +1542,11 @@ We hope the reader will draw their own conclusions.
 
 
 \begin{acks}
-We presented this to the Portland State University's Programming Languages \&
-Verification group in early May and had a lovely discussion with Yao, Katie,
-Ted, Marly, Andrew, and others that directly inspired us to write this paper
-for submission in early June. We're immensely grateful for their enthusiasm and
-encouragement.
+This paper grew out of a presentation at Portland State University's Programming Languages & Verification group in May 2023, and we are grateful to the Portland State PLV group for their enthusiasm and encouragement of our work.
+%
+We also thank Jos\'{e} Calder\'{o}n, the members of the LSD Lab at UC Santa Cruz, and the anonymous Haskell '23 reviewers for their valuable feedback on drafts of this paper.
 
-Jose Calderon reviewed a late draft of this paper just before the June deadline
-and gave us valuable feedback. We appreciate Jose's willingness to explore
-together with us PL's maze of twisty little passages, all alike.
-
-Thank you to our LSD Lab members at UCSC, who provided several rounds of
-feedback on both this paper and the presentation that preceded it!
+This material is based upon work supported by the National Science Foundation under Grant No. CCF-2145367. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
 \end{acks}
 
 \bibliographystyle{ACM-Reference-Format}
