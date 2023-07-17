@@ -1277,12 +1277,7 @@ additional lines.\footnote{
     is performed in the exception handler.
 }
 %
-While a user must remember to
-mask asynchronous exceptions when creating an actor thread
-(\Cref{sec:safe-fork}),
-and endeavor to write an idempotent intent function
-(\Cref{sec:receiving-catching}),
-we find it compelling that this is possible and shocking that it is so easy.
+We find it intriguing that this is possible and shocking that it is so easy.
 
 \subsection{Almost a COPL}
 \label{sec:almost-copl}
