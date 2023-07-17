@@ -271,7 +271,7 @@ In this section, we briefly review the status of asynchronous exceptions in GHC
 to skip this section.
 Readers unfamiliar with the behavior of \verb|throwTo|, \verb|catch|, or
 \verb|mask| may wish to scan the documentation of \verb|throwTo|
-\cite{controlDotException}, which covers the essentials.
+\cite{controlDotException} before reading this section.
 
 \subsection{Asynchronous exceptions in GHC}
 \label{subsec:async-exceptions}
@@ -424,9 +424,10 @@ The main loop function mediates message receipt and makes calls to a
 user-defined intent function.
 %
 Here we describe the minimal abstractions around such threads which realize the
-actor model.\footnote{
-    These abstractions are so minimal as to seem unnecessary. We have sought to keep them minimal to underscore our point.
-}
+actor model.
+%
+These abstractions are so minimal as to seem unnecessary. We have sought to
+keep them minimal to underscore our point.
 
 
 \subsection{Sending (throwing) messages}
