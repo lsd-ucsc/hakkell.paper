@@ -89,7 +89,12 @@
 
 \author{Patrick Redmond}
 \orcid{0000-0001-5702-0860}
+\affiliation{
+  \institution{University of California, Santa Cruz}
+  \country{USA}
+}
 \author{Lindsey Kuper}
+\orcid{0000-0002-1374-7715}
 \affiliation{
   \institution{University of California, Santa Cruz}
   \country{USA}
