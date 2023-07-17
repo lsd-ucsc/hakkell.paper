@@ -1474,7 +1474,20 @@ We aren't sure -- we invite the reader to draw their own conclusions.
 
 
 
+\begin{acks}
+We presented this to the Portland State University's Programming Languages \&
+Verification group in early May and had a lovely discussion with Yao, Katie,
+Ted, Marly, Andrew, and others that directly inspired us to write this paper
+for submission in early June. We're immensely grateful for their enthusiasm and
+encouragement.
 
+Jose Calderon reviewed a late draft of this paper just before the June deadline
+and gave us valuable feedback. We appreciate Jose's willingness to explore
+together with us PL's maze of twisty little passages, all alike.
+
+Thank you to our LSD Lab members at UCSC, who provided several rounds of
+feedback on both this paper and the presentation that preceded it!
+\end{acks}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{main.bib}
