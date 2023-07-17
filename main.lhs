@@ -1324,27 +1324,30 @@ the exception is received by the target thread''
     synchronous, but recipients will always perceive them as asynchronous.
 }
 %
-This means that a sender may block if the recipient never reaches an
-interruptible point (e.g., its intent function enters an infinite loop in pure
-computation).
+This means that a sender may block if the recipient is not well-behaved (e.g.,
+its intent function enters an infinite loop in pure computation).
 %
-Assuming intent functions reach interruptible
-points or terminate, the framework will tend to exhibit the behavior of
-\emph{reliable asynchronous message passing with FIFO order} and occasional
-double-sends, because senders will not observe the blocking behavior of \verb|throwTo|.
+We distinguish \emph{well behaved} intent functions as those which eventually
+terminate or reach an interruptible point,
+from \emph{poorly behaved} intent functions which do not.
+%
+Assuming intent functions are well-behaved,
+the framework will tend to exhibit the behavior of
+\emph{reliable asynchronous message passing with FIFO order}
+and occasional double-sends,
+because senders will not observe the blocking behavior of \verb|throwTo|.
 %
 By wrapping calls to the send function with \verb|forkIO|
-\cite{marlow2001async}, we obtain
+\cite{marlow2001async}, we can achieve
 \emph{reliable asynchronous message passing without FIFO order}
-even in the presence of non-terminating intent
-functions.\footnote{
+even in the presence of poorly behaved intent functions.\footnote{
     If thread $T_1$ forks thread $T_2$ to send message $M_2$, and then $T_1$
     forks thread $T_3$ to send message $M_3$, the RTS scheduler may first run
     $T_3$ resulting in $M_3$ reaching the recipient before $M_2$, violating
     FIFO if both messages have the same recipient.
 }
 %
-FIFO can be recovered by message sequence numbers or by (albeit, jumping the
+FIFO can then be recovered by message sequence numbers or by (albeit, jumping the
 shark) use of an outbox thread per actor.
 %
 With those caveats in mind, the message-passing semantics has these criteria:
@@ -1354,8 +1357,7 @@ With those caveats in mind, the message-passing semantics has these criteria:
 %
 \begin{enumerate}[leftmargin=2em]
     \item[(5a)] \ding{55} A stuck recipient may cause a sender to become stuck
-    (unless senders use \verb|forkIO| or intent functions terminate or reach
-    interruptible points).
+    (unless senders use \verb|forkIO| or we assume the recipient is well behaved).
 
     \item[(5b)] \ding{51} Actors know that a message is \emph{received} (stored
     in the recipient's inbox) as soon as \verb|send| or \verb|throwTo| returns.
