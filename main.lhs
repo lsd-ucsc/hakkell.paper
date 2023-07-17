@@ -1330,14 +1330,32 @@ characteristics of a \emph{concurrency-oriented programming language}
 %
 Which requirements to be a COPL does this framework display?
 %
-RTS threads behave as independent processes, and although not strongly
-isolated and able to share state, they have a unique hidden \verb|ThreadId|.
-
-The implementation as shown encourages communication via \emph{reliable
-synchronous message passing with FIFO order}.
+Here we review the critera listed in \Cref{sec:actor-model}:
 %
-We call it synchronous because ``\verb|throwTo| does not return until the
-exception is received by the target thread''
+% \ding{51} is the checkmark
+% \ding{55} is a x-symbol
+%
+\begin{enumerate}[leftmargin=2em]
+    \item \ding{51} Threads behave as independent processes.
+    \item \ding{55} Threads are not strongly isolated because
+    termination of the main thread terminates all others. However, if the main
+    thread is excluded as a special case, then the set of other threads are
+    strongly isolated.
+    \item \ding{51} \verb|ThreadID| is unique, hidden, and unforgeable.
+    \item \ding{55} Threads may have shared state.
+    \item \ding{55} Asynchronous exceptions do not behave as \emph{unreliable} message passing.
+    \item \ding{51} An actor can reliably inform others when it halts using
+    \verb|forkFinally|.
+\end{enumerate}
+
+The message passing semantics of our actor framework is nuanced.
+%
+Documentation for the constituent interfaces indicate
+that the framework provides
+\emph{reliable synchronous message passing with FIFO order}.
+%
+We call it \emph{synchronous} because ``\verb|throwTo| does not return until
+the exception is received by the target thread''
 \cite{controlDotException}.\footnote{
     ``Synchronous for me, but not for thee'' might be the most correct
     characterization. Senders may experience GHC's asynchronous exceptions as
@@ -1347,15 +1365,16 @@ exception is received by the target thread''
 This means that a sender may block if the recipient never reaches an
 interruptible point (e.g. its intent function enters an infinite loop in pure
 computation).
-
-However, assuming intent functions reach interruptible
+%
+Assuming intent functions reach interruptible
 points or terminate, the framework will tend to exhibit the behavior of
 \emph{reliable asynchronous message passing with FIFO order} and occasional
-double-sends.
+double-sends, because senders will not observe the blocking behavior of \verb|throwTo|.
 %
 By wrapping calls to the send function with \verb|forkIO|
-\cite{marlow2001async}, we obtain \emph{reliable asynchronous message passing
-without FIFO order} even in the presence of non-terminating intent
+\cite{marlow2001async}, we obtain
+\emph{reliable asynchronous message passing without FIFO order}
+even in the presence of non-terminating intent
 functions.\footnote{
     If thread $T_1$ forks thread $T_2$ to send message $M_2$, and then $T_1$
     forks thread $T_3$ to send message $M_3$, the RTS scheduler may first run
@@ -1366,8 +1385,24 @@ functions.\footnote{
 FIFO can be recovered by message sequence numbers or by (albeit, jumping the
 shark) use of an outbox thread per actor.
 %
-An actor can reliably inform others of its termination with use of
-\verb|forkFinally|.
+With those caveats in mind the message passing semantics has these criteria:
+%
+% \ding{51} is the checkmark
+% \ding{55} is a x-symbol
+%
+\begin{enumerate}[leftmargin=2em]
+    \item[(5a)] \ding{55} A stuck recipient may cause a sender to become stuck
+    (unless senders use \verb|forkIO| or intent functions terminate or reach
+    interruptible points).
+
+    \item[(5b)] \ding{51} Actors know that a message is \emph{received} (stored
+    in the recipients inbox) as soon as \verb|send| or \verb|throwTo| returns.
+    However, they do not know that a message is \emph{delivered} (processed by
+    the recipient) until receiving a response.
+
+    \item[(5c)] \ding{51} Messages between two actors obey FIFO ordering,
+    (unless \verb|forkIO| is used when sending).
+\end{enumerate}
 
 Our choice to wrap a user-defined message type in a known envelope type has the
 benefit of allowing the actor main loop to distinguish between messages and
@@ -1383,19 +1418,14 @@ to wrap calls to the send function with \verb|forkIO|.
 Another strategy would be to define two constructors for envelope, and elide
 the ``sender'' field from one.
 
-By comparing the discussion above with
-\citeauthor{armstrong2003}'s
-requirements summarized in
-\Cref{sec:actor-model},
-we claim that our actor framework is \emph{almost}
-a COPL.
+We claim that our actor framework is \emph{almost} a COPL.
 %
 It also meets our informal requirements that actors can send and receive
 messages, update state, and spawn or kill other actors (though we have not
 shown examples of all of these).
 %
 With conscientious attention to the termination and idempotence of intent
-functions, the framework might be considered practical.
+functions, the framework might wrongly be considered practical.
 
 
 
