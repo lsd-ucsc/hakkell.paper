@@ -102,11 +102,11 @@
 
 \begin{abstract}
     The Glasgow Haskell Compiler is known for its feature-laden runtime system
-    (RTS) which includes lightweight threads, asynchronous exceptions, and a
+    (RTS), which includes lightweight threads, asynchronous exceptions, and a
     slew of other features.
     %
     Their combination is powerful enough that a programmer may
-    complete the same task in many different ways -- some more advisable than
+    complete the same task in many different ways --- some more advisable than
     others.
 
     We present a user-accessible actor framework hidden in plain sight within
@@ -191,12 +191,12 @@ The paper is organized as follows:
 This paper is a literate Haskell program.\footnote{
     We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
     %
-    The actor framework imports \verb|Control.Exception| and
+    Our actor framework imports \verb|Control.Exception| and
     \verb|Control.Concurrent|, and we use the extensions \verb|NamedFieldPuns|
-    and \verb|DuplicateRecordFields| for convenience of its presentation.
+    and \verb|DuplicateRecordFields| for convenience of presentation.
     %
-    The leader election example of \Cref{sec:what-have-we-wrought} additionally imports the module \verb|System.Random|
-    and uses the extension \verb|ViewPatterns|.
+    The leader election example of \Cref{sec:ring-impl} additionally imports the module \verb|System.Random|
+    and uses the \verb|ViewPatterns| extension.
     %
     The appendices have other imports, which we do not describe here.
 }
@@ -257,7 +257,7 @@ which are thrown as a result of executing code in the current thread,
 asynchronous exceptions are thrown by threads distinct from the current one,
 or by the RTS itself.
 %
-They communicate conditions which may require the current thread to
+They communicate conditions that may require the current thread to
 terminate: thread cancellation, user interrupts, or memory limits.
 
 Asynchronous exceptions allow syntactically-distant parts of a program
@@ -287,7 +287,7 @@ Even
 user-defined datatypes may be thrown as asynchronous exceptions by
 declaring an empty instance of \verb|Exception| \cite{marlow2006extensible}.
 %
-For example, with the declarations in \Cref{fig:greet} it is possible to greet
+For example, with the declarations in \Cref{fig:greet}, it is possible to greet
 in vernacular: \verb|(\x -> throwTo x Hi)|.
 
 Asynchronous exceptions may be caught by the receiving thread for
@@ -304,20 +304,16 @@ it leaves asynchronous exceptions open to being repurposed.
 
 The actor model is a computational paradigm characterized by message passing.
 %
-\citet{hewitt1973actors} writes that ``an actor can be thought of as a kind of
+\citet{hewitt1973actors} write that ``an actor can be thought of as a kind of
 virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
-We interpret this definition in our setting to be a green thread\footnote{
+In our setting, we interpret an actor to be a green thread\footnote{
     A \emph{green thread} (also ``lightweight thread'' or ``userspace thread'')
     is a thread not bound to an OS thread, but dynamically mapped to a CPU by a
     language-level scheduler.
     %
-    A language with only OS threads would likely support actor programming
-    poorly, due to the large numbers of actors required.
-    %
-    The \emph{Akka} framework for Java and Scala gets around the lack of green threads in
-    the JVM with a framework-level scheduler.
+    As opposed to heavier-weight OS threads, green threads simplify the implementation of a practical actor framework that supports large numbers of actors.
 } with some state and an inbox.
 %
 When a message is received by an actor,
@@ -331,14 +327,14 @@ Unless terminated, the actor then waits to process the next message in its
 inbox.
 %
 We will approximate this model with Haskell's asynchronous exceptions as the
-primary metaphor for message passing.
+mechanism for message passing.
 
 More concretely, we think of an actor framework as
 having the characteristics of a
 \emph{concurrency-oriented programming language} (COPL),
 a notion due to \citet{armstrong2003}.
 %
-After describing our framework, we will make the case that it has many of the
+After describing our framework, we will make the case (in \Cref{sec:almost-copl}) that it has many of the
 characteristics of a COPL.
 %
 To summarize \citet{armstrong2003}, a COPL
@@ -392,10 +388,10 @@ provided main loop function.
 The main loop function mediates message receipt and makes calls to a
 user-defined intent function.
 %
-Here we describe the minimal abstractions around such threads which realize the
+Here we describe the minimal abstractions around such threads that realize the
 actor model.
 %
-These abstractions are so minimal as to seem unnecessary. We have sought to
+These abstractions are so minimal as to seem unnecessary; we have sought to
 keep them minimal to underscore our point.
 
 
@@ -454,7 +450,7 @@ handler and a case-split on the inbox list:
     recurse on the unchanged actor state and the empty inbox.
     
     \item If the inbox has a message, call the intent function and recurse on
-    the updated actor state and remainder of the inbox.
+    the updated actor state and the remainder of the inbox.
 
     \item If, during cases (1) or (2), an \verb|Envelope| exception is received,
     recurse on the unchanged actor state and an inbox with the new envelope
@@ -471,7 +467,7 @@ its inbox, and recurse.
 On the next loop iteration, the actor will process that message and once again
 have an empty inbox.
 %
-Exceptions are masked outside of interruptible actions so that the bookkeeping
+Exceptions are masked (using \texttt{mask\_}) outside of interruptible actions so that the bookkeeping
 of recursing with updated state through the loop is not disrupted.
 
 
@@ -482,16 +478,16 @@ Before moving forward, let us acknowledge that this is \emph{not safe}.
 %
 An exception may arrive while executing the intent function.
 %
-Despite the exception mask which we left in place,\footnote{
+Despite our use of \texttt{mask\_},\footnote{
     It is good practice to use \texttt{mask} instead of \texttt{mask\_}, and
     ``restore'' the prior masking state of the context before calling a
     user-defined callback function.
     %
     Such functions may be written with the expectation to catch asynchronous
-    exception for reasons mentioned in \Cref{subsec:async-exceptions} or
+    exceptions, for reasons mentioned in \Cref{subsec:async-exceptions} or
     \citet{marlow2001async}.
     %
-    For our purpose here \texttt{mask\_} is acceptable.
+    For our purpose here, \texttt{mask\_} is acceptable.
 } if the intent function executes an interruptible action, then
 it will be preempted.
 %
@@ -510,8 +506,8 @@ asynchronous exceptions:
 use software transactional memory (STM),
 avoid interruptible actions,
 or apply \verb|uninterruptibleMask|.
-However, recall that message sending is implemented with \verb|throwTo| which is
-``\emph{always} interruptible, even if does not actually block''
+However, recall that message sending is implemented with \verb|throwTo|, which is
+``\emph{always} interruptible, even if it does not actually block''
 \cite{controlDotException}.
 %
 Here be dragons.
@@ -597,7 +593,7 @@ We think the recipient should not crash when another actor sends an incorrect
 message.\footnote{
     Sending a message not handled by the recipient is like calling a function
     with wrong argument types, which would cause the thread to crash in a
-    dynamically typed language. However here both caller and callee are
+    dynamically typed language. However, here both caller and callee are
     persistent, and we choose to locate the mistake in the caller.
 }
 
@@ -612,7 +608,7 @@ This is similar to the dynamic types support in Haskell's
 \verb|Data.Dynamic| module.
 
 
-Furthermore, any actor may be extended by wrapping it (has-a style) with an
+Furthermore, any actor may be extended by wrapping it (``has-a'' style) with an
 actor that uses a distinct message type and branches on the type of a received
 message, delegating to the wrapped actor where desired.\footnote{
     It is not sufficient to wrap a message type in a sum type and write an
@@ -620,7 +616,7 @@ message, delegating to the wrapped actor where desired.\footnote{
     %
     Such an actor will fail to receive messages sent as the un-wrapped type.
     %
-    To correct for this one would need to change existing actors to wrap their
+    To correct for this, one would need to change existing actors to wrap their
     outgoing messages in the sum type.
     %
     The pattern described in \Cref{sec:dynamic-types} generalizes this
@@ -644,7 +640,7 @@ we convert messages to the ``any type''
 in Haskell's exception hierarchy,
 \verb|SomeException|.
 %
-\Cref{fig:dyn-impl} defines a new send function which converts messages before
+\Cref{fig:dyn-impl} defines a new \verb|send| function that converts messages before
 sending, so that all inflight messages will have the type \verb|Envelope
 SomeException|.
 
@@ -686,8 +682,8 @@ Such actors will use an intent function handling messages of type
 \verb|SomeException|.
 %%%, and will work equally well with \verb|runStatic| or \verb|run|.
 %
-\Cref{sec:dyn-ring} shows an example of an actor that receives
-messages of different types, by extending an actor that doesn't.
+We will see an example of this usage pattern in \Cref{sec:dyn-ring}.
+
 
 
 \begin{figure}
@@ -727,7 +723,7 @@ installs its exception handler.
 If this happened, the exception would cause the newly created thread to die.
 %
 To avoid this, the fork step prior to entering the actor main loop must be
-masked (this is in addition to the mask within the main loop).
+masked (in addition to the mask within the main loop).
 
 \Cref{fig:run} defines the main loop wrapper we will use for examples in
 \Cref{sec:ring-impl}.
@@ -765,24 +761,24 @@ among a network of communicating nodes organized in a ring topology.
 Each node has a unique identity, and identities are totally ordered.
 %
 Nodes know their immediate successor, or ``next'' node, but do not know the
-number or identities of others.
+number or identities of the other nodes in the ring.
 %
 A correct solution will result in exactly one node being designated the leader.
 %
-We choose to demonstrate a solution to this classic problem in distributed
-systems literature because it nicely illustrates concurrent programming,
-despite being unnecessary in the context of threads in a process.
+This classic problem from the distributed
+systems literature serves to illustrate the use of our actor framework,
+despite leader election being unnecessary in the context of threads in a process.
 
-\citet{chang1979decentralextrema} describe a solution that begins with every
+\citet{chang1979decentralextrema} describe a solution to the ring leader election problem that begins with every
 node sending a message to its successor to nominate itself as the leader
 (\Cref{fig:ring-election-visual}).
 %
 Upon receiving a nomination,
 a node forwards the nomination to its successor
 if the identity of the nominee is
-greater than the identity of the current node.
+greater than its own identity.
 %
-Otherwise the nomination is ignored.
+Otherwise, the nomination is ignored.
 %
 We implement and extend that solution below.
 
@@ -803,7 +799,7 @@ We implement and extend that solution below.
     Concurrently, node 6 nominated itself and was accepted by node 2 but
     rejected by node 7.
     %
-    For this election to obtain a leader, node 7 must nominate itself.
+    For this election to result in a leader, node 7 must nominate itself.
 }
 \label{fig:ring-election-visual}
 \end{figure}
@@ -869,7 +865,7 @@ means that only one nomination will circumnavigate the ring.\footnote{
     In the context of a distributed system, with unreliable message passing, it
     is possible that no nomination makes it all the way around the ring.
     %
-    We can then say the algorithm terminates (because nodes idle) without a
+    In such a situation, the algorithm could terminate without a
     winner.
 }
 
@@ -885,7 +881,7 @@ means that only one nomination will circumnavigate the ring.\footnote{
 The intent function for a node actor will have state of type \verb|Node| and
 receive messages of type \verb|Msg|, as defined in \Cref{fig:node-types}.
 %
-We show its implementation and describe each case here below.
+We show its implementation and describe each case below.
 %
 \begin{code}
 node :: Intent Node Msg
@@ -945,7 +941,7 @@ node _ _ = error "node: unhandled"
 
 The election initialization function\footnote{
     The implementation shown doesn't handle rings of size 0 or 1,
-    but we consider that out of scope of the demonstration.
+    but we consider that out of scope for the purposes of this paper.
     %
     Also, we do not show thread cleanup here.
 }
@@ -1044,7 +1040,7 @@ who is the winner.
 We will extend the existing node intent function by wrapping it with a new
 intent function that processes messages of either the old or the new message
 types, with distinct behavior for each, leveraging the dynamic types support
-from \Cref{sec:dynamic-types}.
+described in \Cref{sec:dynamic-types}.
 %
 The new behaviors are:
 %
@@ -1064,7 +1060,7 @@ The new behaviors are:
 Extended nodes will store the original node state (\Cref{fig:node-types})
 paired with the identity of the greatest nominee they have seen.
 %
-This new extended node state is shown in \Cref{fig:exnode-types} as type,
+This new extended node state is shown in \Cref{fig:exnode-types} as type
 \verb|Exnode|.
 %
 The new message type (\verb|Winner|, also in \Cref{fig:exnode-types}) has only
@@ -1096,13 +1092,12 @@ instance Exception Winner
 %
 When an extended node receives a declaration of the winner
 that matches their greatest nominee seen,
-they have ``learned'' that node is indeed the winner.
+they have ``learned'' that that node is indeed the winner.
 %
 When the winner receives their own declaration,
 \emph{everyone} has learned they are the winner,
-and the algorithm terminates.\footnote{
-    See also termination discussion in footnotes of \Cref{sec:election-termination}.
-}
+and the algorithm terminates.
+
 
 
 
@@ -1156,7 +1151,7 @@ We annotate the rest of \Cref{fig:exnode-case-msg} as follows:
     \item If the message is a nomination of the current extended node, start
     the winner round, because the election is over.
     %
-    \item Otherwise the election is ongoing so keep track of the greatest
+    \item Otherwise, the election is ongoing, so keep track of the greatest
     nominee seen.
 \end{enumerate}
 %
@@ -1262,7 +1257,7 @@ main2 count = do
 \end{code}
 }
 %
-For execution trace of an extended election see \Cref{apx:main2-trace}.
+An execution trace of an extended election appears in \Cref{apx:main2-trace}.
 
 
 
@@ -1271,7 +1266,7 @@ For execution trace of an extended election see \Cref{apx:main2-trace}.
 \label{sec:what-have-we-wrought}
 
 \Cref{fig:static-impl} shows that we have, in only a few lines of
-code, discovered an actor framework within the RTS which makes no explicit use
+code, discovered an actor framework within Haskell's RTS that makes no explicit use
 of channels, references, or locks and imports just a few names from default
 modules.
 %
@@ -1289,9 +1284,9 @@ We find it intriguing that this is possible and shocking that it is so easy.
 
 In \Cref{sec:actor-model} we described an actor framework as having the
 characteristics of a \emph{concurrency-oriented programming language}
-(COPL) \cite{armstrong2003}.
+(COPL)~\citep{armstrong2003}.
 %
-Which requirements to be a COPL does this framework display?
+Which of the COPL requirements does our framework satisfy?
 %
 Here we review the criteria listed in \Cref{sec:actor-model}:
 %
@@ -1300,10 +1295,10 @@ Here we review the criteria listed in \Cref{sec:actor-model}:
 %
 \begin{enumerate}[leftmargin=2em]
     \item \ding{51} Threads behave as independent processes.
-    \item \ding{55} Threads are not strongly isolated because
+    \item \ding{55}/\ding{51} Threads are not strongly isolated because
     termination of the main thread terminates all others. However, if the main
     thread is excluded as a special case, then the set of other threads are
-    strongly isolated. (\ding{51})
+    strongly isolated.
     \item \ding{51} \verb|ThreadID| is unique, hidden, and unforgeable.
     \item \ding{55} Threads may have shared state.
     \item \ding{55} Asynchronous exceptions do not behave as \emph{unreliable} message passing.
@@ -1327,9 +1322,9 @@ the exception is received by the target thread''
 This means that a sender may block if the recipient is not well-behaved (e.g.,
 its intent function enters an infinite loop in pure computation).
 %
-We distinguish \emph{well behaved} intent functions as those which eventually
+We distinguish \emph{well-behaved} intent functions, which eventually
 terminate or reach an interruptible point,
-from \emph{poorly behaved} intent functions which do not.
+from \emph{poorly-behaved} intent functions, which do not.
 %
 Assuming intent functions are well-behaved,
 the framework will tend to exhibit the behavior of
@@ -1337,10 +1332,9 @@ the framework will tend to exhibit the behavior of
 and occasional double-sends,
 because senders will not observe the blocking behavior of \verb|throwTo|.
 %
-By wrapping calls to the send function with \verb|forkIO|
-\cite{marlow2001async}, we can achieve
+By wrapping calls to the send function with \verb|forkIO|~\cite{marlow2001async}, we can achieve
 \emph{reliable asynchronous message passing without FIFO order}
-even in the presence of poorly behaved intent functions.\footnote{
+even in the presence of poorly-behaved intent functions.\footnote{
     If thread $T_1$ forks thread $T_2$ to send message $M_2$, and then $T_1$
     forks thread $T_3$ to send message $M_3$, the RTS scheduler may first run
     $T_3$ resulting in $M_3$ reaching the recipient before $M_2$, violating
@@ -1350,31 +1344,30 @@ even in the presence of poorly behaved intent functions.\footnote{
 FIFO can then be recovered by message sequence numbers or by (albeit, jumping the
 shark) use of an outbox thread per actor.
 %
-With those caveats in mind, the message-passing semantics has these criteria:
+With those caveats in mind, our framework \emph{mostly} satisfies \citet{armstrong2003}'s criteria for message-passing semantics:
 %
 % \ding{51} is the checkmark
 % \ding{55} is a x-symbol
 %
 \begin{enumerate}[leftmargin=2em]
-    \item[(5a)] \ding{55} A stuck recipient may cause a sender to become stuck,
+    \item[(5a)] \ding{55}/\ding{51} A stuck recipient may cause a sender to become stuck,
     unless senders use \verb|forkIO|
-    or we assume the recipient is well behaved. (\ding{51})
+    or we assume the recipient is well-behaved.
 
-    \item[(5b)] \ding{55} Actors know that a message is \emph{received} (stored
+    \item[(5b)] \ding{55}/\ding{51} Actors know that a message is \emph{received} (stored
     in the recipient inbox) as soon as \verb|send| returns.
     However, they do not know that a message is \emph{delivered} (processed by
-    the recipient) until receiving a response. (\ding{51})
+    the recipient) until receiving a response.
 
-    \item[(5c)] \ding{51} Messages between two actors obey FIFO ordering,
-    unless \verb|forkIO| is used when sending. (\ding{55})
+    \item[(5c)] \ding{51}/\ding{55} Messages between two actors obey FIFO ordering,
+    unless \verb|forkIO| is used when sending.
 \end{enumerate}
 
 Our choice to wrap a user-defined message type in a known envelope type has the
 benefit of allowing the actor main loop to distinguish between messages and
 exceptions, allowing the latter to terminate the thread as intended.
 %
-At the same time this choice runs afoul of the \emph{name distribution problem}
-\cite{armstrong2003} by indiscriminately informing all recipients of the sender
+At the same time, though, this choice runs afoul of the \emph{name distribution problem}~\cite{armstrong2003} by indiscriminately informing all recipients of the sender
 process identifier.
 %
 One strategy to hide to an actor's name and restore the lost security isolation is
@@ -1390,7 +1383,7 @@ messages, update state, and spawn or kill other actors (though we have not
 shown examples of all of these).
 %
 With conscientious attention to the termination and idempotence of intent
-functions, the framework might wrongly be considered practical.
+functions, the framework might (wrongly) be considered practical.
 
 
 
@@ -1405,9 +1398,9 @@ is prudent to compare the performance this \emph{unintended communication
 mechanism} against the performance of an \emph{intended communication
 mechanism} to restore a sense that the ship is indeed upright.
 %
-To that end
+To that end,
 we re-implemented the extended ring leader election from \Cref{sec:ring-impl}
-using channels -- a standard FIFO communication primitive.
+using channels --- a standard FIFO communication primitive.
 %
 We also implemented a ``control''\footnote{
     The ``control'' forks some number of threads that do nothing and
@@ -1429,23 +1422,23 @@ sizes.
 Our running time results (\Cref{fig:perf-eval-time-n32}) show that
 the actor-based implementation is significantly slower
 than the channel-based implementation for ring sizes less than $8192$ nodes,
-but surprisingly it is marginally faster for more than $32768$ nodes.
+but surprisingly, it is marginally faster for more than $32768$ nodes.
 %
 The total-allocations result (\Cref{fig:perf-eval-mem}) shows that
 allocations made by the channel-based implementation
 catch up to that of the actor-based implementation at large ring sizes,
-and we hypothesize this convergence
+and we hypothesize that this convergence
 explains why the running time results swap places.
 %
-Additionally we learned that the running time of the extended ring leader
-election is invariant to the number of capabilities used by the RTS,
-making it a poor choice for a general evaluation of the actor framework
+Additionally, our results show that the running time of the extended ring leader
+election algorithm is invariant to the number of capabilities used by the RTS,
+making it a poor choice for a general evaluation of our actor framework,
 but sufficient for our purpose of confirming that channels are faster.
 
 \Cref{apx:actor-bench-impl,apx:control-bench-impl,apx:channel-bench-impl,apx:criterion-bench-impl}
-have the source code of these benchmarks.
-\Cref{apx:exp-setup} details the experimental setup and
-\Cref{apx:exp-result} contains more of the results.
+give the source code for these benchmarks.
+\Cref{apx:exp-setup} details our experimental setup, and
+\Cref{apx:exp-result} discusses more of the results.
 
 
 \begin{figure}
@@ -1505,7 +1498,7 @@ or references, no effort to achieve synchronization, and very little code only
 because \emph{those things already exist, abstracted within the RTS}.
 
 
-Should it have been possible to implement the actor framework we present
+\emph{Should} it have been possible to implement the actor framework we present
 here?
 %
 Like many people, we choose Haskell because it is a tool that typically
@@ -1526,7 +1519,7 @@ delimited continuations (and extensible algebraic effects),
 and more,
 all together in the same tub.
 %
-The water is warm -- jump in!
+The water is warm --- jump in!
 %
 Will all the members of this new \emph{extended} ``awkward squad''
 \cite{peytonjones2001tackling} bob gently together, or will they knock elbows?
