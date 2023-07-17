@@ -1452,19 +1452,21 @@ with frighteningly little effort.
 Perhaps the user-accessible interface to the asynchronous exception system
 should be more constrained.
 
-
 More broadly,
-a user of GHC's RTS may soon enjoy software transactional memory, asynchronous
+with coming releases of GHC, a user of the RTS
+may soon enjoy software transactional memory, asynchronous
 exceptions, delimited continuations, extensible algebraic effects, and more,
 all together in the same tub.
 %
 The water is warm -- jump in!
 %
-Which of these ``awkward squad'' features can be implemented in terms of the others?
+Will all the members of this new \emph{extended} ``awkward squad''
+\cite{peytonjones2001tackling} bob gently together, or will they knock elbows?
 %
-And should their full power be exposed so that we can do so?
+Which of them can be implemented in terms of the
+others, and should their full power be exposed so that we can do so?
 %
-We aren't sure -- we invite the reader to draw their own conclusions.
+We hope the reader will draw their own conclusions.
 
 
 
