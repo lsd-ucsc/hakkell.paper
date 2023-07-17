@@ -90,8 +90,8 @@
 
 \section{Introduction}
 
-The most commonly used implementation of Haskell today is the Glasgow Haskell
-Compiler (GHC) \cite{fausak2022} together with its runtime system (RTS).
+Together with its runtime system (RTS), the Glasgow Haskell Compiler (GHC) is
+the most commonly used implementation of Haskell \cite{fausak2022}.
 %
 The RTS is featureful and boasts support for lightweight threads, two kinds of
 profiling, transactional memory, asynchronous exceptions, and more.
