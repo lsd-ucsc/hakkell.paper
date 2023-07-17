@@ -1510,9 +1510,12 @@ Perhaps the user-accessible interface to the asynchronous exception system
 should be constrained.
 
 More broadly,
-with coming releases of GHC, a user of the RTS
-may soon enjoy software transactional memory, asynchronous
-exceptions, delimited continuations, extensible algebraic effects, and more,
+with the 9.6.1 release of  GHC,
+a user of the RTS enjoys
+software transactional memory,
+asynchronous exceptions,
+delimited continuations (and extensible algebraic effects),
+and more,
 all together in the same tub.
 %
 The water is warm -- jump in!
