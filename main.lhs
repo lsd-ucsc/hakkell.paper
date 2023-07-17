@@ -178,7 +178,7 @@ The paper is organized as follows:
     implementation.
 
     \item[--] We reflect on whether this was a good idea in
-    \Cref{sec:what-hath-we-wrought},
+    \Cref{sec:what-have-we-wrought},
     by considering the practicality and performance of our framework,
     and conclude in \Cref{sec:conclusion} that asynchronous exceptions
     might be more constrained.
@@ -190,7 +190,7 @@ This paper is a literate Haskell program.\footnote{
     \verb|Control.Concurrent|, and we use the extensions \verb|NamedFieldPuns|
     and \verb|DuplicateRecordFields| for convenience of its presentation.
     %
-    The leader election example of \Cref{sec:what-hath-we-wrought} additionally imports the module \verb|System.Random|
+    The leader election example of \Cref{sec:what-have-we-wrought} additionally imports the module \verb|System.Random|
     and uses the extension \verb|ViewPatterns|.
     %
     The appendices have other imports, which we do not describe here.
@@ -1262,8 +1262,8 @@ For execution trace of an extended election see \Cref{apx:main2-trace}.
 
 
 
-\section{What hath we wrought?}
-\label{sec:what-hath-we-wrought}
+\section{What have we wrought?}
+\label{sec:what-have-we-wrought}
 
 \Cref{fig:static-impl} shows that we have, in only a few lines of
 code, discovered an actor framework within the RTS which makes no explicit use
