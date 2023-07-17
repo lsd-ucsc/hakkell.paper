@@ -211,11 +211,10 @@ The paper is organized as follows:
     implementation.
 
     \item[--] We reflect on whether this was a good idea in
-    \Cref{sec:what-hath-we-wrought}:
-    we consider the practicality and performance of our framework,
-    suggest that asynchronous exceptions might be more constrained,
-    and ask whether it is appropriate to implement ``language level'' features
-    in terms of others.
+    \Cref{sec:what-hath-we-wrought},
+    by considering the practicality and performance of our framework,
+    and conclude in \Cref{sec:conclusion} that asynchronous exceptions
+    might be more constrained.
 \end{itemize}
 This paper is a literate Haskell program.\footnote{
     We use \verb|GHC 9.0.2| and \verb|base-4.15.1.0|.
