@@ -284,7 +284,7 @@ which are thrown as a result of executing code in the current thread,
 asynchronous exceptions are thrown by threads distinct from the current one,
 or by the RTS itself.
 %
-They communicate conditions requiring the current thread to
+They communicate conditions which may require the current thread to
 terminate: thread cancellation, user interrupts, or memory limits.
 
 Asynchronous exceptions allow syntactically-distant parts of a program
@@ -1333,9 +1333,9 @@ synchronous message passing with FIFO order}.
 We call it synchronous because ``\verb|throwTo| does not return until the
 exception is received by the target thread''
 \cite{controlDotException}.\footnote{
-	``Synchronous for me, but not for thee'' might be the most correct
-	characterization. Senders may experience GHC's asynchronous exceptions as
-	synchronous, but recipients will always perceive them as asynchronous.
+    ``Synchronous for me, but not for thee'' might be the most correct
+    characterization. Senders may experience GHC's asynchronous exceptions as
+    synchronous, but recipients will always perceive them as asynchronous.
 }
 %
 This means that a sender may block if the recipient never reaches an
