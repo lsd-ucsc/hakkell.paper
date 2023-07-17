@@ -57,23 +57,21 @@
 %%%%format }   = "\}"
 %%%%format (,)  = "(,\!)"
 
-%% Rights management information.  This information is sent to you
-%% when you complete the rights form.  These commands have SAMPLE
-%% values in them; it is your responsibility as an author to replace
-%% the commands and values with those provided to you when you
-%% complete the rights form.
-%% TODO
-\setcopyright{acmcopyright}
-\copyrightyear{2018}
-\acmYear{2018}
-\acmDOI{XXXXXXX.XXXXXXX}
-
-%% Submission ID.
-%% Use this when submitting an article to a sponsored event. You'll
-%% receive a unique submission ID from the organizers
-%% of the event, and this ID should be used as the parameter to this command.
-%% TODO
-\acmSubmissionID{123-A56-BU3}
+%%% The following is specific to Haskell '23 and the paper
+%%% 'An Exceptional Actor System (Functional Pearl)'
+%%% by Patrick Redmond and Lindsey Kuper.
+%%%
+\setcopyright{rightsretained}
+\acmPrice{}
+\acmDOI{10.1145/3609026.3609728}
+\acmYear{2023}
+\copyrightyear{2023}
+\acmSubmissionID{icfpws23haskellmain-id51-p}
+\acmISBN{979-8-4007-0298-3/23/09}
+\acmConference[Haskell '23]{Proceedings of the 16th ACM SIGPLAN International Haskell Symposium}{September 8--9, 2023}{Seattle, WA, USA}
+\acmBooktitle{Proceedings of the 16th ACM SIGPLAN International Haskell Symposium (Haskell '23), September 8--9, 2023, Seattle, WA, USA}
+\received{2023-06-01}
+\received[accepted]{2023-07-04}
 
 %% The majority of ACM publications use numbered citations and
 %% references.  The command \citestyle{authoryear} switches to the
