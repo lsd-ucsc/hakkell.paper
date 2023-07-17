@@ -378,7 +378,7 @@ and
 %
 Additionally, 
 (5a) message passing is asynchronous so that no stuck recipient may cause a sender to become stuck,
-(5b) receiving a response is the only way to know that a prior message was delivered,
+(5b) receiving a response is the only way to know that a prior message was sent,
 and
 (5c) messages between two processes obey FIFO ordering.\footnote{
     These are \emph{process isolation} points 3 and 4 and \emph{message
