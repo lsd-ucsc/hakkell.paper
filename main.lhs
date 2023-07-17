@@ -1303,7 +1303,7 @@ Here we review the criteria listed in \Cref{sec:actor-model}:
     \item \ding{55} Threads are not strongly isolated because
     termination of the main thread terminates all others. However, if the main
     thread is excluded as a special case, then the set of other threads are
-    strongly isolated.
+    strongly isolated. (\ding{51})
     \item \ding{51} \verb|ThreadID| is unique, hidden, and unforgeable.
     \item \ding{55} Threads may have shared state.
     \item \ding{55} Asynchronous exceptions do not behave as \emph{unreliable} message passing.
@@ -1356,16 +1356,17 @@ With those caveats in mind, the message-passing semantics has these criteria:
 % \ding{55} is a x-symbol
 %
 \begin{enumerate}[leftmargin=2em]
-    \item[(5a)] \ding{55} A stuck recipient may cause a sender to become stuck
-    (unless senders use \verb|forkIO| or we assume the recipient is well behaved).
+    \item[(5a)] \ding{55} A stuck recipient may cause a sender to become stuck,
+    unless senders use \verb|forkIO|
+    or we assume the recipient is well behaved. (\ding{51})
 
-    \item[(5b)] \ding{51} Actors know that a message is \emph{received} (stored
-    in the recipient's inbox) as soon as \verb|send| or \verb|throwTo| returns.
+    \item[(5b)] \ding{55} Actors know that a message is \emph{received} (stored
+    in the recipient inbox) as soon as \verb|send| returns.
     However, they do not know that a message is \emph{delivered} (processed by
-    the recipient) until receiving a response.
+    the recipient) until receiving a response. (\ding{51})
 
-    \item[(5c)] \ding{51} Messages between two actors obey FIFO ordering
-    (unless \verb|forkIO| is used when sending).
+    \item[(5c)] \ding{51} Messages between two actors obey FIFO ordering,
+    unless \verb|forkIO| is used when sending. (\ding{55})
 \end{enumerate}
 
 Our choice to wrap a user-defined message type in a known envelope type has the
