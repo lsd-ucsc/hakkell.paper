@@ -1431,74 +1431,56 @@ functions, the framework might wrongly be considered practical.
 
 
 
-\subsection{Performance evaluation}
+\subsection{Summary of performance evaluation}
 
-%% What/why did we eval?
-
-Even though we make no claims of the practicality of our actor framework, we
-felt it would be prudent to compare to some traditional means of inter-thread
-communication.
+We have described a novel approach to inter-thread communication.
 %
-We implemented the extended ring leader election from \Cref{sec:ring-impl}
-using channels,
-and also a control which forks some number of threads that do nothing and
-immediately kills them.
+We believe it
+is prudent to compare the performance this \emph{unintended communication
+mechanism} against the performance of an \emph{intended communication
+mechanism} to restore a sense that the ship is indeed upright.
 %
-The control establishes a lower bound on the expected running time of the
-actor-based and channel-based implementations.
+To that end
+we re-implemented the extended ring leader election from \Cref{sec:ring-impl}
+using channels -- a standard FIFO communication primitive.
 %
-See
-\Cref{apx:actor-bench-impl,apx:control-bench-impl,apx:channel-bench-impl,apx:criterion-bench-impl}
-for the source code of the benchmarks.
+We also implemented a ``control''\footnote{
+    The ``control'' forks some number of threads that do nothing and
+    immediately kills them.
+} to establish a lower bound on the expected
+running time of the actor-based and channel-based implementations.
 
 %% Experimental setup
-
-We compared the running time of the actor-based implementation, channel-based implementation, and control
+%
+We compared the running time of these implementations
 at ring sizes up to $65536$ nodes on machines with 8, 32, and 192
-capabilities.\footnote{
-    A MacBookPro11,5 (NixOS) with 8 capabilities,
-    an Amazon AWS \verb|c3.8xlarge| (amazon linux AMI) instance with 32 capabilities,
-    and an Amazon AWS \verb|c6a.48xlarge| (amazon linux AMI) instance with 192 capabilities.
-    Running time measured with \verb|criterion|.
-}
+capabilities.
 %
-We also compared their memory usage (total allocations over program run) at
-various ring sizes.
-%
-A detailed description of the experimental setup is in
-\Cref{apx:exp-setup}.
+We also compared their total allocations over the program run at various ring
+sizes.
 
 %% Experimental results
+%
+Our running time results (\Cref{fig:perf-eval-time-n32}) show that
+the actor-based implementation is significantly slower
+than the channel-based implementation for ring sizes less than $8192$ nodes,
+but surprisingly it is marginally faster for more than $32768$ nodes.
+%
+The total-allocations result (\Cref{fig:perf-eval-mem}) shows that
+allocations made by the channel-based implementation
+catch up to that of the actor-based implementation at large ring sizes,
+and we hypothesize this convergence
+explains why the running time results swap places.
+%
+Additionally we learned that the running time of the extended ring leader
+election is invariant to the number of capabilities used by the RTS,
+making it a poor choice for a general evaluation of the actor framework
+but sufficient for our purpose of confirming that channels are faster.
 
-Our results show that the actor-based implementation is significantly slower
-than the channel-based implementation for less than $8192$ nodes, but
-surprisingly it is marginally faster for more than $32768$ nodes.
-%
-Additionally the running time of the extended ring leader election is invariant
-to the number of capabilities used by the RTS.
-%
-We include a representative selection of the experimental results in
-\Cref{fig:perf-eval}, and the rest in \Cref{apx:exp-result}.
-
-%% Discussion of results
-
-The running time of the extended ring leader election is $O(2n)$ in the number
-of nodes.
-%
-We hypothesize that it is invariant to the number of capabilities because after
-an initial flood of nominations the algorithm degenerates quickly to a single
-message passing around the ring twice.
-
-We do not have a hypothesis that explains why the actor-based implementation is
-faster than the channel-based implementation for large ring sizes.
-%
-It arises because the channel-based implementation has an inflection point in
-its running time around $2048$ nodes, after which it grows at a higher
-rate and surpasses the running time of the actor-based implementation.
-%
-The memory-use result shows that allocations made by the channel-based
-implementation catch up to that of the actor-based implementation at large ring
-sizes.
+\Cref{apx:actor-bench-impl,apx:control-bench-impl,apx:channel-bench-impl,apx:criterion-bench-impl}
+have the source code of these benchmarks.
+\Cref{apx:exp-setup} details the experimental setup and
+\Cref{apx:exp-result} contains more of the results.
 
 
 \begin{figure}
@@ -1513,7 +1495,7 @@ sizes.
             The channel-based implementation is faster than the actor-based
             implementation, except at very large numbers of threads.
             %
-            This was reproduced on machines with 8, 32, and 192 capabilities.
+            We reproduced this result on machines with 8, 32, and 192 capabilities.
         }
         \label{fig:perf-eval-time-n32}
     \end{subfigure}
@@ -1555,10 +1537,10 @@ tools.
 %
 It requires no appreciable dependencies, no explicitly mutable data structures
 or references, no effort to achieve synchronization, and very little code only
-because those things already exist, abstracted within the RTS.
+because \emph{those things already exist, abstracted within the RTS}.
 
 
-\emph{Should} it have been possible to implement the actor framework we present
+Should it have been possible to implement the actor framework we present
 here?
 %
 Like many people, we choose Haskell because it is a tool that typically
@@ -1568,7 +1550,7 @@ But in this paper we achieve dynamically typed ``spooky action at a distance''
 with frighteningly little effort.
 %
 Perhaps the user-accessible interface to the asynchronous exception system
-should be more constrained.
+should be constrained.
 
 More broadly,
 with coming releases of GHC, a user of the RTS
