@@ -303,7 +303,7 @@ The actor model is a computational paradigm characterized by message passing.
 virtual processor that is never `busy' [in the sense that it cannot be sent a
 message].''
 %
-We interpret this to be a green thread\footnote{
+We interpret this definition in our setting to be a green thread\footnote{
     A \emph{green thread} (also ``lightweight thread'' or ``userspace thread'')
     is a thread not bound to an OS thread, but dynamically mapped to a CPU by a
     language-level scheduler.
@@ -315,7 +315,8 @@ We interpret this to be a green thread\footnote{
     the JVM with a framework-level scheduler.
 } with some state and an inbox.
 %
-When a message is received, it is handled by the actor \emph{intent function}.
+When a message is received by an actor,
+it is handled by that actor's \emph{intent function}.
 %
 An intent function may perform some actions:
 send a message, update state, create a new actor, destroy an actor, or
@@ -417,7 +418,7 @@ For the purpose of explication in this paper, it also prints an execution trace.
 
 An actor is defined by how it behaves in response to messages.
 %
-A user-defined \emph{intent function}, with the type \verb|Intent| shown in
+A user-defined intent function, with the type \verb|Intent| shown in
 \Cref{fig:envelope-and-intent},
 encodes behavior as a state transition that takes a self-addressed envelope
 argument.
@@ -478,8 +479,8 @@ An exception may arrive while executing the intent function.
 %
 Despite the exception mask which we left in place,\footnote{
     It is good practice to use \texttt{mask} instead of \texttt{mask\_}, and
-    ``restore'' the prior masking state of the context before calling a user
-    provided callback function.
+    ``restore'' the prior masking state of the context before calling a
+    user-defined callback function.
     %
     Such functions may be written with the expectation to catch asynchronous
     exception for reasons mentioned in \Cref{subsec:async-exceptions} or
@@ -512,8 +513,7 @@ Here be dragons.
 %
 The best recommendation we can make is for the idempotence of intent
 functions.\footnote{
-    We considered alternate designs to eliminate the possibility of double
-    sends.
+    We considered alternate designs to eliminate the possibility of double-sends.
     %
     Intent functions could return an outbox of messages for the main loop to
     send,
@@ -1293,7 +1293,7 @@ characteristics of a \emph{concurrency-oriented programming language}
 %
 Which requirements to be a COPL does this framework display?
 %
-Here we review the critera listed in \Cref{sec:actor-model}:
+Here we review the criteria listed in \Cref{sec:actor-model}:
 %
 % \ding{51} is the checkmark
 % \ding{55} is a x-symbol
@@ -1311,10 +1311,9 @@ Here we review the critera listed in \Cref{sec:actor-model}:
     \verb|forkFinally|.
 \end{enumerate}
 
-The message passing semantics of our actor framework is nuanced.
+The message-passing semantics of our actor framework is nuanced.
 %
-Documentation for the constituent interfaces indicate
-that the framework provides
+Documentation for the interfaces we use indicates that the framework provides
 \emph{reliable synchronous message passing with FIFO order}.
 %
 We call it \emph{synchronous} because ``\verb|throwTo| does not return until
@@ -1326,7 +1325,7 @@ the exception is received by the target thread''
 }
 %
 This means that a sender may block if the recipient never reaches an
-interruptible point (e.g. its intent function enters an infinite loop in pure
+interruptible point (e.g., its intent function enters an infinite loop in pure
 computation).
 %
 Assuming intent functions reach interruptible
@@ -1348,7 +1347,7 @@ functions.\footnote{
 FIFO can be recovered by message sequence numbers or by (albeit, jumping the
 shark) use of an outbox thread per actor.
 %
-With those caveats in mind the message passing semantics has these criteria:
+With those caveats in mind, the message-passing semantics has these criteria:
 %
 % \ding{51} is the checkmark
 % \ding{55} is a x-symbol
@@ -1359,11 +1358,11 @@ With those caveats in mind the message passing semantics has these criteria:
     interruptible points).
 
     \item[(5b)] \ding{51} Actors know that a message is \emph{received} (stored
-    in the recipients inbox) as soon as \verb|send| or \verb|throwTo| returns.
+    in the recipient's inbox) as soon as \verb|send| or \verb|throwTo| returns.
     However, they do not know that a message is \emph{delivered} (processed by
     the recipient) until receiving a response.
 
-    \item[(5c)] \ding{51} Messages between two actors obey FIFO ordering,
+    \item[(5c)] \ding{51} Messages between two actors obey FIFO ordering
     (unless \verb|forkIO| is used when sending).
 \end{enumerate}
 
