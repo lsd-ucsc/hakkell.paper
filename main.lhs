@@ -265,10 +265,13 @@ import qualified Criterion.Main as Cr
 \section{Brief background}
 \label{sec:background}
 
-In this section, we briefly review asynchronous exceptions in GHC
+In this section, we briefly review the status of asynchronous exceptions in GHC
 (\Cref{subsec:async-exceptions}) and the actor model of programming
 (\Cref{sec:actor-model}); readers already familiar with these topics may wish
 to skip this section.
+Readers unfamiliar with the behavior of \verb|throwTo|, \verb|catch|, or
+\verb|mask| may wish to scan the documentation of \verb|throwTo|
+\cite{controlDotException}, which covers the essentials.
 
 \subsection{Asynchronous exceptions in GHC}
 \label{subsec:async-exceptions}
@@ -283,8 +286,6 @@ or by the RTS itself.
 %
 They communicate conditions requiring the current thread to
 terminate: thread cancellation, user interrupts, or memory limits.
-%
-We focus exclusively on asynchronous exceptions for the rest of the paper.
 
 Asynchronous exceptions allow syntactically-distant parts of a program
 to interact in unexpected ways, much like mutable references.
