@@ -131,7 +131,7 @@
 \keywords{
     actor framework,
     asynchronous exceptions,
-    runtime system,
+    runtime system
 }
 
 \maketitle
