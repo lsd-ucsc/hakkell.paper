@@ -348,12 +348,7 @@ Additionally,
 (5a) message passing is asynchronous so that no stuck recipient may cause a sender to become stuck,
 (5b) receiving a response is the only way to know that a prior message was sent,
 and
-(5c) messages between two processes obey FIFO ordering.\footnote{
-    These are \emph{process isolation} points 3 and 4 and \emph{message
-    passing} point 2 from \citet{armstrong2003}. Others were redundant with
-    earlier points or irrelevant because our fundamentally ``reliable''
-    context.
-}
+(5c) messages between two processes obey FIFO ordering.
 %
 While an actor system within an instance of the RTS cannot satisfy all of these
 requirements (e.g., termination of the main thread is not strongly isolated
