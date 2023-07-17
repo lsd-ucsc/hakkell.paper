@@ -1545,7 +1545,7 @@ We hope the reader will draw their own conclusions.
 
 
 \begin{acks}
-This paper grew out of a presentation at Portland State University's Programming Languages & Verification group in May 2023, and we are grateful to the Portland State PLV group for their enthusiasm and encouragement of our work.
+This paper grew out of a presentation at Portland State University's Programming Languages \& Verification group in May 2023, and we are grateful to the Portland State PLV group for their enthusiasm and encouragement of our work.
 %
 We also thank Jos\'{e} Calder\'{o}n, the members of the LSD Lab at UC Santa Cruz, and the anonymous Haskell '23 reviewers for their valuable feedback on drafts of this paper.
 
