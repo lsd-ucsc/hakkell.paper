@@ -43,7 +43,7 @@ to determine how many nodes will participate in the election.
    to run the `benchActors`, `benchChannels`, or `benchControl`
    functions, respectively, on the specified `RING_SIZE` nodes.
 
-   This is the mode we used for measuring total bytes allocated..
+   This is the mode we used for measuring total bytes allocated.
 
 1. ### Run benchmark mode
 
