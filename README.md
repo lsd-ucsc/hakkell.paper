@@ -6,7 +6,7 @@ The paper (`main.lhs`) is a literate haskell program.
 
 ## Build the program
 
-1. *NixOS users*
+1. ### NixOS users
 
    We developed this program on NixOS, and recommend using `nix-shell`
    to enter an environment where the `makefile` does the rest.
@@ -15,7 +15,7 @@ The paper (`main.lhs`) is a literate haskell program.
    * `nix-shell --run 'make bench'` -- Run the benchmark (first read all of [Benchmark the program](#benchmark-the-program))
    * `nix-shell --run 'make prof'` -- Obtain an eventlog
 
-1. *Cabal users*
+1. ### Cabal users
 
    For users not on NixOS, a cabal-file and a cabal-freeze-file are included.
    You'll need to obtain GHC `9.0.2`
@@ -37,22 +37,22 @@ The main method supports two modes of operation.
 For either mode, set the environment variable `RING_SIZE`
 to determine how many nodes will participate in the election.
 
-1. *Run demo mode*
+1. ### Run demo mode
 
    Set the environment variable `MODE` to `actors`, `channels`, or `control`
    to run the `benchActors`, `benchChannels`, or `benchControl`
    functions, respectively, on the specified `RING_SIZE` nodes.
 
-   This is the mode we used for measuring memory use.
+   This is the mode we used for measuring total bytes allocated..
 
-1. *Run benchmark mode*
+1. ### Run benchmark mode
 
    If the environment variable `MODE` is not set,
    then the criterion benchmark will run.
    It sets up a benchmark group for the specified `RING_SIZE`
    containing a becnhmark of `benchControl`, `benchActors`, and `benchChannels`.
 
-   This is the mode we used for measuring run time.
+   This is the mode we used for measuring running time.
    We used a shell script that provided command-line arguments interpreted
    by criterion to select and run only one of those functions at a time.
 
