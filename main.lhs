@@ -565,7 +565,7 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
 \caption{
     Message sends are implemented by throwing an exception.
     %
-    Actor threads enter a main loop to receive messages.
+    Actor threads run a main loop to receive messages.
 }
 \label{fig:static-impl}
 \end{figure}
