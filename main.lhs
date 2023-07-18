@@ -932,17 +932,18 @@ node _ _ = error "node: unhandled"
 
 
 
-The election initialization function\footnote{
-    The implementation shown doesn't handle rings of size 0 or 1,
-    but we consider that out of scope for the purposes of this paper.
-    %
-    Also, we do not show thread cleanup here.
-}
+The election initialization function
 is implemented in \Cref{fig:ringElection}.
 %
 It takes the size of the ring
 and an unevaluated \verb|IO| action representing node behavior,
-and then performs the following steps to start an election:
+and then performs the following steps to start an election:\footnote{
+    The implementation shown doesn't handle rings of size 0 or 1.
+    %
+    We do not show thread cleanup.
+    %
+    We consider that out of scope for our purpose.
+}
 %
 \begin{enumerate}[leftmargin=2em]
     \item Create actors (with asynchronous exceptions masked).
