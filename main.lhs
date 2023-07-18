@@ -506,23 +506,17 @@ asynchronous exceptions:
 use software transactional memory (STM),
 avoid interruptible actions,
 or apply \verb|uninterruptibleMask|.
-However, recall that message sending is implemented with \verb|throwTo|, which is
+%
+However, recall that message sends are implemented with \verb|throwTo|, which is
 ``\emph{always} interruptible, even if it does not actually block''
 \cite{controlDotException}.
 %
-Here be dragons.
+A solution is obtained ``by forking a new thread'' \cite{marlow2001async} each
+time we run an intent function, but this sacrifices the serializabile
+executions --- an actor must be safe to run concurrently with itself.
 %
-The best recommendation we can make is for the idempotence of intent
-functions.\footnote{
-    We considered alternate designs to eliminate the possibility of double-sends.
-    %
-    Intent functions could return an outbox of messages for the main loop to
-    send,
-    or intent functions could be run in a new anonymous (therefore not
-    interruptible) thread.
-    %
-    We opt for the simple presentation seen here.
-}
+We opt for the simple presentation in \Cref{fig:static-impl}
+and recommend users write idempotent intent functions.
 
 
 \begin{figure}
@@ -1488,14 +1482,7 @@ perhaps asynchronous exceptions are at least as general as actors.
 
 However, the actor framework we present is not an advancement:
 %
-It is easy to use, but easy to use wrongly.\footnote{
-    A user must endeavor to
-    write an idempotent intent function
-    (\Cref{sec:receiving-catching})
-    and
-    mask asynchronous exceptions when creating an actor thread
-    (\Cref{sec:safe-fork}),
-}
+It is easy to use, but easy to use wrongly.
 %
 It has acceptable throughput, but is slower than accepted
 tools.
