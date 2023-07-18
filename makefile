@@ -68,4 +68,9 @@ artifact:
 		default.nix shell.nix \
 		makefile noprint.py benchprep.sh \
 		hakkell-paper.cabal cabal.project.freeze \
-		README.md LICENSE
+		bench-mem/total-allocated.svg \
+		bench-time/machine_macbookpro11,5-mean.svg \
+		bench-time/machine_c3.8xlarge-mean.svg \
+		bench-time/machine_c6a.48xlarge-mean.svg \
+		bench-time/group_channels-mean.svg \
+		README.md LICENSE \
