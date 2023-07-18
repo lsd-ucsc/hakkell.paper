@@ -638,10 +638,10 @@ Instead of sending an \verb|Envelope|
 of some application-specific message type
 we convert messages to the ``any type''
 in Haskell's exception hierarchy,
-\verb|SomeException|.
+\verb|SomeException| \cite{marlow2006extensible}.
 %
-\Cref{fig:dyn-impl} defines a new \verb|send| function that converts messages before
-sending, so that all inflight messages will have the type \verb|Envelope
+\Cref{fig:dyn-impl} defines a new \verb|send| function that converts messages,
+so that all inflight messages will have the type \verb|Envelope
 SomeException|.
 
 
