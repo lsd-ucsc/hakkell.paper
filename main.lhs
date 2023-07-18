@@ -851,8 +851,8 @@ receive its own nomination after it has circulated the entire ring.
 %
 That same node will ignore every other nomination.
 %
-Therefore the algorithm will terminate because node identities being unique
-means that only one nomination will circumnavigate the ring.\footnote{
+Therefore the algorithm will terminate because node identities are unique
+and only one nomination can circumnavigate the ring.\footnote{
     In the context of this paper, termination is guaranteed because we have
     reliable message passing (See \Cref{sec:almost-copl}).
     %
