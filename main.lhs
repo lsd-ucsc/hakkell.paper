@@ -1524,7 +1524,7 @@ software transactional memory,
 asynchronous exceptions,
 delimited continuations (and extensible algebraic effects),
 and more,
-all together in the same tub.
+together in the same tub.
 %
 The water is warm --- jump in!
 %
