@@ -853,7 +853,7 @@ That same node will ignore every other nomination.
 Therefore the algorithm will terminate because node identities are unique
 and only one nomination can circumnavigate the ring.\footnote{
     In the context of this paper, termination is guaranteed because we have
-    reliable message passing (See \Cref{sec:almost-copl}).
+    reliable message passing (see \Cref{sec:almost-copl}).
     %
     In the context of a distributed system, with unreliable message passing, it
     is possible that no nomination makes it all the way around the ring.
@@ -940,9 +940,7 @@ and an unevaluated \verb|IO| action representing node behavior,
 and then performs the following steps to start an election:\footnote{
     The implementation shown doesn't handle rings of size 0 or 1.
     %
-    We do not show thread cleanup.
-    %
-    We consider that out of scope for our purpose.
+    Also, we do not show thread cleanup.
 }
 %
 \begin{enumerate}[leftmargin=2em]
@@ -1563,9 +1561,11 @@ leader election in our actor framework.
 The implementation used \verb|permute| to randomize the list of
 \verb|ThreadId|.
 %
+The \verb|permute| function repeatedly pops a random element from the input and adds it to the output.
+%
 Its implementation is as follows:
 %
-Repeatedly pop a random element from the input and add it to the output.
+
 %
 \begin{code}
 permute :: RandomGen g => [a] -> g -> ([a], g)
@@ -1593,7 +1593,7 @@ permute pool0 gen0
 \label{apx:actor-bench-impl}
 
 
-In the extended ring leader election solution the time to
+In the extended ring leader election solution, the time to
 termination is
 the time necessary for the winner's self-nomination to pass around the ring
 once, plus the time for the winner-declaration to pass around the ring once.
@@ -1605,7 +1605,7 @@ identity.
 We extend \verb|exnode| (\Cref{sec:ring2-intent-fun})
 with additional behavior:
 %
-When a benchmark-node detects that it is confirmed as winner it puts its own
+When a benchmark-node detects that it is confirmed as winner, it puts its own
 \verb|ThreadId| into an \verb|MVar| to signal termination.
 %
 \begin{code}
@@ -1633,7 +1633,7 @@ because of the potential for race conditions.
 
 We benchmark time to termination using the \verb|criterion| package.
 %
-For this, we need an \verb|IO| action which executes the algorithm, cleans
+For this, we need an \verb|IO| action that executes the algorithm, cleans
 up its resources, and then returns.
 %
 The function \verb|benchActors| does this:
@@ -1755,7 +1755,7 @@ successor channel is captured within the communication functions.
 
 
 \noindent
-Still within the where-clause of \texttt{chanNode}, we implment
+Still within the where-clause of \texttt{chanNode}, we implement
 \texttt{exnodePart} with the behavior of the winner-round node
 (\Cref{sec:ring2-intent-fun}) and the benchmark-node
 (\Cref{apx:actor-bench-impl}).
@@ -1789,7 +1789,7 @@ an \texttt{MVar}.
 
 
 \noindent
-Finally we initialize the algorithm with a function similar to
+Finally, we initialize the algorithm with a function similar to
 \texttt{ringElection}, but using channels instead of passing in
 \texttt{ThreadId}s.
 %
@@ -1969,7 +1969,7 @@ The running time of the extended ring leader election is $O(2n)$ in the number
 of nodes.
 %
 We hypothesize that it is invariant to the number of capabilities because after
-an initial flood of nominations the algorithm degenerates quickly to a single
+an initial flood of nominations, the algorithm degenerates quickly to a single
 message passing around the ring twice.
 
 
@@ -1991,7 +1991,7 @@ message passing around the ring twice.
 \subsection{Actor-based (dynamic types) trace}
 \label{apx:main2-trace}
 
-In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
+In \Cref{sec:main2-init}, we showed how to call \verb|runElection| on
 \verb|exnode| to run a ring leader election with a winner declaration round.
 %
 Here is an example trace.
