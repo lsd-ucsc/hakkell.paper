@@ -74,3 +74,4 @@ artifact:
 		bench-time/machine_c6a.48xlarge-mean.svg \
 		bench-time/group_channels-mean.svg \
 		README.md LICENSE \
+		.gitignore \
