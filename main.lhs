@@ -1939,7 +1939,7 @@ Our experiment proceeded as follows:
 \caption{
     On different machines we replicate
     \Cref{fig:perf-eval-time-n32} in both the absolute running time, and
-    the actor-based implementation being fastare at the highest
+    the actor-based implementation being faster at the highest
     ring sizes.
 }
 \label{fig:perf-eval-time-rest}
