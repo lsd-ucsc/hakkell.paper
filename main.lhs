@@ -605,15 +605,15 @@ This is similar to the dynamic types support in Haskell's
 Furthermore, any actor may be extended by wrapping it (``has-a'' style) with an
 actor that uses a distinct message type and branches on the type of a received
 message, delegating to the wrapped actor where desired.\footnote{
-    It is not sufficient to wrap a message type in a sum type and write an
-    actor that takes the sum type as its message.
+    It is not sufficient to wrap a message type in a sum and write an actor
+    that takes the sum as its message.
     %
     Such an actor will fail to receive messages sent as the un-wrapped type.
     %
     To correct for this, one would need to change existing actors to wrap their
-    outgoing messages in the sum type.
+    outgoing messages in the sum.
     %
-    The pattern described in \Cref{sec:dynamic-types} generalizes this
+    \Cref{sec:dynamic-types} generalizes this
     correction without requiring changes to existing actors.
 }
 %
