@@ -512,7 +512,7 @@ However, recall that message sends are implemented with \verb|throwTo|, which is
 \cite{controlDotException}.
 %
 A solution is obtained ``by forking a new thread'' \cite{marlow2001async} each
-time we run an intent function, but this sacrifices the serializabile
+time we run an intent function, but this sacrifices serializable
 executions --- an actor must be safe to run concurrently with itself.
 %
 We opt for the simple presentation in \Cref{fig:static-impl}
