@@ -1257,7 +1257,7 @@ main2 count = do
 \end{code}
 }
 %
-An execution trace of an extended election appears in \Cref{apx:main2-trace}.
+A trace of an extended election appears in \Cref{apx:main2-trace}.
 
 
 
