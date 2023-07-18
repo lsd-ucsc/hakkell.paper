@@ -1010,7 +1010,7 @@ ringElection n actor = do
 \begin{figure}
 \raggedright
 \scriptsize
-\perform{beginVerb >> main1 5 >> endVerb}
+\perform{beginVerb >> main1 4 >> endVerb}
 \normalsize
 \caption{An execution trace of the ring leader election solution.}
 \label{fig:main1-trace}
@@ -1602,26 +1602,6 @@ permute pool0 gen0
 
 
 
-
-
-\subsection{Actor-based (dynamic types) trace}
-\label{apx:main2-trace}
-
-In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
-\verb|exnode| to run a ring leader election with a winner declaration round.
-%
-Here is an example trace.
-
-\scriptsize
-\perform{beginVerb >> putStrLn "> main2 5" >> main2 5 >> endVerb }
-\normalsize
-
-
-
-
-
-
-
 \subsection{Actor benchmark implementation}
 \label{apx:actor-bench-impl}
 
@@ -2009,17 +1989,27 @@ shown here in \Cref{fig:perf-eval-time-rest,fig:perf-group-chan}.
 
 
 
-\ignore{
-\begin{code}
-beginVerb :: IO ()
-beginVerb = do
-    hSetBuffering stdout LineBuffering
-    putStrLn "\\begin{verbatim}"
 
-endVerb :: IO ()
-endVerb = putStrLn "\\end{verbatim}"
-\end{code}
-}
+
+
+
+\subsection{Actor-based (dynamic types) trace}
+\label{apx:main2-trace}
+
+In \Cref{sec:main2-init} we showed how to call \verb|runElection| on
+\verb|exnode| to run a ring leader election with a winner declaration round.
+%
+Here is an example trace.
+
+\scriptsize
+\perform{beginVerb >> putStrLn "> main2 4" >> main2 4 >> endVerb }
+\normalsize
+
+
+
+
+
+
 
 \subsection{Channel-based extended election trace}
 \label{apx:benchChannels-trace}
@@ -2031,13 +2021,35 @@ communication.
 Here's an example trace.
 
 \scriptsize
-\perform{beginVerb >> putStrLn "> benchChannels 5" >> benchChannels 5 >> endVerb }
+\perform{beginVerb >> putStrLn "> benchChannels 4" >> benchChannels 4 >> endVerb }
 \normalsize
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 % It's necessary to have a main function, but I'm excluding it from appearing
 % in the document.
 \ignore{
 \begin{code}
+
+beginVerb :: IO ()
+beginVerb = do
+    hSetBuffering stdout LineBuffering
+    putStrLn "\\begin{verbatim}"
+
+endVerb :: IO ()
+endVerb = putStrLn "\\end{verbatim}"
+
 main :: IO ()
 main = do
     ringSize <- maybe 8 read `fmap` lookupEnv "RING_SIZE"
