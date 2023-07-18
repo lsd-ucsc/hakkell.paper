@@ -1622,7 +1622,7 @@ Here is an example trace.
 
 
 In the extended ring leader election solution the time to
-termination is, at minimum,
+termination is
 the time necessary for the winner's self-nomination to pass around the ring
 once, plus the time for the winner-declaration to pass around the ring once.
 %
@@ -1630,7 +1630,7 @@ Termination is detected when a node receives a winner declaration with its own
 identity.
 
 
-To report termination, we extend \verb|exnode| (\Cref{sec:ring2-intent-fun})
+We extend \verb|exnode| (\Cref{sec:ring2-intent-fun})
 with additional behavior:
 %
 When a benchmark-node detects that it is confirmed as winner it puts its own
@@ -1647,29 +1647,26 @@ benchNode done state e@Envelope{message} = do
     return state'
 \end{code}
 
-
-It should be acknowledged that the reason we aren't using message passing to
+The reason we aren't using message passing to
 notify about termination is because it is difficult to communicate between the
 ``actor world'' and the ``functional world.''
 %
 The functional world expects \verb|IO| actions to terminate with return values,
 but we didn't bother to implement clean termination in our actor framework.
 %
-In the absence of that, we could try spawning an actor and then setting up an
+Lacking that, we could try spawning an actor and then setting up an
 exception handler to receive messages from it, but we choose not to do this
 because of the potential for race conditions.
 
 
-We will benchmark time to termination using the \verb|criterion| package.
+We benchmark time to termination using the \verb|criterion| package.
 %
-For this, we will need an \verb|IO| action which executes the algorithm, cleans
+For this, we need an \verb|IO| action which executes the algorithm, cleans
 up its resources, and then returns.
 %
-We define \verb|benchActors| to be the function which \verb|criterion| will
-measure.
-%
-It will run an election with benchmark-nodes, wait for termination, kill the
-nodes, and assert a correct result.
+The function \verb|benchActors| does this:
+it runs an election with benchmark-nodes, waits for termination, kills the
+nodes, and asserts a correct result.
 %
 \begin{code}
 benchActors :: Int -> IO ()
@@ -1682,8 +1679,7 @@ benchActors n = do
     -- Wait for termination, kill the ring, assert correct result
     w <- Mv.takeMVar done
     mapM_ killThread ring
-    assert (w == maximum ring) $
-        return ()
+    assert (w == maximum ring) (return ())
 \end{code}
 
 
@@ -1693,13 +1689,14 @@ benchActors n = do
 \subsection{Control benchmark implementation}
 \label{apx:control-bench-impl}
 
-The experimental control only forks threads and then kills them.
+The experimental control, \verb|benchControl|, only forks threads and then
+kills them.
 %
 It is useful to establish whether or not, for example, laziness has caused
 our non-control implementations to perform no work.
 %
-The other implementations should take longer than the control because they are
-doing more work.
+The other implementations should take longer than the control because they
+do more work.
 %
 \begin{code}
 benchControl :: Int -> IO ()
@@ -1728,7 +1725,7 @@ type Ch = Ch.Chan ChMsg
 
 \noindent
 It is unnecessary to split the channel-based implementation into a simple node
-and an extended node, but we do so it is easier to reference against the
+and an extended node, but we split them anyway to ease comparison to the
 actor-based implementation.
 %
 This structural similarity hopefully has the added benefit of focusing
@@ -1740,7 +1737,7 @@ In \verb|chanNode| we implement the main loop.
 %
 The only state maintained is the greatest nominee seen.
 %
-It leaves off with definitions of send-functions in its where-clause.
+It leaves off with definitions of communication functions in its where-clause.
 %
 \begin{code}
 chanNode ::
@@ -1755,11 +1752,13 @@ chanNode done chans st = do
 
 
 \noindent
-Next we define \texttt{nodePart}, within the where-clause of \texttt{chanNode},
+
+Within the where-clause of \verb|chanNode|,
+we define \verb|nodePart|
 to implement the behavior of a ring node from \Cref{sec:ring-intent-fun}.
 %
 This part has no state and requires no \verb|Init| message because its
-successor-channel is given on construction.
+successor channel is captured within the communication functions.
 %
 \begin{code}
     nodePart :: Msg -> IO ()
@@ -1767,14 +1766,13 @@ successor-channel is given on construction.
         self <- myThreadId
         putStrLn (show self ++ ": nominate self")
         sendMsg $ Nominate self
-    nodePart Nominate{nominee} = do
+    nodePart Nominate{nominee=nom} = do
         self <- myThreadId
         case () of
-         _  | self == nominee -> putStrLn (show self ++ ": I win")
-            | self <  nominee
-                -> putStrLn (show self ++ ": nominate "
-                    ++ show nominee)
-                >> sendMsg (Nominate nominee)
+         _  | self == nom -> putStrLn (show self ++ ": I win")
+            | self <  nom ->
+                putStrLn (show self ++ ": nominate " ++ show nom)
+                >> sendMsg (Nominate nom)
             | otherwise       -> putStrLn "Ignored nominee"
 \end{code}
 \ignore{
@@ -1809,8 +1807,8 @@ an \texttt{MVar}.
         self <- myThreadId
         case m of
             Winner w
-                | w == self
-                    -> putStrLn (show self ++ ": Confirmed")
+                | w == self ->
+                    putStrLn (show self ++ ": Confirmed")
                     >> Mv.putMVar done self
                 | w == great -> sendWinner (Winner w)
                 | otherwise -> putStrLn "Unexpected winner"
@@ -1823,37 +1821,35 @@ Finally we initialize the algorithm with a function similar to
 \texttt{ringElection}, but using channels instead of passing in
 \texttt{ThreadId}s.
 %
-First define a function to run a channel-node on the ``done'' \texttt{MVar}
-and two provided channels.
+(1) Define a function to run a channel-node on the ``done'' \texttt{MVar} and
+two provided channels.
 %
-Next construct channels and a ring of un-evaluated nodes \emph{in order}.
+(2) Construct channels and a ring of un-evaluated nodes \emph{in order}.
 %
-Finally permute the nodes and fork them out of order.
+(3) Finally permute the nodes and fork them out of order.
 %
 At this point the nodes are assigned random thread identifiers.
+%
+(4) Start the election.
+%
+(5) Wait for termination and clean up.
 %
 \begin{code}
 benchChannels :: Int -> IO ()
 benchChannels n = do
-    -- (1) Define a channel-node main function.
     done <- Mv.newEmptyMVar
-    let mkNode chans = do
+    let mkNode chans = do {-"\hfill(1)"-}
             great <- myThreadId
             chanNode done chans great
-    -- (2) Make an in-order ring linked by chans.
     chans <- sequence . replicate n $ Ch.newChan
-    let nodeActs = map mkNode
+    let nodeActs = map mkNode {-"\hfill(2)"-}
             (zip chans $ tail chans ++ [head chans])
-    -- (3) Permute the ring and fork to assign random IDs.
     ringActs <- getStdRandom $ permute nodeActs
-    ring <- mapM forkIO ringActs
-    -- (4) Start the election.
-    mapM_ (\c -> Ch.writeChan c . Left $ Start) chans
-    -- (5) Wait for termination and clean up.
-    w <- Mv.takeMVar done
+    ring <- mapM forkIO ringActs {-"\hfill(3)"-}
+    mapM_ (\c -> Ch.writeChan c . Left $ Start) chans  {-"\quad\hfill(4)"-}
+    w <- Mv.takeMVar done {-"\hfill(5)"-}
     mapM_ killThread ring
-    assert (w == maximum ring) $
-        return ()
+    assert (w == maximum ring) (return ())
 \end{code}
 
 
