@@ -12,15 +12,31 @@ The paper (`main.lhs`) is a literate haskell program.
    to enter an environment where the `makefile` does the rest.
 
    * `nix-shell --run 'make'` -- Build the paper
-   * `nix-shell --run 'make bench'` -- Run the benchmark (first read all of [Benchmark the program](#benchmark-the-program))
+   * `nix-shell --run 'make bench'` -- Run the benchmark (first read all of [*Benchmark the program*](#benchmark-the-program))
    * `nix-shell --run 'make prof'` -- Obtain an eventlog
 
 1. ### Cabal users
 
-   For users not on NixOS, a cabal-file and a cabal-freeze-file are included.
-   You'll need to obtain GHC `9.0.2`
-   and some version of cabal-the-command (we used #####).
-   The `makefile` isn't aware of the cabal setup.
+   For users not on NixOS, we include a cabal-file and a cabal-freeze-file.
+   We built the project on GHC `9.0.2` with `base-4.15.1.0` using Cabal `3.10.1.0`.
+
+   ```sh-session
+   $ cabal update
+   ...
+   $ cabal v2-build
+   ...
+   Linking /.../hakkell.paper/dist-newstyle/build/x86_64-linux/ghc-9.0.2/hakkell-paper-0.0.0/x/main/build/main/main ...
+   $ cabal v2-exec make main.bench.elf
+   ...
+   [1 of 1] Compiling Main             ( main.noprint.lhs, main.noprint.o )
+   Linking main.bench.elf ...
+   rm main.noprint.lhs
+   ```
+
+   The `makefile` isn't aware of the `cabal exec` environment
+   and some targets have additional dependencies,
+   so not all the targets will work under `cabal exec`
+   (the clean targets do not work, for example).
 
 
 
