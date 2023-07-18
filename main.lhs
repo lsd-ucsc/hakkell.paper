@@ -1906,11 +1906,10 @@ Our experiment proceeded as follows:
     on the MacBookPro11,5
     for ring sizes up to $65536$.
     %
-    For this benchmark, the main function only ran a single algorithm at a
+    Here the main function only ran a single algorithm at a
     specified ring size once, and then terminated.
     %
-    We ran ten trials for each combination of algorithm and ring size,
-    and averaged across the trials.
+    We ran ten trials for each combination of algorithm and ring size, and averaged.
 \end{itemize}
 
 
@@ -1948,18 +1947,16 @@ message passing around the ring twice.
     \caption{
         Running time with 192 capabilities:
         %
-        There is a missing datapoint for the actor-based implementation because
-        that run consistently crashed with a segmentation fault that we have not
-        investigated.
+        The missing datapoint is a run that consistently crashed with a segmentation fault in the RTS.
     }
     \label{fig:perf-eval-time-n192}
     \end{subfigure}
 
 \caption{
-    On machines with different numbers of capabilities, we replicate
-    \Cref{fig:perf-eval-time-n32} in both the absolute running time (seconds), and
-    in the tendency of the actor-based implementation to win out at the highest
-    ring sizes that we tested.
+    On different machines we replicate
+    \Cref{fig:perf-eval-time-n32} in both the absolute running time, and
+    the actor-based implementation being fastare at the highest
+    ring sizes.
 }
 \label{fig:perf-eval-time-rest}
 \end{figure}
