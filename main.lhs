@@ -716,7 +716,7 @@ installs its exception handler.
 %
 If this happened, the exception would cause the newly created thread to die.
 %
-To avoid this, the fork step prior to entering the actor main loop must be
+To avoid this, the fork prior to entering the main loop must be
 masked (in addition to the mask within the main loop).
 
 \Cref{fig:run} defines the main loop wrapper we will use for examples in
