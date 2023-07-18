@@ -1853,12 +1853,10 @@ Criterion's \verb|defaultMain|.
 %
 \begin{code}
 benchHeat :: Int -> Cr.Benchmark
-benchHeat n =
-    Cr.bgroup ("n=" ++ show n)
-        [ Cr.bench "control"      . Cr.nfIO $ benchControl n
-        , Cr.bench "actor ring"   . Cr.nfIO $ benchActors n
-        , Cr.bench "channel ring" . Cr.nfIO $ benchChannels n
-        ]
+benchHeat n = Cr.bgroup ("n=" ++ show n)
+    [ Cr.bench "control" . Cr.nfIO $ benchControl n
+    , Cr.bench "actor ring" . Cr.nfIO $ benchActors n
+    , Cr.bench "channel ring" . Cr.nfIO $ benchChannels n ]
 \end{code}
 
 
@@ -1866,63 +1864,66 @@ benchHeat n =
 
 
 
-\subsection{Experimental setup}
+
+\subsection{Experimental setup and procedure}
 \label{apx:exp-setup}
 
-When benchmarking for this paper, we replace all printlines with \verb|pure ()|
-because printlines introduce latency and dramatically inflate the algorithm
-running time.
+In all benchmarks, we replace printlines with \verb|pure ()|
+to reduce noise and latency in results.
+We compile with the threaded RTS (\verb|-threaded|) and run on all capabilities
+(\verb|+RTS -N|).
+Our test machines included:
 %
-We proceeded as follows:
+\begin{itemize}[leftmargin=1em]
+    \item[--] MacBookPro11,5; 8 capabilities (NixOS).
+    \item[--] AWS \verb|c3.8xlarge|; 32 vCPU (Amazon Linux 2023 AMI).
+    \item[--] AWS \verb|c6a.48xlarge|; 192 vCPU (Amazon Linux 2023 AMI).
+\end{itemize}
 %
-\begin{itemize}[leftmargin=1.5em]
+Our experiment proceeded as follows:
+%
+\begin{itemize}[leftmargin=1em]
     \item[--] We ran the \verb|criterion| benchmark for ring sizes up to
-    $2048$ on a MacBookAir4,1 and a MacBookPro11,5.
+    $16384$ on the MacBookPro11,5, clocked to 1.6GHz, without
+    frequency scaling, and with no other programs running (kernel vtty).
     %
-    Both ran NixOS, with 4 capabilities (\verb|+RTS -N4|), clocked to
-    1.6GHz, without frequency scaling, and with no other programs running
-    (kernel vtty).
+    Channels took a third the time of actors.
     %
-    These results showed the channels took a third the time of the actors.
+    As we increased the ring size exponentially,
+    the performance difference narrowed.
 
-    \item[--] We ran the same benchmark with 8 capabilities (\verb|+RTS -N|) on
-    just the MacBookPro11,5.
+    \item[--] \Cref{fig:perf-eval-time-n32}:
+    We ran the benchmark on the AWS \verb|c3.8xlarge| instance with 32 vCPU
+    for ring sizes up to $65536$.
     %
-    This allowed us to explore larger ring sizes (up to $16384$).
-    %
-    These results showed that as we increased the ring size exponentially, the
-    difference in performance narrowed.
+    We saw actors outperform channels at high ring sizes.
 
-    \item[--] \Cref{fig:perf-eval-time-n32}: We ran the benchmark on an Amazon
-    AWS \verb|c3.8xlarge| instance with 32 capabilities for ring sizes up to
-    $65536$.
-    %
-    This result showed that the actors outperform
-    channels at high ring sizes.
-
-    \item[--] \Cref{fig:perf-eval-time-n192}: We ran the benchmark on an Amazon AWS \verb|c6a.48xlarge| instance
-    with 192 capabilities for ring sizes up to $65536$.
+    \item[--] \Cref{fig:perf-eval-time-n192}:
+    We ran the benchmark on the AWS \verb|c6a.48xlarge| instance with 192 vCPU
+    for ring sizes up to $65536$.
     %
     The benchmark segfaulted unpredictably.
     %
     We used a shell script to call the benchmark executable once per set of
     parameters to work around segfaults.
     %
-    This result confirmed that the
-    actors outperform channels at high ring sizes.
+    We confirmed that actors outperform channels at high ring sizes.
 
-    \item[--] \Cref{fig:perf-eval-time-n8}: We repeated the benchmark on the
-    MacBookPro11,5 with 8 capabilities for ring sizes up to $65536$.
+    \item[--] \Cref{fig:perf-eval-time-n8}:
+    We repeated the benchmark on the MacBookPro11,5
+    for ring sizes up to $65536$.
 
-    \item[--] \Cref{fig:perf-eval-mem}: We ran a different benchmark focused on
-    measuring memory usage (\verb|+RTS -t --machine-readable|) on the
-    MacBookPro11,5 with 8 capabilities for ring sizes up to $65536$.
+    \item[--] \Cref{fig:perf-eval-mem}:
+    We ran a different benchmark
+    to measure total-allocations (\verb|+RTS -t --machine-readable|)
+    on the MacBookPro11,5
+    for ring sizes up to $65536$.
     %
     For this benchmark, the main function only ran a single algorithm at a
-    specified ring size, and then terminated.
+    specified ring size once, and then terminated.
     %
-    We ran ten trials for each combination of algorithm and ring size, averaged
-    across the trials.
+    We ran ten trials for each combination of algorithm and ring size,
+    and averaged across the trials.
 \end{itemize}
 
 
@@ -1932,8 +1933,21 @@ We proceeded as follows:
 \subsection{Experiment result}
 \label{apx:exp-result}
 
-The remaining running time results not shown in \Cref{fig:perf-eval-time-n32} are
-shown here in \Cref{fig:perf-eval-time-rest,fig:perf-group-chan}.
+Our running time results for 8, 32, and 192 capabilities are in
+\Cref{fig:perf-eval-time-n8,fig:perf-eval-time-n32,fig:perf-eval-time-n192},
+respectively.
+%
+We group the running time of the channel-based implementation over all three
+machines in \Cref{fig:perf-group-chan} to make its inflection point clearer.
+%
+Our total-allocations result is in \Cref{fig:perf-eval-mem}.
+
+The running time of the extended ring leader election is $O(2n)$ in the number
+of nodes.
+%
+We hypothesize that it is invariant to the number of capabilities because after
+an initial flood of nominations the algorithm degenerates quickly to a single
+message passing around the ring twice.
 
 \begin{figure}
     \begin{subfigure}{\linewidth}
@@ -1968,11 +1982,8 @@ shown here in \Cref{fig:perf-eval-time-rest,fig:perf-group-chan}.
         \includesvg[width=\linewidth]{bench-time/group_channels-mean.svg}
     }
     \caption{
-        We group the running time of the channel-based implementation over all
-        three machines to make its inflection point clearer.
-        %
-        The linear rate of growth for larger ring sizes inflects near $2048$ to
-        a higher rate.
+        The growth of total-allocations as ring size is increased inflects to a
+        higher rate near $2048$ nodes.
     }
     \label{fig:perf-group-chan}
 \end{figure}
