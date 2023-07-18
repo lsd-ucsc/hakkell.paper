@@ -1266,7 +1266,7 @@ An execution trace of an extended election appears in \Cref{apx:main2-trace}.
 \label{sec:what-have-we-wrought}
 
 \Cref{fig:static-impl} shows that we have, in only a few lines of
-code, discovered an actor framework within Haskell's RTS that makes no explicit use
+code, discovered an actor framework within GHC's RTS that makes no explicit use
 of channels, references, or locks and imports just a few names from default
 modules.
 %
