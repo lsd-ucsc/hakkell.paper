@@ -1,6 +1,12 @@
 # Exceptional Actors (Hakkell)
 
-The paper (`main.lhs`) is a literate haskell program.
+This project explores the use of *asynchronous exceptions* as an inter-thread
+communication mechanism in GHC Haskell. We implemented the actor model of
+programming on top of asynchronous exceptions as a small framework:
+a send function and a message-receipt mainloop (to be run on each thread).
+The paper (`main.lhs`) is written as a Literate-Haskell program and was
+accepted at Haskell Symposium 2023. To read the paper, we recommend rendering
+it first or visiting <https://doi.org/10.1145/3609026.3609728>.
 
 
 
