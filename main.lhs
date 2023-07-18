@@ -1142,7 +1142,7 @@ We annotate the rest of \Cref{fig:exnode-case-msg} as follows:
     into its envelope and passing it through the intent function, \verb|node|,
     from \Cref{sec:ring-intent-fun}.
     %
-    \item If the message is a nomination of the current extended node, start
+    \item If the message is a nomination of the current node, start
     the winner round, because the election is over.
     %
     \item Otherwise, the election is ongoing, so keep track of the greatest
