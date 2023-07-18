@@ -61,3 +61,11 @@ preview: $(TEXSRC)
 
 onchange:
 	git ls-files | entr -c make
+
+artifact:
+	zip exceptional-actors.zip \
+		main.lhs main.bib ring.tex \
+		default.nix shell.nix \
+		makefile noprint.py benchprep.sh \
+		hakkell-paper.cabal cabal.project.freeze \
+		README.md LICENSE

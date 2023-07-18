@@ -27,6 +27,8 @@ mkShell {
     python3 # for the noprint.py script
     gnuplot
     inkscape
+    zip
+    unzip
   ];
   passthru = {
     inherit pkgs;
