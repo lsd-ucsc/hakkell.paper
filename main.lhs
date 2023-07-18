@@ -760,7 +760,7 @@ number or identities of the other nodes in the ring.
 A correct solution will result in exactly one node being designated the leader.
 %
 This classic problem from the distributed
-systems literature serves to illustrate the use of our actor framework,
+systems literature serves to illustrate our actor framework,
 despite leader election being unnecessary in the context of threads in a process.
 
 \citet{chang1979decentralextrema} describe a solution to the ring leader election problem that begins with every
