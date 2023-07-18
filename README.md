@@ -17,8 +17,8 @@ it first or visiting <https://doi.org/10.1145/3609026.3609728>.
    We developed this program on NixOS, and recommend using `nix-shell`
    to enter an environment where the `makefile` does the rest.
 
-   * `nix-shell --run 'make'` -- Build the paper
-   * `nix-shell --run 'make main.bench.elf'` -- Build the benchmark executable
+   * `nix-shell --run 'make'` or `nix-build` -- Build the paper
+   * `nix-shell --run 'make main.bench.elf'` or `nix-build` -- Build the benchmark executable
    * `nix-shell --run 'make bench'` -- Build and run the benchmark (first read all of [*Benchmark the program*](#benchmark-the-program))
    * `nix-shell --run 'make prof'` -- Obtain an eventlog
 
@@ -95,7 +95,7 @@ for this and other factors that may confound benchmark results.
     compiles an executable which defaults to `+RTS -N4`.
     * You may override the capabilities default with an environment variable.
       For example, an `+RTS -N` default is obtained this way:  
-      `env CAPABILITIES= make main.bench.elf`
+      `env CAPABILITIES= make main.bench.elf` or `make main.bench.elf CAPABILITIES=`
   * Running executables produced by this target is sufficient to get a
     consistent result on Amazon AWS EC2 instances.
 
