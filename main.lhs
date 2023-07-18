@@ -1488,7 +1488,14 @@ perhaps asynchronous exceptions are at least as general as actors.
 
 However, the actor framework we present is not an advancement:
 %
-It is easy to use, but easy to use wrongly.
+It is easy to use, but easy to use wrongly.\footnote{
+    A user must endeavor to
+    write an idempotent intent function
+    (\Cref{sec:receiving-catching})
+    and
+    mask asynchronous exceptions when creating an actor thread
+    (\Cref{sec:safe-fork}),
+}
 %
 It has acceptable throughput, but is slower than accepted
 tools.
@@ -1547,8 +1554,6 @@ This material is based upon work supported by the National Science Foundation un
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{main.bib}
-
-
 
 
 
