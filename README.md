@@ -12,7 +12,8 @@ The paper (`main.lhs`) is a literate haskell program.
    to enter an environment where the `makefile` does the rest.
 
    * `nix-shell --run 'make'` -- Build the paper
-   * `nix-shell --run 'make bench'` -- Run the benchmark (first read all of [*Benchmark the program*](#benchmark-the-program))
+   * `nix-shell --run 'make main.bench.elf'` -- Build the benchmark executable
+   * `nix-shell --run 'make bench'` -- Build and run the benchmark (first read all of [*Benchmark the program*](#benchmark-the-program))
    * `nix-shell --run 'make prof'` -- Obtain an eventlog
 
 1. ### Cabal users
