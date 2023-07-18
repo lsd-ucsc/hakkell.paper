@@ -57,8 +57,8 @@ to determine how many nodes will participate in the election.
 1. ### Run demo mode
 
    Set the environment variable `MODE` to `actors`, `channels`, or `control`
-   to run the `benchActors`, `benchChannels`, or `benchControl`
-   functions, respectively, on the specified `RING_SIZE` nodes.
+   to run `benchActors`, `benchChannels`, or `benchControl` once,
+   on the specified `RING_SIZE` nodes.
 
    This is the mode we used for measuring total bytes allocated.
 
