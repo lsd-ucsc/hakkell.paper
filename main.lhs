@@ -1603,9 +1603,10 @@ identity.
 
 
 We extend \verb|exnode| (\Cref{sec:ring2-intent-fun})
+to make a benchmark-node
 with additional behavior:
 %
-When a benchmark-node detects that it is confirmed as winner, it puts its own
+When a benchmark-node is confirmed as winner, it puts its own
 \verb|ThreadId| into an \verb|MVar| to signal termination.
 %
 \begin{code}
