@@ -1919,22 +1919,6 @@ Our experiment proceeded as follows:
 \subsection{Experiment result}
 \label{apx:exp-result}
 
-Our running time results for 8, 32, and 192 capabilities are in
-\Cref{fig:perf-eval-time-n8,fig:perf-eval-time-n32,fig:perf-eval-time-n192},
-respectively.
-%
-We group the running time of the channel-based implementation over all three
-machines in \Cref{fig:perf-group-chan} to make its inflection point clearer.
-%
-Our total-allocations result is in \Cref{fig:perf-eval-mem}.
-
-The running time of the extended ring leader election is $O(2n)$ in the number
-of nodes.
-%
-We hypothesize that it is invariant to the number of capabilities because after
-an initial flood of nominations the algorithm degenerates quickly to a single
-message passing around the ring twice.
-
 \begin{figure}
     \begin{subfigure}{\linewidth}
     {\small \includesvg[width=\linewidth]{bench-time/machine_macbookpro11,5-mean.svg} }
@@ -1971,6 +1955,22 @@ message passing around the ring twice.
     }
     \label{fig:perf-group-chan}
 \end{figure}
+
+Our running time results for 8, 32, and 192 capabilities are in
+\Cref{fig:perf-eval-time-n8,fig:perf-eval-time-n32,fig:perf-eval-time-n192},
+respectively.
+%
+We group the running time of the channel-based implementation over all three
+machines in \Cref{fig:perf-group-chan} to make its inflection point clearer.
+%
+Our total-allocations result is in \Cref{fig:perf-eval-mem}.
+
+The running time of the extended ring leader election is $O(2n)$ in the number
+of nodes.
+%
+We hypothesize that it is invariant to the number of capabilities because after
+an initial flood of nominations the algorithm degenerates quickly to a single
+message passing around the ring twice.
 
 
 
