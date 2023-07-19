@@ -598,7 +598,7 @@ actors that may receive messages of different types.
 With this extension, our framework could be thought of as dynamically typed in
 the sense that a single actor can process multiple message types.
 %
-This is similar to the dynamic types support in Haskell's
+This is similar to the dynamic types support in the
 \verb|Data.Dynamic| module.
 
 
