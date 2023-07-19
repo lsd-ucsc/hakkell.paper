@@ -687,9 +687,9 @@ send :: Exception a => ThreadId -> a -> IO ()
 send recipient = sendStatic recipient . toException
 
 runDyn :: Exception a => Intent s a -> s -> IO ()
-runDyn intentStatic = runStatic intent
+runDyn intentStatic = runStatic intentDyn
   where
-    intent state e@Envelope{sender, message} =
+    intentDyn state e@Envelope{sender, message} =
         case fromException message of
             Just m -> intentStatic state e{message=m}
             Nothing
