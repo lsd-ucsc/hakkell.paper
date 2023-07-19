@@ -466,7 +466,17 @@ its inbox, and recurse.
 On the next loop iteration, the actor will process that message and once again
 have an empty inbox.
 %
-Exceptions are masked (using \texttt{mask\_}) outside of interruptible actions so that the bookkeeping
+Exceptions are masked (using \texttt{mask\_}\footnote{
+    It is good practice to use \texttt{mask} instead of \texttt{mask\_}, and
+    ``restore'' the prior masking state of the context before calling a
+    user-defined callback function.
+    %
+    Such functions may be written with the expectation to catch asynchronous
+    exceptions, for reasons mentioned in \Cref{subsec:async-exceptions} or
+    \citet{marlow2001async}.
+    %
+    For our purpose here, \texttt{mask\_} is acceptable.
+}) outside of interruptible actions so that the bookkeeping
 of recursing with updated state through the loop is not disrupted.
 
 
@@ -477,17 +487,8 @@ Before moving forward, let us acknowledge that this is \emph{not safe}.
 %
 An exception may arrive while executing the intent function.
 %
-Despite our use of \texttt{mask\_},\footnote{
-    It is good practice to use \texttt{mask} instead of \texttt{mask\_}, and
-    ``restore'' the prior masking state of the context before calling a
-    user-defined callback function.
-    %
-    Such functions may be written with the expectation to catch asynchronous
-    exceptions, for reasons mentioned in \Cref{subsec:async-exceptions} or
-    \citet{marlow2001async}.
-    %
-    For our purpose here, \texttt{mask\_} is acceptable.
-} if the intent function executes an interruptible action, then
+Despite our use of \texttt{mask\_},
+if the intent function executes an interruptible action, then
 it will be preempted.
 %
 In this case the intent function's work will be unfinished.
