@@ -1600,8 +1600,7 @@ termination is
 the time necessary for the winner's self-nomination to pass around the ring
 once, plus the time for the winner-declaration to pass around the ring once.
 %
-Termination is detected when a node receives a winner declaration with its own
-identity.
+Termination is detected when a node receives its own winner declaration.
 
 
 We extend \verb|exnode| (\Cref{sec:ring2-intent-fun})
