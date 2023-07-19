@@ -1732,8 +1732,7 @@ Within the where-clause of \verb|chanNode|,
 we define \verb|nodePart|
 to implement the behavior of a ring node from \Cref{sec:ring-intent-fun}.
 %
-This part has no state and requires no \verb|Init| message because its
-successor channel is captured within the communication functions.
+This part has no state and requires no \verb|Init| message.
 %
 \begin{code}
     nodePart :: Msg -> IO ()
@@ -1803,7 +1802,7 @@ two provided channels.
 %
 (3) Finally permute the nodes and fork them out of order.
 %
-At this point the nodes are assigned random thread identifiers.
+Nodes are assigned random thread identifiers at this point.
 %
 (4) Start the election.
 %
@@ -1877,10 +1876,8 @@ Our experiment proceeded as follows:
     $16384$ on the MacBookPro11,5, clocked to 1.6GHz, without
     frequency scaling, and with no other programs running (kernel vtty).
     %
-    Channels took a third the time of actors.
-    %
-    As we increased the ring size exponentially,
-    the performance difference narrowed.
+    Channels took a third the time of actors, but
+    the performance gap narrowed as ring size increased.
 
     \item[--] \Cref{fig:perf-eval-time-n32}:
     We ran the benchmark on the AWS \verb|c3.8xlarge| instance with 32 vCPU
