@@ -1726,7 +1726,6 @@ chanNode done chans st = do
 
 
 \noindent
-
 Within the where-clause of \verb|chanNode|,
 we define \verb|nodePart|
 to implement the behavior of a ring node from \Cref{sec:ring-intent-fun}.
@@ -1753,7 +1752,6 @@ This part has no state and requires no \verb|Init| message.
     nodePart _ = error "nodePart: unhandled"
 \end{code}
 }
-
 
 \noindent
 Still within the where-clause of \texttt{chanNode}, we implement
