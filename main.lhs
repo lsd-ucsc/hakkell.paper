@@ -256,7 +256,7 @@ which are thrown as a result of executing code in the current thread,
 asynchronous exceptions are thrown by threads distinct from the current one,
 or by the RTS itself.
 %
-They communicate conditions that may require the current thread to
+They are used to communicate conditions that may require the current thread to
 terminate: thread cancellation, user interrupts, or memory limits.
 
 Asynchronous exceptions allow syntactically-distant parts of a program
