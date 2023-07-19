@@ -808,7 +808,8 @@ it learns the identity of its successor.
 %
 To represent this we define two constructors in \Cref{fig:node-types} for node
 state type, \verb|Node|.
-%
+
+\noindent
 Three messages (also defined in \Cref{fig:node-types} as type, \verb|Msg|) will
 be used to run the election:
 \begin{itemize}[leftmargin=1.5em]
