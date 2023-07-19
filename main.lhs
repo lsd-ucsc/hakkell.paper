@@ -666,11 +666,11 @@ Specifically, it throws an exception (not an envelope) using the built-in
 These changes do not directly empower actor intent functions to
 deal with messages of different types.
 %
-We have only lifted our infrastructure to remove
+We have only removed
 application-specific type parameters from envelopes.
 %
 Actors intending to receive messages of different types will do so by
-performing the downcast from \verb|SomeException| themselves.
+downcasting from \verb|SomeException| themselves.
 %
 Such actors will use an intent function handling messages of type
 \verb|SomeException|.
@@ -718,6 +718,7 @@ If this happened, the exception would cause the newly created thread to die.
 %
 To avoid this, the fork prior to entering the main loop must be
 masked (in addition to the mask within the main loop).
+
 \Cref{fig:run} defines the main loop wrapper we will use for examples in
 \Cref{sec:ring-impl}.
 %
