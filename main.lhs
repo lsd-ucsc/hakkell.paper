@@ -1376,8 +1376,8 @@ It also meets our informal requirements that actors can send and receive
 messages, update state, and spawn or kill other actors (though we have not
 shown examples of all of these).
 %
-With conscientious attention to the termination and idempotence of intent
-functions, the framework might (wrongly) be considered practical.
+However, we do not mean to imply that our actor framework is practical; we
+merely mean to point out that it is, indeed, an actor framework.
 
 
 
