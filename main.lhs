@@ -242,9 +242,8 @@ In this section, we briefly review the status of asynchronous exceptions in GHC
 (\Cref{sec:actor-model}); readers already familiar with these topics may wish
 to skip this section.
 Readers unfamiliar with the behavior of \verb|throwTo|, \verb|catch|, or
-\verb|mask| from the \verb|Control.Exception| module may wish to scan the
-documentation of \verb|throwTo| \cite{controlDotException} before reading this
-section.
+\verb|mask| from the \verb|Control.Exception| module may wish to first scan the
+documentation of \verb|throwTo| in \citet{controlDotException}.
 
 \subsection{Asynchronous exceptions in GHC}
 \label{subsec:async-exceptions}
