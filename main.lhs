@@ -617,10 +617,10 @@ message, delegating to the wrapped actor where desired.\footnote{
     correction without requiring changes to existing actors.
 }
 %
-It is desirable to encapsulate such actor-wrapping in combinators that
+It may seem natural to encapsulate such actor-wrapping in combinators that
 generalize the patterns by which an actor is given additional behavior.
 %
-Our purpose here, though, is not to lean into the utility of a dynamically
+However, here our goal is not to lean into the utility of a dynamically
 typed actor framework, but to point out how little scaffolding is required to
 obtain one from the RTS.
 
