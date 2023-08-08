@@ -237,7 +237,7 @@ In this section, we briefly review the status of asynchronous exceptions in GHC
 to skip this section.
 Readers unfamiliar with the behavior of \verb|throwTo|, \verb|catch|, or
 \verb|mask| from the \verb|Control.Exception| module may wish to first scan the
-documentation of \verb|throwTo| in \citet{controlDotException}.
+documentation of \verb|throwTo|~\citep{controlDotException}.
 
 \subsection{Asynchronous Exceptions in GHC}
 \label{subsec:async-exceptions}
@@ -510,7 +510,7 @@ time we run an intent function, but this sacrifices serializable
 executions --- an actor must be safe to run concurrently with itself.
 %
 We opt for the simple presentation in \Cref{fig:static-impl}
-and recommend users write idempotent intent functions.
+and recommend that users write idempotent intent functions.
 
 
 \begin{figure}
@@ -1492,7 +1492,8 @@ here?
 Like many people, we choose Haskell because it is a tool that typically
 prevents ``whole classes of errors,'' and also because it is a joy to use.
 %
-But in this paper we achieve dynamically typed ``spooky action at a distance''
+But with the actor framework we present here,
+we achieve dynamically typed ``spooky action at a distance''
 with frighteningly little effort.
 %
 Perhaps the user-accessible interface to the asynchronous exception system
