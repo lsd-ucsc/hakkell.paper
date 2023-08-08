@@ -1,0 +1,93 @@
+%% Creator: Inkscape 1.2.1 (9c6d41e410, 2022-07-14), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'machine_c6a.48xlarge-mean_svg-tex.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{465bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.75)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.15612903,0.10935484){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}0.00003\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.15612903,0.2233871){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}0.00098\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.15612903,0.33741935){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}0.03125\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.15612903,0.45129032){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}1.00000\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.15612903,0.56532258){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}32.00000\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.16951613,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}4\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.28241935,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}16\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.39532258,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}64\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.50822581,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}256\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.62096774,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}1024\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=11]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.73387097,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}4096\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=12]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.84677419,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}16384\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=13]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.95967742,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}65536\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=14]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.03064516,0.37774194){\rotatebox{90}{\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Seconds\end{tabular}}}}}%
+    \put(0.56451613,0.01403226){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Nodes\end{tabular}}}}%
+    \put(0.56451613,0.7){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Mean elapsed time vs Ring size (AWS c6a.48xlarge; +RTS -N192)\end{tabular}}}}%
+    \put(0.57064516,0.62741935){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}control\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=15]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.57064516,0.5983871){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}actors\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=16]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+    \put(0.57064516,0.56935484){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}channels\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=17]{machine_c6a.48xlarge-mean_svg-tex.pdf}}%
+  \end{picture}%
+\endgroup%

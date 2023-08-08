@@ -1,0 +1,86 @@
+\begin{tikzpicture}[scale=1.5]
+
+\def\radius{2cm}
+\def\bounce{18pt}
+\def\pad{10pt}
+\def\ct{7}
+\def\noderad{8pt}
+\coordinate (center) at (1,1);
+
+\draw (center) circle[radius=\radius];
+
+\fill[white] (center) +(0/\ct*360:\radius) circle[radius=\noderad];
+\fill[white] (center) +(1/\ct*360:\radius) circle[radius=\noderad];
+\fill[white] (center) +(2/\ct*360:\radius) circle[radius=\noderad];
+\fill[white] (center) +(3/\ct*360:\radius) circle[radius=\noderad];
+\fill[white] (center) +(4/\ct*360:\radius) circle[radius=\noderad];
+\fill[white] (center) +(5/\ct*360:\radius) circle[radius=\noderad];
+\fill[white] (center) +(6/\ct*360:\radius) circle[radius=\noderad];
+
+\draw (center) +(0/\ct*360:\radius) circle[radius=\noderad] node {6};
+\draw (center) +(1/\ct*360:\radius) circle[radius=\noderad] node {2};
+\draw (center) +(2/\ct*360:\radius) circle[radius=\noderad] node {7};
+\draw (center) +(3/\ct*360:\radius) circle[radius=\noderad] node {5};
+\draw (center) +(4/\ct*360:\radius) circle[radius=\noderad] node {3};
+\draw (center) +(5/\ct*360:\radius) circle[radius=\noderad] node {1};
+\draw (center) +(6/\ct*360:\radius) circle[radius=\noderad] node {4};
+
+%% arcs on left
+
+\draw[thick,->]
+          (center) +(3.1/\ct*360:\radius+\pad)
+       .. controls +(4/\ct*360:\bounce)
+               and +(3/\ct*360:\bounce)
+                .. +(3.9/\ct*360:\radius+\pad);
+
+\draw[thick,->]
+          (center) +(4.1/\ct*360:\radius+\pad)
+       .. controls +(5/\ct*360:\bounce)
+               and +(4/\ct*360:\bounce)
+                .. +(4.9/\ct*360:\radius+\pad);
+
+\draw[thick,->]
+          (center) +(5.1/\ct*360:\radius+\pad)
+       .. controls +(6/\ct*360:\bounce)
+               and +(5/\ct*360:\bounce)
+                .. +(5.9/\ct*360:\radius+\pad);
+
+%% message labels on left
+
+\draw (center) +(3.5/\ct*360:\radius+\bounce+2mm) node {5};
+\draw (center) +(4.5/\ct*360:\radius+\bounce+2mm) node {5};
+\draw (center) +(5.5/\ct*360:\radius+\bounce+2mm) node {5};
+
+%% node decisions on left
+
+\draw (center) +(4/\ct*360:\radius+2*\noderad) node {\ding{51}}; % checkmark
+\draw (center) +(5/\ct*360:\radius+2*\noderad) node {\ding{51}}; % checkmark
+\draw (center) +(6/\ct*360:\radius+2*\noderad) node {\ding{51}}; % checkmark
+
+%%%%
+
+%% arcs in top right
+
+\draw[thick,->]
+          (center) +(0.1/\ct*360:\radius+\pad)
+       .. controls +(1/\ct*360:\bounce)
+               and +(0/\ct*360:\bounce)
+                .. +(0.9/\ct*360:\radius+\pad);
+
+\draw[thick,->]
+          (center) +(1.1/\ct*360:\radius+\pad)
+       .. controls +(2/\ct*360:\bounce)
+               and +(1/\ct*360:\bounce)
+                .. +(1.9/\ct*360:\radius+\pad);
+
+%% message labels in top right
+
+\draw (center) +(0.5/\ct*360:\radius+\bounce+2mm) node {6};
+\draw (center) +(1.5/\ct*360:\radius+\bounce+2mm) node {6};
+
+%% node decisions in top right
+
+\draw (center) +(1/\ct*360:\radius+2*\noderad) node {\ding{51}}; % checkmark
+\draw (center) +(2/\ct*360:\radius+2*\noderad) node {\ding{55}}; % batsumark
+
+\end{tikzpicture}

@@ -1,0 +1,103 @@
+%% Creator: Inkscape 1.2.1 (9c6d41e410, 2022-07-14), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'total-allocated_svg-tex.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{465bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.75)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.1166129){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}0.25\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.1766129){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}1\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.2366129){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}4\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.2966129){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}16\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.3566129){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}64\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.41659677){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}256\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.47659677){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}1024\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.53659677){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}4096\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.59659677){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}16384\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{total-allocated_svg-tex.pdf}}%
+    \put(0.13051613,0.65659677){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}65536\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=11]{total-allocated_svg-tex.pdf}}%
+    \put(0.14404839,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}4\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=12]{total-allocated_svg-tex.pdf}}%
+    \put(0.26053226,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}16\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=13]{total-allocated_svg-tex.pdf}}%
+    \put(0.377,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}64\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=14]{total-allocated_svg-tex.pdf}}%
+    \put(0.49348387,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}256\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=15]{total-allocated_svg-tex.pdf}}%
+    \put(0.60995161,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}1024\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=16]{total-allocated_svg-tex.pdf}}%
+    \put(0.72643548,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}4096\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=17]{total-allocated_svg-tex.pdf}}%
+    \put(0.84290323,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}16384\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=18]{total-allocated_svg-tex.pdf}}%
+    \put(0.9593871,0.05758065){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}65536\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=19]{total-allocated_svg-tex.pdf}}%
+    \put(0.03093548,0.3778871){\rotatebox{90}{\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Mebibytes\end{tabular}}}}}%
+    \put(0.55170968,0.01403226){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Nodes\end{tabular}}}}%
+    \put(0.55798387,0.62756452){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}control\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=20]{total-allocated_svg-tex.pdf}}%
+    \put(0.55798387,0.59853226){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}actors\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=21]{total-allocated_svg-tex.pdf}}%
+    \put(0.55798387,0.5695){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}channels\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=22]{total-allocated_svg-tex.pdf}}%
+    \put(0.55170968,0.70014516){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Allocations vs Ring size (MacBookPro11,5; +RTS -N8)\end{tabular}}}}%
+  \end{picture}%
+\endgroup%

@@ -1,0 +1,158 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{8}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[Armstrong(2003)]%
+        {armstrong2003}
+\bibfield{author}{\bibinfo{person}{Joe Armstrong}.}
+  \bibinfo{year}{2003}\natexlab{}.
+\newblock \emph{\bibinfo{title}{Making reliable distributed systems in the
+  presence of software errors}}.
+\newblock \bibinfo{thesistype}{Ph.\,D. Dissertation}.
+\newblock
+\urldef\tempurl%
+\url{http://urn.kb.se/resolve?urn=urn:nbn:se:ri:diva-22455}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Chang and Roberts(1979)]%
+        {chang1979decentralextrema}
+\bibfield{author}{\bibinfo{person}{Ernest Chang} {and}
+  \bibinfo{person}{Rosemary Roberts}.} \bibinfo{year}{1979}\natexlab{}.
+\newblock \showarticletitle{An Improved Algorithm for Decentralized
+  Extrema-Finding in Circular Configurations of Processes}.
+\newblock \bibinfo{journal}{\emph{Commun. ACM}} \bibinfo{volume}{22},
+  \bibinfo{number}{5} (\bibinfo{date}{May} \bibinfo{year}{1979}),
+  \bibinfo{pages}{281–283}.
+\newblock
+\showISSN{0001-0782}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/359104.359108}
+\showDOI{\tempurl}
+
+
+\bibitem[Fausak(2022)]%
+        {fausak2022}
+\bibfield{author}{\bibinfo{person}{Taylor Fausak}.}
+  \bibinfo{year}{2022}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{2022 State of Haskell Survey Results}}.
+\newblock
+\urldef\tempurl%
+\url{https://taylor.fausak.me/2022/11/18/haskell-survey-results/#s2q0}
+\showURL{%
+\tempurl}
+
+
+\bibitem[{GHC Contributors}(2021)]%
+        {controlDotException}
+\bibfield{author}{\bibinfo{person}{{GHC Contributors}}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Control.Exception module, base package}}.
+\newblock
+\urldef\tempurl%
+\url{https://hackage.haskell.org/package/base-4.15.1.0/docs/Control-Exception.html#v:throwTo}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Hewitt et~al\mbox{.}(1973)]%
+        {hewitt1973actors}
+\bibfield{author}{\bibinfo{person}{Carl Hewitt}, \bibinfo{person}{Peter
+  Bishop}, {and} \bibinfo{person}{Richard Steiger}.}
+  \bibinfo{year}{1973}\natexlab{}.
+\newblock \showarticletitle{A Universal Modular ACTOR Formalism for Artificial
+  Intelligence}. In \bibinfo{booktitle}{\emph{Proceedings of the 3rd
+  International Joint Conference on Artificial Intelligence}} (Stanford, USA)
+  \emph{(\bibinfo{series}{IJCAI'73})}. \bibinfo{publisher}{Morgan Kaufmann
+  Publishers Inc.}, \bibinfo{address}{San Francisco, CA, USA},
+  \bibinfo{pages}{235–245}.
+\newblock
+
+
+\bibitem[Marlow(2006)]%
+        {marlow2006extensible}
+\bibfield{author}{\bibinfo{person}{Simon Marlow}.}
+  \bibinfo{year}{2006}\natexlab{}.
+\newblock \showarticletitle{An Extensible Dynamically-Typed Hierarchy of
+  Exceptions}. In \bibinfo{booktitle}{\emph{Proceedings of the 2006 ACM SIGPLAN
+  Workshop on Haskell}} (Portland, Oregon, USA) \emph{(\bibinfo{series}{Haskell
+  '06})}. \bibinfo{publisher}{Association for Computing Machinery},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{96–106}.
+\newblock
+\showISBNx{1595934898}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/1159842.1159854}
+\showDOI{\tempurl}
+
+
+\bibitem[Marlow et~al\mbox{.}(2001)]%
+        {marlow2001async}
+\bibfield{author}{\bibinfo{person}{Simon Marlow}, \bibinfo{person}{Simon~Peyton
+  Jones}, \bibinfo{person}{Andrew Moran}, {and} \bibinfo{person}{John Reppy}.}
+  \bibinfo{year}{2001}\natexlab{}.
+\newblock \showarticletitle{Asynchronous Exceptions in Haskell}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the ACM SIGPLAN 2001 Conference on
+  Programming Language Design and Implementation}} (Snowbird, Utah, USA)
+  \emph{(\bibinfo{series}{PLDI '01})}. \bibinfo{publisher}{Association for
+  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{274–285}.
+\newblock
+\showISBNx{1581134142}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/378795.378858}
+\showDOI{\tempurl}
+
+
+\bibitem[Peyton~Jones(2001)]%
+        {peytonjones2001tackling}
+\bibfield{author}{\bibinfo{person}{Simon Peyton~Jones}.}
+  \bibinfo{year}{2001}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Tackling the awkward squad: monadic
+  input/output, concurrency, exceptions, and foreign-language calls in
+  Haskell}}.
+\newblock \bibinfo{publisher}{IOS Press}, \bibinfo{pages}{47--96}.
+\newblock
+\showISBNx{ISBN 1 58603 1724}
+\urldef\tempurl%
+\url{https://www.microsoft.com/en-us/research/publication/tackling-awkward-squad-monadic-inputoutput-concurrency-exceptions-foreign-language-calls-haskell/}
+\showURL{%
+\tempurl}
+
+
+\end{thebibliography}
