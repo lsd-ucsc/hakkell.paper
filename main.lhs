@@ -19,15 +19,6 @@
 \usepackage{svg}
 \usepackage{subcaption}
 
-\newcommand{\newcommenter}[3]{%
-  \newcommand{#1}[1]{%
-    \textcolor{#2}{\small\textsf{[{#3}: {##1}]}}%
-  }%
-}
-
-\newcommenter{\plr}{magenta}{PLR}
-\newcommenter{\lk}{blue}{LK}
-
 % make numbered lists use parenthesized numerals
 \renewcommand{\labelenumi}{(\arabic{enumi})}
 % left align captions
@@ -80,7 +71,10 @@
 %% sponsored by ACM SIGGRAPH, you must use the "author year" style of
 %% citations and references.
 %% Uncommenting the next command will enable that style.
-\citestyle{acmauthoryear}
+%% \citestyle{acmauthoryear}
+
+%% This command is an attempt to fix issues with text running into margins.
+\sloppy
 
 \begin{document}
 
@@ -234,7 +228,7 @@ import qualified Criterion.Main as Cr
 \end{code}
 } % end ignore
 
-\section{Brief background}
+\section{Brief Background}
 \label{sec:background}
 
 In this section, we briefly review the status of asynchronous exceptions in GHC
@@ -245,7 +239,7 @@ Readers unfamiliar with the behavior of \verb|throwTo|, \verb|catch|, or
 \verb|mask| from the \verb|Control.Exception| module may wish to first scan the
 documentation of \verb|throwTo| in \citet{controlDotException}.
 
-\subsection{Asynchronous exceptions in GHC}
+\subsection{Asynchronous Exceptions in GHC}
 \label{subsec:async-exceptions}
 
 The Glasgow Haskell Compiler (GHC) is unusual in its support for
@@ -298,7 +292,7 @@ running out [so] it can take remedial action'' \cite{marlow2001async}.
 The ability to recover from a termination signal seems innocuous, but
 it leaves asynchronous exceptions open to being repurposed.
 
-\subsection{The actor model}
+\subsection{The Actor Model}
 \label{sec:actor-model}
 
 The actor model is a computational paradigm characterized by message passing.
@@ -377,7 +371,7 @@ instance Exception Greet
 
 
 
-\section{Actor framework implementation}
+\section{Actor Framework Implementation}
 \label{sec:actor-framework}
 
 
@@ -394,7 +388,7 @@ These abstractions are so minimal as to seem unnecessary; we have sought to
 keep them minimal to underscore our point.
 
 
-\subsection{Sending (throwing) messages}
+\subsection{Sending (Throwing) Messages}
 \label{sec:sending-throwing}
 
 
@@ -412,7 +406,7 @@ envelope, and throws it to the specified recipient.
 For the purpose of explication in this paper, it also prints an execution trace.
 
 
-\subsection{Receiving (catching) messages}
+\subsection{Receiving (Catching) Messages}
 \label{sec:receiving-catching}
 
 
@@ -573,7 +567,7 @@ runStatic intent initialState = mask_ $ loop (initialState, [])
 
 
 
-\subsection{Dynamic types}
+\subsection{Dynamic Types}
 \label{sec:dynamic-types}
 
 
@@ -625,7 +619,7 @@ typed actor framework, but to point out how little scaffolding is required to
 obtain one from the RTS.
 
 
-\subsubsection{Sending dynamic messages}
+\subsubsection{Sending Dynamic Messages}
 
 
 Instead of sending an \verb|Envelope|
@@ -639,7 +633,7 @@ so that all inflight messages will have the type \verb|Envelope
 SomeException|.
 
 
-\subsubsection{Receiving dynamic messages}
+\subsubsection{Receiving Dynamic Messages}
 \label{sec:dynamic-recv-loop}
 
 
@@ -707,7 +701,7 @@ runDyn intentStatic = runStatic intentDyn
 
 
 
-\subsection{Safe initialization}
+\subsection{Safe Initialization}
 \label{sec:safe-fork}
 
 When creating an actor thread, it is important that no exception arrive before
@@ -746,7 +740,7 @@ run intent state = do
 
 
 
-\section{Example: Ring leader election}
+\section{Example: Ring Leader Election}
 \label{sec:ring-impl}
 
 The problem of \emph{ring leader election} is to designate one node
@@ -798,7 +792,7 @@ We implement and extend that solution below.
 \label{fig:ring-election-visual}
 \end{figure}
 
-\subsection{Implementing a leader election}
+\subsection{Implementing a Leader Election}
 
 
 
@@ -845,7 +839,7 @@ instance Exception Msg
 
 
 
-\subsubsection{Election termination}
+\subsubsection{Election Termination}
 \label{sec:election-termination}
 The node with the greatest identity that nominates itself will eventually
 receive its own nomination after it has circulated the entire ring.
@@ -868,7 +862,7 @@ and only one nomination can circumnavigate the ring.\footnote{
 
 
 
-\subsubsection{Node-actor behavior}
+\subsubsection{Node-Actor Behavior}
 \label{sec:ring-intent-fun}
 
 
@@ -929,7 +923,7 @@ node _ _ = error "node: unhandled"
 
 
 
-\subsubsection{Election initialization}
+\subsubsection{Election Initialization}
 \label{sec:main1-init}
 
 
@@ -1014,7 +1008,7 @@ ringElection n actor = do
 
 
 
-\subsection{Extending the leader election}
+\subsection{Extending the Leader Election}
 \label{sec:dyn-ring}
 
 The solution we have shown solves the ring leader election problem
@@ -1082,7 +1076,7 @@ instance Exception Winner
 
 
 
-\subsubsection{Declaration-round termination}
+\subsubsection{Declaration-Round Termination}
 %
 When an extended node receives a declaration of the winner
 that matches their greatest nominee seen,
@@ -1098,7 +1092,7 @@ and the algorithm terminates.
 
 
 
-\subsubsection{Exnode-actor behavior}
+\subsubsection{Exnode-Actor Behavior}
 \label{sec:ring2-intent-fun}
 
 
@@ -1215,7 +1209,7 @@ exnode _ _ = error "exnode: unhandled"
 
 
 
-\subsubsection{Extended election initialization}
+\subsubsection{Extended Election Initialization}
 \label{sec:main2-init}
 
 The extended ring leader election reuses the
@@ -1256,7 +1250,7 @@ A trace of an extended election appears in \Cref{apx:main2-trace}.
 
 
 
-\section{What have we wrought?}
+\section{What Have We Wrought?}
 \label{sec:what-have-we-wrought}
 
 \Cref{fig:static-impl} shows that we have, in only a few lines of
@@ -1383,12 +1377,12 @@ merely mean to point out that it is, indeed, an actor framework.
 
 
 
-\subsection{Summary of performance evaluation}
+\subsection{Summary of Performance Evaluation}
 
 We have described a novel approach to inter-thread communication.
 %
 We believe it
-is prudent to compare the performance this \emph{unintended communication
+is prudent to compare the performance of this \emph{unintended communication
 mechanism} against the performance of an \emph{intended communication
 mechanism} to restore a sense that the ship is indeed upright.
 %
@@ -1539,8 +1533,7 @@ We also thank Jos\'{e} Calder\'{o}n, the members of the LSD Lab at UC Santa Cruz
 This material is based upon work supported by the National Science Foundation under Grant No. CCF-2145367. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
 \end{acks}
 
-\bibliographystyle{ACM-Reference-Format}
-\bibliography{main.bib}
+
 
 
 
@@ -1554,7 +1547,7 @@ This material is based upon work supported by the National Science Foundation un
 
 \section{Appendix}
 
-\subsection{Permute function implementation}
+\subsection{Permute Function Implementation}
 \label{apx:permute-impl}
 
 In \Cref{sec:ring-impl} we provided the implementation of a ring
@@ -1591,7 +1584,7 @@ permute pool0 gen0
 
 
 
-\subsection{Actor benchmark implementation}
+\subsection{Actor Benchmark Implementation}
 \label{apx:actor-bench-impl}
 
 
@@ -1660,7 +1653,7 @@ benchActors n = do
 
 
 
-\subsection{Control benchmark implementation}
+\subsection{Control Benchmark Implementation}
 \label{apx:control-bench-impl}
 
 The experimental control, \verb|benchControl|, only forks threads and then
@@ -1683,7 +1676,7 @@ benchControl n = do
 
 
 
-\subsection{Channel benchmark implementation}
+\subsection{Channel Benchmark Implementation}
 \label{apx:channel-bench-impl}
 
 Each node has references to a send-channel and a receive-channel in the
@@ -1828,7 +1821,7 @@ benchChannels n = do
 
 
 
-\subsection{Criterion benchmark implementation}
+\subsection{Criterion Benchmark Implementation}
 \label{apx:criterion-bench-impl}
 
 Finally, we define a benchmark-heat to run each of the benchmark functions
@@ -1851,7 +1844,7 @@ benchHeat n = Cr.bgroup ("n=" ++ show n)
 
 
 
-\subsection{Experimental setup and procedure}
+\subsection{Experimental Setup and Procedure}
 \label{apx:exp-setup}
 
 In all benchmarks, we replace printlines with \verb|pure ()|
@@ -1913,7 +1906,7 @@ Our experiment proceeded as follows:
 
 
 
-\subsection{Experiment result}
+\subsection{Experiment Result}
 \label{apx:exp-result}
 
 \begin{figure}
@@ -1985,7 +1978,7 @@ message passing around the ring twice.
 
 
 
-\subsection{Actor-based (dynamic types) trace}
+\subsection{Actor-based (Dynamic Types) Trace}
 \label{apx:main2-trace}
 
 In \Cref{sec:main2-init}, we showed how to call \verb|runElection| on
@@ -2003,7 +1996,7 @@ Here is an example trace.
 
 
 
-\subsection{Channel-based extended election trace}
+\subsection{Channel-based Extended Election Trace}
 \label{apx:benchChannels-trace}
 
 In \Cref{apx:control-bench-impl} we defined \verb|benchChannels| to run a ring
@@ -2071,7 +2064,8 @@ main = do
 \end{code}
 }
 
-
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main.bib}
 
 
 
