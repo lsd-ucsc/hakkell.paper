@@ -1376,6 +1376,39 @@ merely mean to point out that it is, indeed, an actor framework.
 
 \subsection{Summary of Performance Evaluation}
 
+
+\begin{figure}
+\raggedright
+% try columnwidth?
+
+    \begin{subfigure}{\linewidth}
+        \begin{small}
+        \includesvg[width=\linewidth]{bench-time/machine_c3.8xlarge-mean.svg}
+        \end{small}
+        \caption{
+            The channel-based implementation is faster than the actor-based
+            implementation, except at very large numbers of threads.
+            %
+            We reproduced this result on machines with 8, 32, and 192 capabilities.
+        }
+        \label{fig:perf-eval-time-n32}
+    \end{subfigure}
+
+    \begin{subfigure}{\linewidth}
+        \begin{small}
+        \includesvg[width=\linewidth]{bench-mem/total-allocated.svg}
+        \end{small}
+        \caption{
+            The growth of allocations by the channel-based implementation
+            eventually catches up to that of the actor-based implementation.
+        }
+        \label{fig:perf-eval-mem}
+    \end{subfigure}
+
+\caption{Representative selection of experimental results.}
+\label{fig:perf-eval}
+\end{figure}
+
 We have described a novel approach to inter-thread communication.
 %
 We believe it
@@ -1424,39 +1457,6 @@ but sufficient for our purpose of confirming that channels are faster.
 give the source code for these benchmarks.
 \Cref{apx:exp-setup} details our experimental setup, and
 \Cref{apx:exp-result} discusses more of the results.
-
-
-\begin{figure}
-\raggedright
-% try columnwidth?
-
-    \begin{subfigure}{\linewidth}
-        \begin{small}
-        \includesvg[width=\linewidth]{bench-time/machine_c3.8xlarge-mean.svg}
-        \end{small}
-        \caption{
-            The channel-based implementation is faster than the actor-based
-            implementation, except at very large numbers of threads.
-            %
-            We reproduced this result on machines with 8, 32, and 192 capabilities.
-        }
-        \label{fig:perf-eval-time-n32}
-    \end{subfigure}
-
-    \begin{subfigure}{\linewidth}
-        \begin{small}
-        \includesvg[width=\linewidth]{bench-mem/total-allocated.svg}
-        \end{small}
-        \caption{
-            The growth of allocations by the channel-based implementation
-            eventually catches up to that of the actor-based implementation.
-        }
-        \label{fig:perf-eval-mem}
-    \end{subfigure}
-
-\caption{Representative selection of experimental results.}
-\label{fig:perf-eval}
-\end{figure}
 
 
 
