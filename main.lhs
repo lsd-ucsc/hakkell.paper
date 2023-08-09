@@ -490,8 +490,8 @@ In this case the intent function's work will be unfinished.
 Without removing the message currently being processed, the loop
 will continue on an inbox extended with the new message.
 %
-The next iteration will begin by processing the same message that the preempted
-iteration was, effecting a double-send.
+The next iteration will process the same message as the preempted
+iteration, effecting a double-send.
 
 
 To avoid the possibility of a double-send, a careful implementor of an actor
@@ -933,7 +933,7 @@ is implemented in \Cref{fig:ringElection}.
 %
 It takes the size of the ring
 and an unevaluated \verb|IO| action representing node behavior,
-and then performs the following steps to start an election:\footnote{
+and takes the following steps to start the election:\footnote{
     The implementation shown doesn't handle rings of size 0 or 1.
     %
     Also, we do not show thread cleanup.
@@ -1000,7 +1000,7 @@ ringElection n actor = do
 \scriptsize
 \perform{beginVerb >> main1 4 >> endVerb}
 \normalsize
-\caption{An execution trace of the ring leader election solution.}
+\caption{An execution trace of the ring leader election.}
 \label{fig:main1-trace}
 \end{figure}
 
@@ -1118,9 +1118,8 @@ which succeeds unconditionally.
 The \verb|exnode| intent function must then perform its own downcasts,
 and we enable \verb|ViewPatterns| to ease our presentation.
 %
-There are two main cases,
-corresponding to the two message types the actor will handle,
-which we explain below.
+Next we explain the two main cases,
+corresponding to the two message types the actor will handle.
 
 
 The first case of \verb|exnode|, shown in \Cref{fig:exnode-case-msg}, applies
@@ -1218,9 +1217,7 @@ initialization scaffolding from before
 %
 The only change is that the \verb|IO| action passed to
 \verb|ringElection| initializes the greatest nominee seen
-to itself, prior to calling \verb|run|.
-%
-It is called like this:
+to itself, prior to calling \verb|run|:
 %
 \ignore{
 \begin{code}
@@ -1594,7 +1591,7 @@ termination is
 the time necessary for the winner's self-nomination to pass around the ring
 once, plus the time for the winner-declaration to pass around the ring once.
 %
-Termination is detected when a node receives its own winner declaration.
+Termination is when a node receives its own winner declaration.
 
 
 We extend \verb|exnode| (\Cref{sec:ring2-intent-fun})
@@ -1856,8 +1853,8 @@ Our test machines included:
 %
 \begin{itemize}[leftmargin=1em]
     \item[--] MacBookPro11,5; 8 capabilities (NixOS).
-    \item[--] AWS \verb|c3.8xlarge|; 32 vCPU (Amazon Linux 2023 AMI).
-    \item[--] AWS \verb|c6a.48xlarge|; 192 vCPU (Amazon Linux 2023 AMI).
+    \item[--] AWS \verb|c3.8xlarge|; 32 vCPU (\small{Amazon Linux 2023 AMI}).
+    \item[--] AWS \verb|c6a.48xlarge|; 192 vCPU (\small{Amazon Linux 2023 AMI}).
 \end{itemize}
 %
 Our experiment proceeded as follows:
@@ -1874,7 +1871,7 @@ Our experiment proceeded as follows:
     We ran the benchmark on the AWS \verb|c3.8xlarge| instance with 32 vCPU
     for ring sizes up to $65536$.
     %
-    We saw actors outperform channels at high ring sizes.
+    Actors outperformed channels at high ring sizes.
 
     \item[--] \Cref{fig:perf-eval-time-n192}:
     We ran the benchmark on the AWS \verb|c6a.48xlarge| instance with 192 vCPU
