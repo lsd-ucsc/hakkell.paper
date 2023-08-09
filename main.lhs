@@ -1940,8 +1940,9 @@ Our experiment proceeded as follows:
         \includesvg[width=\linewidth]{bench-time/group_channels-mean.svg}
     }
     \caption{
-        The growth of total-allocations as ring size is increased inflects to a
-        higher rate near $2048$ nodes.
+        As ring size increases,
+        the running time of \text{\ttfamily benchChannels}
+        inflects to a higher rate around $2048$ nodes.
     }
     \label{fig:perf-group-chan}
 \end{figure}
