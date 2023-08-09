@@ -1518,11 +1518,6 @@ We hope the reader will draw their own conclusions.
 
 
 
-\section*{Data Availability Statement}
-
-A version of the literate Haskell and benchmarks for this paper
-is on Zenodo; a living version is on GitHub \cite{hakkellartifact}.
-
 
 
 
@@ -1538,6 +1533,11 @@ This material is based upon work supported by the National Science Foundation un
 
 
 
+
+\section*{Data Availability Statement}
+
+A version of the literate Haskell and benchmarks for this paper
+is on Zenodo; a living version is on GitHub \cite{hakkellartifact}.
 
 
 
