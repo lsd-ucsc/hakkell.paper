@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{8}
+\begin{thebibliography}{9}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -153,6 +153,20 @@
 \url{https://www.microsoft.com/en-us/research/publication/tackling-awkward-squad-monadic-inputoutput-concurrency-exceptions-foreign-language-calls-haskell/}
 \showURL{%
 \tempurl}
+
+
+\bibitem[Redmond and Kuper(2023)]%
+        {hakkellartifact}
+\bibfield{author}{\bibinfo{person}{Patrick Redmond} {and}
+  \bibinfo{person}{Lindsey Kuper}.} \bibinfo{year}{2023}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{{An Exceptional Actor System (Functional
+  Pearl): Artifact}}}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.5281/zenodo.8162084}
+\showDOI{\tempurl}
+\newblock
+\shownote{\emph{Living.} \url{https://github.com/lsd-ucsc/hakkell.paper/}}.
 
 
 \end{thebibliography}

@@ -1518,6 +1518,11 @@ We hope the reader will draw their own conclusions.
 
 
 
+\section*{Data Availability Statement}
+
+A version of the literate Haskell and benchmarks for this paper
+is on Zenodo; a living version is on GitHub \cite{hakkellartifact}.
+
 
 
 
@@ -1529,8 +1534,6 @@ Jonathan Castello, of the LSD Lab, contributed the title of this paper.
 
 This material is based upon work supported by the National Science Foundation under Grant No. CCF-2145367. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
 \end{acks}
-
-
 
 
 
