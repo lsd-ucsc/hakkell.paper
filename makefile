@@ -75,3 +75,26 @@ artifact:
 		bench-time/group_channels-mean.svg \
 		README.md LICENSE \
 		.gitignore \
+
+# Rebuild until the trace-figures let us fit in 12 pages:
+#
+# while test 12 -lt "$(pdfinfo main.pdf |grep Pages |cut -d: -f2)"; do touch main.lhs; make; done
+
+sources: $(PAPER).pdf
+	mv -v   tex-sources/acmart.cls .
+	rm -vrf tex-sources/ tex-sources.zip
+	mkdir   tex-sources/
+	mv -v   acmart.cls tex-sources/
+
+	cp -vr  svg-inkscape/* tex-sources/
+	cp -v   $(TEXSRC) tex-sources/
+	cp -v   main.bbl tex-sources/
+
+	# fix the latex code and paths for importing the SVGs
+	sed -e 's,\\includesvg\[width=\([^]]*\)]{\([^}]*\)},\\def\\svgwidth{\1}\n\\input{\2},' \
+		-e 's,\(bench-time\|bench-mem\)/,,' \
+		-e 's,\.svg,_svg-tex.pdf_tex,' \
+		-i tex-sources/main.tex
+
+	cd tex-sources/; \
+		zip -r ../tex-sources.zip *; \
