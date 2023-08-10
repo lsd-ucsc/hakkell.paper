@@ -995,7 +995,7 @@ ringElection n actor = do
 \end{figure}
 
 
-\begin{figure}
+\begin{figure}[h]
 \raggedright
 \scriptsize
 \perform{beginVerb >> main1 4 >> endVerb}
