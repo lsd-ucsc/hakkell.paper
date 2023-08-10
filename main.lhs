@@ -906,11 +906,11 @@ successor.
 %
 \begin{code}
 node state@Member{next}
-  Envelope{message=Nominate{nominee=nom}} = do
+  Envelope{message=Nominate n} = do
     self <- myThreadId
     case () of
-     _  |  self == nom -> putStrLn (show self ++ ": I win")
-        |  self <  nom -> send next (Nominate nom)
+     _  |  self == n -> putStrLn (show self ++ ": I win")
+        |  self <  n -> send next (Nominate n)
         |  otherwise   -> putStrLn "Ignored nomination"
     return state
 \end{code}
