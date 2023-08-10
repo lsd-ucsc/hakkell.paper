@@ -223,7 +223,7 @@ import System.IO (hSetBuffering, stdout, BufferMode(..))
 import Control.Exception (assert)
 import System.Environment (lookupEnv)
 import qualified Control.Concurrent.Chan as Ch
-import qualified Control.Concurrent.MVar as Mv
+import Control.Concurrent.MVar (MVar, newEmptyMVar, takeMVar, putMVar)
 import qualified Criterion.Main as Cr
 \end{code}
 } % end ignore
@@ -1604,12 +1604,12 @@ When a benchmark-node is confirmed as winner, it puts its own
 \verb|ThreadId| into an \verb|MVar| to signal termination.
 %
 \begin{code}
-benchNode :: Mv.MVar ThreadId -> Intent Exnode SomeException
+benchNode :: MVar ThreadId -> Intent Exnode SomeException
 benchNode done state e@Envelope{message} = do
     state' <- exnode state e
     self <- myThreadId
     case fromException message of
-        Just (Winner w) | w == self -> Mv.putMVar done w
+        Just (Winner w) | w == self -> putMVar done w
         _ -> return ()
     return state'
 \end{code}
@@ -1639,12 +1639,12 @@ nodes, and asserts a correct result.
 benchActors :: Int -> IO ()
 benchActors n = do
     -- Start the ring-leader election
-    done <- Mv.newEmptyMVar
+    done <- newEmptyMVar
     ring <- ringElection n $ do
         great <- myThreadId
         run (benchNode done) (Uninitialized, great)
     -- Wait for termination, kill the ring, assert correct result
-    w <- Mv.takeMVar done
+    w <- takeMVar done
     mapM_ killThread ring
     assert (w == maximum ring) (return ())
 \end{code}
@@ -1708,7 +1708,7 @@ It leaves off with definitions of communication functions in its where-clause.
 %
 \begin{code}
 chanNode ::
-    Mv.MVar ThreadId -> (Ch, Ch) -> ThreadId -> IO ()
+    MVar ThreadId -> (Ch, Ch) -> ThreadId -> IO ()
 chanNode done chans st = do
     chanNode done chans =<< exnodePart st =<< recv
   where
@@ -1773,7 +1773,7 @@ an \texttt{MVar}.
             Winner w
                 | w == self ->
                     putStrLn (show self ++ ": Confirmed")
-                    >> Mv.putMVar done self
+                    >> putMVar done self
                 | w == great -> sendWinner (Winner w)
                 | otherwise -> putStrLn "Unexpected winner"
         return great
@@ -1801,7 +1801,7 @@ Nodes are assigned random thread identifiers at this point.
 \begin{code}
 benchChannels :: Int -> IO ()
 benchChannels n = do
-    done <- Mv.newEmptyMVar
+    done <- newEmptyMVar
     let mkNode chans = do {-"\hfill(1)"-}
             great <- myThreadId
             chanNode done chans great
@@ -1811,7 +1811,7 @@ benchChannels n = do
     ringActs <- getStdRandom $ permute nodeActs
     ring <- mapM forkIO ringActs {-"\hfill(3)"-}
     mapM_ (\c -> Ch.writeChan c . Left $ Start) chans  {-"\quad\hfill(4)"-}
-    w <- Mv.takeMVar done {-"\hfill(5)"-}
+    w <- takeMVar done {-"\hfill(5)"-}
     mapM_ killThread ring
     assert (w == maximum ring) (return ())
 \end{code}
