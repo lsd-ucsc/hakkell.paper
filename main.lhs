@@ -1736,8 +1736,8 @@ This part has no state and requires no \verb|Init| message.
         case () of
          _  | self == nom -> putStrLn (show self ++ ": I win")
             | self <  nom ->
-                putStrLn (show self ++ ": nominate " ++ show nom)
-                >> sendMsg (Nominate nom)
+                putStrLn (show self ++ ": nominate "
+                    ++ show nom) >> sendMsg (Nominate nom)
             | otherwise       -> putStrLn "Ignored nominee"
 \end{code}
 \ignore{
