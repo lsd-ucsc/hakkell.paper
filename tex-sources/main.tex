@@ -16,6 +16,7 @@
 \usepackage{caption} % align captions globally
 \usepackage{tikz}
 \usepackage{pifont}
+\usepackage{svg}
 \usepackage{subcaption}
 
 % make numbered lists use parenthesized numerals
@@ -497,7 +498,7 @@ This paper is a literate Haskell program.\footnote{
 \\
 \>[B]{}\mathbf{import}\;\Varid{qualified}\;\Conid{\Conid{Control}.\Conid{Concurrent}.Chan}\;\Varid{as}\;\Conid{Ch}{}\<[E]%
 \\
-\>[B]{}\mathbf{import}\;\Varid{qualified}\;\Conid{\Conid{Control}.\Conid{Concurrent}.MVar}\;\Varid{as}\;\Conid{Mv}{}\<[E]%
+\>[B]{}\mathbf{import}\;\Conid{\Conid{Control}.\Conid{Concurrent}.MVar}\;(\Conid{MVar},\Varid{newEmptyMVar},\Varid{takeMVar},\Varid{putMVar}){}\<[E]%
 \\
 \>[B]{}\mathbf{import}\;\Varid{qualified}\;\Conid{\Conid{Criterion}.Main}\;\Varid{as}\;\Conid{Cr}{}\<[E]%
 \ColumnHook
@@ -1320,7 +1321,7 @@ successor.
 \>[B]{}\Varid{node}\;\Varid{state}\mathord{@}\Conid{Member}\;\!\{\Varid{next}\mskip1.5mu\}{}\<[E]%
 \\
 \>[B]{}\hsindent{3}{}\<[3]%
-\>[3]{}\Conid{Envelope}\;\!\{\Varid{message}\mathrel{=}\Conid{Nominate}\;\!\{\Varid{nominee}\mathrel{=}\Varid{nom}\mskip1.5mu\}\mskip1.5mu\}\mathrel{=}\mathbf{do}{}\<[E]%
+\>[3]{}\Conid{Envelope}\;\!\{\Varid{message}\mathrel{=}\Conid{Nominate}\;\Varid{n}\mskip1.5mu\}\mathrel{=}\mathbf{do}{}\<[E]%
 \\
 \>[3]{}\hsindent{2}{}\<[5]%
 \>[5]{}\Varid{self}\leftarrow \Varid{myThreadId}{}\<[E]%
@@ -1331,11 +1332,11 @@ successor.
 \>[5]{}\hsindent{1}{}\<[6]%
 \>[6]{}\anonymous {}\<[9]%
 \>[9]{}\mid {}\<[9E]%
-\>[12]{}\Varid{self}\equiv \Varid{nom}\to \Varid{putStrLn}\;(\Varid{show}\;\Varid{self}\mathbin{+\hspace{-0.2em}+}\text{\ttfamily \char34 :~I~win\char34}){}\<[E]%
+\>[12]{}\Varid{self}\equiv \Varid{n}\to \Varid{putStrLn}\;(\Varid{show}\;\Varid{self}\mathbin{+\hspace{-0.2em}+}\text{\ttfamily \char34 :~I~win\char34}){}\<[E]%
 \\
 \>[9]{}\mid {}\<[9E]%
 \>[12]{}\Varid{self}\mathbin{<}{}\<[20]%
-\>[20]{}\Varid{nom}\to \Varid{send}\;\Varid{next}\;(\Conid{Nominate}\;\Varid{nom}){}\<[E]%
+\>[20]{}\Varid{n}\to \Varid{send}\;\Varid{next}\;(\Conid{Nominate}\;\Varid{n}){}\<[E]%
 \\
 \>[9]{}\mid {}\<[9E]%
 \>[12]{}\Varid{otherwise}{}\<[24]%
@@ -1465,30 +1466,29 @@ An election execution trace appears in \Cref{fig:main1-trace}.
 \end{figure}
 
 
-\begin{figure}
+\begin{figure}[h]
 \raggedright
 \scriptsize
 
 \begin{tabbing}\ttfamily
 ~ThreadId~46~send~Init~\char123{}next~\char61{}~ThreadId~50\char125{}~to~ThreadId~49\\
-\ttfamily ~ThreadId~46~send~Init~\char123{}next~\char61{}~ThreadId~48\char125{}~to~ThreadId~50\\
-\ttfamily ~ThreadId~46~send~Init~\char123{}next~\char61{}~ThreadId~47\char125{}~to~ThreadId~48\\
-\ttfamily ~ThreadId~46~send~Init~\char123{}next~\char61{}~ThreadId~49\char125{}~to~ThreadId~47\\
+\ttfamily ~ThreadId~46~send~Init~\char123{}next~\char61{}~ThreadId~47\char125{}~to~ThreadId~50\\
+\ttfamily ~ThreadId~46~send~Init~\char123{}next~\char61{}~ThreadId~48\char125{}~to~ThreadId~47\\
+\ttfamily ~ThreadId~46~send~Init~\char123{}next~\char61{}~ThreadId~49\char125{}~to~ThreadId~48\\
 \ttfamily ~ThreadId~46~send~Start~to~ThreadId~49\\
 \ttfamily ~ThreadId~49~send~Nominate~\char123{}nominee~\char61{}~ThreadId~49\char125{}~to~ThreadId~50\\
 \ttfamily ~ThreadId~46~send~Start~to~ThreadId~50\\
 \ttfamily ~Ignored~nomination\\
-\ttfamily ~ThreadId~50~send~Nominate~\char123{}nominee~\char61{}~ThreadId~50\char125{}~to~ThreadId~48\\
-\ttfamily ~ThreadId~46~send~Start~to~ThreadId~48\\
-\ttfamily ~ThreadId~48~send~Nominate~\char123{}nominee~\char61{}~ThreadId~50\char125{}~to~ThreadId~47\\
-\ttfamily ~ThreadId~47~send~Nominate~\char123{}nominee~\char61{}~ThreadId~50\char125{}~to~ThreadId~49\\
-\ttfamily ~ThreadId~48~send~Nominate~\char123{}nominee~\char61{}~ThreadId~48\char125{}~to~ThreadId~47\\
+\ttfamily ~ThreadId~50~send~Nominate~\char123{}nominee~\char61{}~ThreadId~50\char125{}~to~ThreadId~47\\
 \ttfamily ~ThreadId~46~send~Start~to~ThreadId~47\\
+\ttfamily ~ThreadId~47~send~Nominate~\char123{}nominee~\char61{}~ThreadId~50\char125{}~to~ThreadId~48\\
+\ttfamily ~ThreadId~48~send~Nominate~\char123{}nominee~\char61{}~ThreadId~50\char125{}~to~ThreadId~49\\
+\ttfamily ~ThreadId~47~send~Nominate~\char123{}nominee~\char61{}~ThreadId~47\char125{}~to~ThreadId~48\\
+\ttfamily ~ThreadId~46~send~Start~to~ThreadId~48\\
 \ttfamily ~ThreadId~49~send~Nominate~\char123{}nominee~\char61{}~ThreadId~50\char125{}~to~ThreadId~50\\
-\ttfamily ~ThreadId~47~send~Nominate~\char123{}nominee~\char61{}~ThreadId~48\char125{}~to~ThreadId~49\\
-\ttfamily ~ThreadId~50\char58{}~I~win\\
 \ttfamily ~Ignored~nomination\\
-\ttfamily ~ThreadId~47~send~Nominate~\char123{}nominee~\char61{}~ThreadId~47\char125{}~to~ThreadId~49\\
+\ttfamily ~ThreadId~50\char58{}~I~win\\
+\ttfamily ~ThreadId~48~send~Nominate~\char123{}nominee~\char61{}~ThreadId~48\char125{}~to~ThreadId~49\\
 \ttfamily ~Ignored~nomination
 \end{tabbing}
 
@@ -1958,7 +1958,7 @@ merely mean to point out that it is, indeed, an actor framework.
     \begin{subfigure}{\linewidth}
         \begin{small}
         \def\svgwidth{\linewidth}
-        \input{machine_c3.8xlarge-mean_svg-tex.pdf_tex}
+\input{machine_c3.8xlarge-mean_svg-tex.pdf_tex}
         \end{small}
         \caption{
             The channel-based implementation is faster than the actor-based
@@ -1972,7 +1972,7 @@ merely mean to point out that it is, indeed, an actor framework.
     \begin{subfigure}{\linewidth}
         \begin{small}
         \def\svgwidth{\linewidth}
-        \input{total-allocated_svg-tex.pdf_tex}
+\input{total-allocated_svg-tex.pdf_tex}
         \end{small}
         \caption{
             The growth of allocations by the channel-based implementation
@@ -2214,7 +2214,7 @@ When a benchmark-node is confirmed as winner, it puts its own
 \column{5}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{9}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\Varid{benchNode}\mathbin{::}\Conid{\Conid{Mv}.MVar}\;\Conid{ThreadId}\to \Conid{Intent}\;\Conid{Exnode}\;\Conid{SomeException}{}\<[E]%
+\>[B]{}\Varid{benchNode}\mathbin{::}\Conid{MVar}\;\Conid{ThreadId}\to \Conid{Intent}\;\Conid{Exnode}\;\Conid{SomeException}{}\<[E]%
 \\
 \>[B]{}\Varid{benchNode}\;\Varid{done}\;\Varid{state}\;\Varid{e}\mathord{@}\Conid{Envelope}\;\!\{\Varid{message}\mskip1.5mu\}\mathrel{=}\mathbf{do}{}\<[E]%
 \\
@@ -2228,7 +2228,7 @@ When a benchmark-node is confirmed as winner, it puts its own
 \>[5]{}\mathbf{case}\;\Varid{fromException}\;\Varid{message}\;\mathbf{of}{}\<[E]%
 \\
 \>[5]{}\hsindent{4}{}\<[9]%
-\>[9]{}\Conid{Just}\;(\Conid{Winner}\;\Varid{w})\mid \Varid{w}\equiv \Varid{self}\to \Varid{\Conid{Mv}.putMVar}\;\Varid{done}\;\Varid{w}{}\<[E]%
+\>[9]{}\Conid{Just}\;(\Conid{Winner}\;\Varid{w})\mid \Varid{w}\equiv \Varid{self}\to \Varid{putMVar}\;\Varid{done}\;\Varid{w}{}\<[E]%
 \\
 \>[5]{}\hsindent{4}{}\<[9]%
 \>[9]{}\anonymous \to \Varid{return}\;(){}\<[E]%
@@ -2272,7 +2272,7 @@ nodes, and asserts a correct result.
 \>[5]{}\mbox{\onelinecomment  Start the ring-leader election}{}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
-\>[5]{}\Varid{done}\leftarrow \Varid{\Conid{Mv}.newEmptyMVar}{}\<[E]%
+\>[5]{}\Varid{done}\leftarrow \Varid{newEmptyMVar}{}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
 \>[5]{}\Varid{ring}\leftarrow \Varid{ringElection}\;\Varid{n}\mathbin{\$}\mathbf{do}{}\<[E]%
@@ -2287,7 +2287,7 @@ nodes, and asserts a correct result.
 \>[5]{}\mbox{\onelinecomment  Wait for termination, kill the ring, assert correct result}{}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
-\>[5]{}\Varid{w}\leftarrow \Varid{\Conid{Mv}.takeMVar}\;\Varid{done}{}\<[E]%
+\>[5]{}\Varid{w}\leftarrow \Varid{takeMVar}\;\Varid{done}{}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
 \>[5]{}\Varid{mapM\char95 }\;\Varid{killThread}\;\Varid{ring}{}\<[E]%
@@ -2375,7 +2375,7 @@ It leaves off with definitions of communication functions in its where-clause.
 \>[B]{}\Varid{chanNode}\mathbin{::}{}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
-\>[5]{}\Conid{\Conid{Mv}.MVar}\;\Conid{ThreadId}\to (\Conid{Ch},\Conid{Ch})\to \Conid{ThreadId}\to \Conid{IO}\;(){}\<[E]%
+\>[5]{}\Conid{MVar}\;\Conid{ThreadId}\to (\Conid{Ch},\Conid{Ch})\to \Conid{ThreadId}\to \Conid{IO}\;(){}\<[E]%
 \\
 \>[B]{}\Varid{chanNode}\;\Varid{done}\;\Varid{chans}\;\Varid{st}\mathrel{=}\mathbf{do}{}\<[E]%
 \\
@@ -2427,7 +2427,7 @@ This part has no state and requires no \text{\ttfamily Init} message.
 \>[5]{}\hsindent{4}{}\<[9]%
 \>[9]{}\Varid{sendMsg}\mathbin{\$}\Conid{Nominate}\;\Varid{self}{}\<[E]%
 \\
-\>[5]{}\Varid{nodePart}\;\Conid{Nominate}\;\!\{\Varid{nominee}\mathrel{=}\Varid{nom}\mskip1.5mu\}\mathrel{=}\mathbf{do}{}\<[E]%
+\>[5]{}\Varid{nodePart}\;(\Conid{Nominate}\;\Varid{n})\mathrel{=}\mathbf{do}{}\<[E]%
 \\
 \>[5]{}\hsindent{4}{}\<[9]%
 \>[9]{}\Varid{self}\leftarrow \Varid{myThreadId}{}\<[E]%
@@ -2437,16 +2437,16 @@ This part has no state and requires no \text{\ttfamily Init} message.
 \\
 \>[9]{}\hsindent{1}{}\<[10]%
 \>[10]{}\anonymous {}\<[13]%
-\>[13]{}\mid \Varid{self}\equiv \Varid{nom}\to \Varid{putStrLn}\;(\Varid{show}\;\Varid{self}\mathbin{+\hspace{-0.2em}+}\text{\ttfamily \char34 :~I~win\char34}){}\<[E]%
+\>[13]{}\mid \Varid{self}\equiv \Varid{n}\to \Varid{putStrLn}\;(\Varid{show}\;\Varid{self}\mathbin{+\hspace{-0.2em}+}\text{\ttfamily \char34 :~I~win\char34}){}\<[E]%
 \\
 \>[13]{}\mid \Varid{self}\mathbin{<}{}\<[23]%
-\>[23]{}\Varid{nom}\to {}\<[E]%
+\>[23]{}\Varid{n}\to {}\<[E]%
 \\
 \>[13]{}\hsindent{4}{}\<[17]%
-\>[17]{}\Varid{putStrLn}\;(\Varid{show}\;\Varid{self}\mathbin{+\hspace{-0.2em}+}\text{\ttfamily \char34 :~nominate~\char34}\mathbin{+\hspace{-0.2em}+}\Varid{show}\;\Varid{nom}){}\<[E]%
+\>[17]{}\Varid{putStrLn}\;(\Varid{show}\;\Varid{self}\mathbin{+\hspace{-0.2em}+}\text{\ttfamily \char34 :~nominate~\char34}\mathbin{+\hspace{-0.2em}+}\Varid{show}\;\Varid{n}){}\<[E]%
 \\
 \>[13]{}\hsindent{4}{}\<[17]%
-\>[17]{}\mathbin{>\hspace{-0.4em}>}\Varid{sendMsg}\;(\Conid{Nominate}\;\Varid{nom}){}\<[E]%
+\>[17]{}\mathbin{>\hspace{-0.4em}>}\Varid{sendMsg}\;(\Conid{Nominate}\;\Varid{n}){}\<[E]%
 \\
 \>[13]{}\mid \Varid{otherwise}{}\<[31]%
 \>[31]{}\to \Varid{putStrLn}\;\text{\ttfamily \char34 Ignored~nominee\char34}{}\<[E]%
@@ -2528,7 +2528,7 @@ an \texttt{MVar}.
 \>[21]{}\Varid{putStrLn}\;(\Varid{show}\;\Varid{self}\mathbin{+\hspace{-0.2em}+}\text{\ttfamily \char34 :~Confirmed\char34}){}\<[E]%
 \\
 \>[17]{}\hsindent{4}{}\<[21]%
-\>[21]{}\mathbin{>\hspace{-0.4em}>}\Varid{\Conid{Mv}.putMVar}\;\Varid{done}\;\Varid{self}{}\<[E]%
+\>[21]{}\mathbin{>\hspace{-0.4em}>}\Varid{putMVar}\;\Varid{done}\;\Varid{self}{}\<[E]%
 \\
 \>[13]{}\hsindent{4}{}\<[17]%
 \>[17]{}\mid \Varid{w}\equiv \Varid{great}\to \Varid{sendWinner}\;(\Conid{Winner}\;\Varid{w}){}\<[E]%
@@ -2571,7 +2571,7 @@ Nodes are assigned random thread identifiers at this point.
 \>[B]{}\Varid{benchChannels}\;\Varid{n}\mathrel{=}\mathbf{do}{}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
-\>[5]{}\Varid{done}\leftarrow \Varid{\Conid{Mv}.newEmptyMVar}{}\<[E]%
+\>[5]{}\Varid{done}\leftarrow \Varid{newEmptyMVar}{}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
 \>[5]{}\mathbf{let}\;\Varid{mkNode}\;\Varid{chans}\mathrel{=}\mathbf{do}\;\hfill(1){}\<[E]%
@@ -2602,7 +2602,7 @@ Nodes are assigned random thread identifiers at this point.
 \>[56]{}\quad\hfill(4){}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
-\>[5]{}\Varid{w}\leftarrow \Varid{\Conid{Mv}.takeMVar}\;\Varid{done}\hfill(5){}\<[E]%
+\>[5]{}\Varid{w}\leftarrow \Varid{takeMVar}\;\Varid{done}\hfill(5){}\<[E]%
 \\
 \>[B]{}\hsindent{5}{}\<[5]%
 \>[5]{}\Varid{mapM\char95 }\;\Varid{killThread}\;\Varid{ring}{}\<[E]%
@@ -2711,21 +2711,22 @@ Our experiment proceeded as follows:
 
 
 
+
+
+\subsection{Experiment Result}
+\label{apx:exp-result}
+
 \begin{figure}
     \begin{subfigure}{\linewidth}
-    {\small
-        \def\svgwidth{\linewidth}
-        \input{machine_macbookpro11,5-mean_svg-tex.pdf_tex}
-    }
+    {\small \def\svgwidth{\linewidth}
+\input{machine_macbookpro11,5-mean_svg-tex.pdf_tex} }
     \caption{Running time with 8 capabilities.}
     \label{fig:perf-eval-time-n8}
     \end{subfigure}
 
     \begin{subfigure}{\linewidth}
-    {\small
-        \def\svgwidth{\linewidth}
-        \input{machine_c6a.48xlarge-mean_svg-tex.pdf_tex}
-    }
+    {\small \def\svgwidth{\linewidth}
+\input{machine_c6a.48xlarge-mean_svg-tex.pdf_tex} }
     \caption{
         Running time with 192 capabilities:
         %
@@ -2746,7 +2747,7 @@ Our experiment proceeded as follows:
 \begin{figure}
     {\small
         \def\svgwidth{\linewidth}
-        \input{group_channels-mean_svg-tex.pdf_tex}
+\input{group_channels-mean_svg-tex.pdf_tex}
     }
     \caption{
         As ring size increases,
@@ -2755,9 +2756,6 @@ Our experiment proceeded as follows:
     }
     \label{fig:perf-group-chan}
 \end{figure}
-
-\subsection{Experiment Result}
-\label{apx:exp-result}
 
 Our running time results for 8, 32, and 192 capabilities are in
 \Cref{fig:perf-eval-time-n8,fig:perf-eval-time-n32,fig:perf-eval-time-n192},
@@ -2803,30 +2801,30 @@ Here is an example trace.
 
 \begin{tabbing}\ttfamily
 ~\char62{}~main2~4\\
-\ttfamily ~ThreadId~53~send~Init~\char123{}next~\char61{}~ThreadId~57\char125{}~to~ThreadId~55\\
-\ttfamily ~ThreadId~53~send~Init~\char123{}next~\char61{}~ThreadId~54\char125{}~to~ThreadId~57\\
-\ttfamily ~ThreadId~53~send~Init~\char123{}next~\char61{}~ThreadId~56\char125{}~to~ThreadId~54\\
-\ttfamily ~ThreadId~53~send~Init~\char123{}next~\char61{}~ThreadId~55\char125{}~to~ThreadId~56\\
-\ttfamily ~ThreadId~53~send~Start~to~ThreadId~55\\
-\ttfamily ~ThreadId~55~send~Nominate~\char123{}nominee~\char61{}~ThreadId~55\char125{}~to~ThreadId~57\\
+\ttfamily ~ThreadId~53~send~Init~\char123{}next~\char61{}~ThreadId~55\char125{}~to~ThreadId~57\\
+\ttfamily ~ThreadId~53~send~Init~\char123{}next~\char61{}~ThreadId~56\char125{}~to~ThreadId~55\\
+\ttfamily ~ThreadId~53~send~Init~\char123{}next~\char61{}~ThreadId~54\char125{}~to~ThreadId~56\\
+\ttfamily ~ThreadId~53~send~Init~\char123{}next~\char61{}~ThreadId~57\char125{}~to~ThreadId~54\\
 \ttfamily ~ThreadId~53~send~Start~to~ThreadId~57\\
-\ttfamily ~Ignored~nomination\\
-\ttfamily ~ThreadId~57~send~Nominate~\char123{}nominee~\char61{}~ThreadId~57\char125{}~to~ThreadId~54\\
-\ttfamily ~ThreadId~53~send~Start~to~ThreadId~54\\
-\ttfamily ~ThreadId~54~send~Nominate~\char123{}nominee~\char61{}~ThreadId~57\char125{}~to~ThreadId~56\\
-\ttfamily ~ThreadId~56~send~Nominate~\char123{}nominee~\char61{}~ThreadId~57\char125{}~to~ThreadId~55\\
-\ttfamily ~ThreadId~54~send~Nominate~\char123{}nominee~\char61{}~ThreadId~54\char125{}~to~ThreadId~56\\
+\ttfamily ~ThreadId~57~send~Nominate~\char123{}nominee~\char61{}~ThreadId~57\char125{}~to~ThreadId~55\\
+\ttfamily ~ThreadId~53~send~Start~to~ThreadId~55\\
+\ttfamily ~ThreadId~55~send~Nominate~\char123{}nominee~\char61{}~ThreadId~57\char125{}~to~ThreadId~56\\
+\ttfamily ~ThreadId~56~send~Nominate~\char123{}nominee~\char61{}~ThreadId~57\char125{}~to~ThreadId~54\\
+\ttfamily ~ThreadId~55~send~Nominate~\char123{}nominee~\char61{}~ThreadId~55\char125{}~to~ThreadId~56\\
 \ttfamily ~ThreadId~53~send~Start~to~ThreadId~56\\
-\ttfamily ~ThreadId~55~send~Nominate~\char123{}nominee~\char61{}~ThreadId~57\char125{}~to~ThreadId~57\\
+\ttfamily ~ThreadId~54~send~Nominate~\char123{}nominee~\char61{}~ThreadId~57\char125{}~to~ThreadId~57\\
 \ttfamily ~Ignored~nomination\\
+\ttfamily ~ThreadId~56~send~Nominate~\char123{}nominee~\char61{}~ThreadId~56\char125{}~to~ThreadId~54\\
+\ttfamily ~ThreadId~53~send~Start~to~ThreadId~54\\
 \ttfamily ~ThreadId~57\char58{}~I~win\\
-\ttfamily ~ThreadId~57~send~Winner~\char40{}ThreadId~57\char41{}~to~ThreadId~54\\
-\ttfamily ~ThreadId~56~send~Nominate~\char123{}nominee~\char61{}~ThreadId~56\char125{}~to~ThreadId~55\\
-\ttfamily ~ThreadId~54~send~Winner~\char40{}ThreadId~57\char41{}~to~ThreadId~56\\
-\ttfamily ~ThreadId~55~send~Nominate~\char123{}nominee~\char61{}~ThreadId~56\char125{}~to~ThreadId~57\\
-\ttfamily ~ThreadId~56~send~Winner~\char40{}ThreadId~57\char41{}~to~ThreadId~55\\
+\ttfamily ~ThreadId~57~send~Winner~\char40{}ThreadId~57\char41{}~to~ThreadId~55\\
+\ttfamily ~ThreadId~54~send~Nominate~\char123{}nominee~\char61{}~ThreadId~56\char125{}~to~ThreadId~57\\
+\ttfamily ~ThreadId~55~send~Winner~\char40{}ThreadId~57\char41{}~to~ThreadId~56\\
 \ttfamily ~Ignored~nomination\\
-\ttfamily ~ThreadId~55~send~Winner~\char40{}ThreadId~57\char41{}~to~ThreadId~57\\
+\ttfamily ~ThreadId~54~send~Nominate~\char123{}nominee~\char61{}~ThreadId~54\char125{}~to~ThreadId~57\\
+\ttfamily ~ThreadId~56~send~Winner~\char40{}ThreadId~57\char41{}~to~ThreadId~54\\
+\ttfamily ~Ignored~nomination\\
+\ttfamily ~ThreadId~54~send~Winner~\char40{}ThreadId~57\char41{}~to~ThreadId~57\\
 \ttfamily ~ThreadId~57\char58{}~Confirmed
 \end{tabbing}
 
@@ -2853,13 +2851,12 @@ Here's an example trace.
 ~\char62{}~benchChannels~4\\
 \ttfamily ~ThreadId~61\char58{}~nominate~self\\
 \ttfamily ~ThreadId~62\char58{}~nominate~self\\
-\ttfamily ~ThreadId~63\char58{}~nominate~self\\
+\ttfamily ~Ignored~nominee\\
 \ttfamily ~ThreadId~64\char58{}~nominate~self\\
 \ttfamily ~Ignored~nominee\\
-\ttfamily ~ThreadId~63\char58{}~nominate~ThreadId~64\\
-\ttfamily ~ThreadId~61\char58{}~nominate~ThreadId~63\\
 \ttfamily ~ThreadId~61\char58{}~nominate~ThreadId~64\\
-\ttfamily ~Ignored~nominee\\
+\ttfamily ~ThreadId~63\char58{}~nominate~self\\
+\ttfamily ~ThreadId~63\char58{}~nominate~ThreadId~64\\
 \ttfamily ~ThreadId~62\char58{}~nominate~ThreadId~63\\
 \ttfamily ~ThreadId~62\char58{}~nominate~ThreadId~64\\
 \ttfamily ~Ignored~nominee\\
@@ -2987,9 +2984,6 @@ Here's an example trace.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{main.bib}
-
-
-
 
 
 

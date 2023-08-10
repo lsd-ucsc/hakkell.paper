@@ -82,7 +82,7 @@
     \put(0,0){\includegraphics[width=\unitlength,page=14]{machine_c3.8xlarge-mean_svg-tex.pdf}}%
     \put(0.03064516,0.37774194){\rotatebox{90}{\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Seconds\end{tabular}}}}}%
     \put(0.57129032,0.01403226){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Nodes\end{tabular}}}}%
-    \put(0.57129032,0.7){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Mean elapsed time vs Ring size (AWS c3.8xlarge; +RTS -N32)\end{tabular}}}}%
+    \put(0.53903226,0.7){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Mean elapsed time vs Ring size (AWS c3.8xlarge; +RTS -N32)\end{tabular}}}}%
     \put(0.57741935,0.62741935){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}control\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=15]{machine_c3.8xlarge-mean_svg-tex.pdf}}%
     \put(0.57741935,0.5983871){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}actors\end{tabular}}}}%
