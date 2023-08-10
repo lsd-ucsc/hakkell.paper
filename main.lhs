@@ -1731,13 +1731,13 @@ This part has no state and requires no \verb|Init| message.
         self <- myThreadId
         putStrLn (show self ++ ": nominate self")
         sendMsg $ Nominate self
-    nodePart Nominate{nominee=nom} = do
+    nodePart (Nominate n) = do
         self <- myThreadId
         case () of
-         _  | self == nom -> putStrLn (show self ++ ": I win")
-            | self <  nom ->
-                putStrLn (show self ++ ": nominate "
-                    ++ show nom) >> sendMsg (Nominate nom)
+         _  | self == n -> putStrLn (show self ++ ": I win")
+            | self <  n ->
+                putStrLn (show self ++ ": nominate " ++ show n)
+                >> sendMsg (Nominate n)
             | otherwise       -> putStrLn "Ignored nominee"
 \end{code}
 \ignore{
