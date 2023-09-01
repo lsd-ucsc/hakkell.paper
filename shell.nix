@@ -18,6 +18,7 @@ mkShell {
   buildInputs = [
     texlive.combined.scheme-full
     (haskellPackages.ghcWithPackages (p: with p; [
+      unlit
       random
       criterion
       lhs2tex
